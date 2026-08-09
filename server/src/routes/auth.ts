@@ -7,8 +7,13 @@ import {
   createUserWithProfile,
   findUserByEmail,
   findUserById,
+  findUserByIdWithPassword,
+  updatePasswordHash,
 } from "../repositories/users";
+import { createResetToken, consumeResetToken } from "../repositories/passwordResets";
+import { sendPasswordResetEmail } from "../services/email";
 import { Unauthorized, BadRequest, Conflict } from "../errors";
+import { config } from "../config";
 
 export const authRouter = Router();
 
@@ -93,6 +98,93 @@ authRouter.get("/me", requireAuth, async (req, res, next) => {
       return;
     }
     res.json({ id: user.id, email: user.email });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Password change and reset
+// ---------------------------------------------------------------------------
+
+const changeBody = z.object({
+  currentPassword: z.string().min(1).max(200),
+  newPassword: z.string().min(8).max(200),
+});
+
+authRouter.post(
+  "/change-password",
+  requireAuth,
+  validate({ body: changeBody }),
+  async (req, res, next) => {
+    try {
+      const { currentPassword, newPassword } = req.body as z.infer<typeof changeBody>;
+
+      // The one caller that needs the hash; everything else uses findUserById.
+      const user = await findUserByIdWithPassword(req.userId);
+      if (!user || !(await verifyPassword(user.password_hash, currentPassword))) {
+        next(new Unauthorized("Current password is incorrect"));
+        return;
+      }
+
+      // updatePasswordHash deletes EVERY session for this user, including the one
+      // making the request — so regenerate afterwards to keep the caller signed
+      // in. The reverse order would delete the session it just created.
+      await updatePasswordHash(user.id, await hashPassword(newPassword));
+      await regenerate(req);
+      req.session.userId = user.id;
+
+      res.sendStatus(204);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+authRouter.post(
+  "/forgot-password",
+  validate({ body: z.object({ email: z.string().email().max(254) }) }),
+  async (req, res, next) => {
+    try {
+      const { email } = req.body as { email: string };
+      const user = await findUserByEmail(email);
+
+      if (user) {
+        const raw = await createResetToken(user.id);
+        await sendPasswordResetEmail(
+          user.email,
+          `${config.APP_ORIGIN}/reset-password?token=${raw}`,
+        );
+      }
+
+      // Always 204, whether or not the account exists. Any other shape is an
+      // account-enumeration oracle.
+      res.sendStatus(204);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+const resetBody = z.object({
+  token: z.string().length(64),
+  newPassword: z.string().min(8).max(200),
+});
+
+authRouter.post("/reset-password", validate({ body: resetBody }), async (req, res, next) => {
+  try {
+    const { token, newPassword } = req.body as z.infer<typeof resetBody>;
+
+    const userId = await consumeResetToken(token);
+    if (!userId) {
+      next(new BadRequest("That reset link is invalid or has expired"));
+      return;
+    }
+
+    // Signs out every device. A reset is usually a response to compromise, so
+    // leaving other sessions alive would defeat the point.
+    await updatePasswordHash(userId, await hashPassword(newPassword));
+    res.sendStatus(204);
   } catch (err) {
     next(err);
   }
