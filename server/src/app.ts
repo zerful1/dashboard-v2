@@ -2,6 +2,7 @@ import express, { type Express } from "express";
 import { sessionMiddleware } from "./middleware/session";
 import { errorHandler } from "./middleware/errorHandler";
 import { authRouter } from "./routes/auth";
+import { profileRouter } from "./routes/profile";
 import { config } from "./config";
 
 /**
@@ -41,6 +42,7 @@ export function createApp(): Express {
   });
 
   app.use("/api/auth", authRouter);
+  app.use("/api/profile", profileRouter);
 
   app.use(errorHandler);
   return app;
