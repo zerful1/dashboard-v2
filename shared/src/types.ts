@@ -191,29 +191,33 @@ export interface FoodLogEntry {
  * Lived in the client's useFoodSearch hook in v1, which meant the pure domain
  * module `nutrition/serving.ts` imported types from a React hook. Moved here so the
  * domain layer is importable by the server.
+ *
+ * The short macro keys (p/f/c) are the wire format the food-search Edge Function
+ * already returns; kept verbatim so neither the function nor `resolveMacros` has to
+ * change during the port.
  */
 export interface FoodHitServing {
-  description: string;
-  grams: number | null;
-  kcal: number | null;
-  protein: number | null;
-  fat: number | null;
-  carbs: number | null;
+  label: string;
+  grams: number;
+  kcal: number;
+  p: number;
+  f: number;
+  c: number;
 }
 
+/** `source` is narrower than FoodExternalSource — search only ever yields these two. */
 export interface FoodHit {
-  source: FoodExternalSource;
-  externalId: string | null;
+  source: "off" | "cofid";
+  externalId: string;
   name: string;
-  brand: string | null;
-  barcode: string | null;
+  brand?: string;
   servings: FoodHitServing[];
-  per100g: {
-    kcal: number | null;
-    protein: number | null;
-    fat: number | null;
-    carbs: number | null;
-  } | null;
+  per100g: { kcal: number; p: number; f: number; c: number } | null;
+}
+
+export interface FoodSearchResult {
+  hits: FoodHit[];
+  warnings?: string[];
 }
 
 // ---------------------------------------------------------------------------
