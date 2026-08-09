@@ -2,8 +2,10 @@
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022"],
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    // node16, not the deprecated node10. Because neither shared nor server sets
+    // "type": "module", node16 treats these files as CommonJS — which means
+    // relative imports stay extensionless, unlike an ESM package.
+    "module": "node16",
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
