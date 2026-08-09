@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  // The augmentation in server/src/types declares req.userId and SessionData.
+  // api/index.ts pulls in the server sources transitively, so without it here the
+  // root typecheck reports every use of req.userId as an error even though the
+  // server's own tsconfig is happy.
+  "include": ["api/**/*", "server/src/types/**/*"]
+}

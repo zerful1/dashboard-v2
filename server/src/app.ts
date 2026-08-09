@@ -3,6 +3,7 @@ import { sessionMiddleware } from "./middleware/session";
 import { errorHandler } from "./middleware/errorHandler";
 import { authRouter } from "./routes/auth";
 import { profileRouter } from "./routes/profile";
+import { pool } from "./db/pool";
 import { config } from "./config";
 
 /**
@@ -39,6 +40,22 @@ export function createApp(): Express {
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true });
+  });
+
+  /**
+   * Keeps the Supabase free tier from pausing.
+   *
+   * A free project is paused after roughly a week of inactivity and has to be
+   * resumed by hand — which, on a portfolio piece, means the link is dead exactly
+   * when someone clicks it. A daily Vercel cron touching the database avoids that.
+   */
+  app.get("/api/cron/keepalive", async (_req, res, next) => {
+    try {
+      const { rows } = await pool.query<{ now: Date }>("SELECT now() as now");
+      res.json({ ok: true, db: rows[0]?.now ?? null });
+    } catch (err) {
+      next(err);
+    }
   });
 
   app.use("/api/auth", authRouter);
