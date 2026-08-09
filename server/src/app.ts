@@ -1,6 +1,7 @@
 import express, { type Express } from "express";
 import { sessionMiddleware } from "./middleware/session";
 import { errorHandler } from "./middleware/errorHandler";
+import { authRouter } from "./routes/auth";
 import { config } from "./config";
 
 /**
@@ -39,7 +40,7 @@ export function createApp(): Express {
     res.json({ ok: true });
   });
 
-  // Routers mount here in later tasks.
+  app.use("/api/auth", authRouter);
 
   app.use(errorHandler);
   return app;
