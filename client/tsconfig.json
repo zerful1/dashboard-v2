@@ -25,7 +25,8 @@
     "noUnusedParameters": true,
     "forceConsistentCasingInFileNames": true,
 
-    "baseUrl": ".",
+    // No baseUrl — deprecated in TS 6. Since TS 5, `paths` resolves relative to
+    // this file, which is what we want anyway.
     "paths": { "@/*": ["./src/*"] }
   },
   "include": ["src", "tests"]

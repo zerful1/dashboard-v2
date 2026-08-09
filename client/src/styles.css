@@ -1,0 +1,71 @@
+@import 'tailwindcss';
+
+/* ---------------------------------------------------------------------------
+   Design tokens.
+   Tailwind v4 takes its theme from CSS, not a config file — every custom
+   property below generates the matching utilities, so `--color-surface`
+   yields bg-surface / text-surface / border-surface.
+
+   Roles, not shades. Components never name a raw hex or a stone number.
+   --------------------------------------------------------------------------- */
+@theme {
+  /* Surfaces — Tailwind's stone scale, aliased by the job each one does */
+  --color-bg: #0c0a09; /* stone-950 — page */
+  --color-surface: #1c1917; /* stone-900 — cards */
+  --color-raised: #292524; /* stone-800 — BORDERS AND GRIDLINES ONLY, never data */
+
+  /* Text */
+  --color-text: #fafaf9; /* stone-50  — 19:1 on bg */
+  --color-muted: #a8a29e; /* stone-400 — 7.8:1 */
+  --color-dim: #57534e; /* stone-600 — decorative, not for body copy */
+
+  /* Data ink. Every one clears 4.5:1 against bg, so all are safe for text. */
+  --color-accent: #e07a5f; /* terracotta, 6.7:1 — roughly once per screen */
+  --color-sage: #81b29a; /* positive,   8.3:1 */
+  --color-gold: #f2cc8f; /* caution,    13:1  */
+  --color-negative: #e5646d; /* destructive, 6.0:1 */
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius-card: 11px;
+}
+
+@layer base {
+  html {
+    /* Painted here as well as on body so overscroll never reveals white. */
+    background-color: var(--color-bg);
+    /* Makes native controls, scrollbars and autofill render dark. */
+    color-scheme: dark;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-bg text-text font-sans antialiased;
+    margin: 0;
+  }
+
+  /* Keyboard focus is always visible; the accent doubles as the focus colour. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+/* Micro-label: uppercase mono with wide tracking. Used for every field label
+   and section heading, and it is the reason the interface reads as instrument
+   panel rather than form. */
+@utility lbl {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+/* Numbers are the point of this app — tabular figures stop columns jittering
+   as values change. */
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+}
