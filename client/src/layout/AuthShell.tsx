@@ -9,7 +9,7 @@ export function AuthShell({
 }: {
   title: string;
   subtitle?: string;
-  children: ReactNode;
+  children?: ReactNode;
   footer?: ReactNode;
 }) {
   return (
@@ -18,7 +18,7 @@ export function AuthShell({
         <div className="lbl text-accent">Dashboard</div>
         <h1 className="mt-2 text-2xl font-extrabold tracking-tight">{title}</h1>
         {subtitle && <p className="mt-1.5 text-sm leading-relaxed text-muted">{subtitle}</p>}
-        <div className="mt-7">{children}</div>
+        {children && <div className="mt-7">{children}</div>}
         {footer && <div className="mt-6 text-sm text-muted">{footer}</div>}
       </div>
     </div>
