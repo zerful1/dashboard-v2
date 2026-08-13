@@ -40,7 +40,7 @@ export function RegisterPage() {
       subtitle="Your data is private to you."
       footer={
         <>
-          Already have one? <Link to="/login" className="text-accent">Sign in</Link>
+          Already have one? <Link to="/login" className="text-text underline underline-offset-4">Sign in</Link>
         </>
       }
     >

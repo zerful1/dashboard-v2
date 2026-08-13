@@ -20,7 +20,7 @@
   --color-dim: #57534e; /* stone-600 — decorative, not for body copy */
 
   /* Data ink. Every one clears 4.5:1 against bg, so all are safe for text. */
-  --color-accent: #e07a5f; /* terracotta, 6.7:1 — roughly once per screen */
+  --color-accent: #e07a5f; /* terracotta, 6.7:1 — the primary action plus the active nav item, kept scarce so it still signals the one thing to act on; the wordmark is identity chrome, not a competing action, and sits outside that budget */
   --color-sage: #81b29a; /* positive,   8.3:1 */
   --color-gold: #f2cc8f; /* caution,    13:1  */
   --color-negative: #e5646d; /* destructive, 6.0:1 */

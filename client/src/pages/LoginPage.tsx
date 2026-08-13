@@ -39,7 +39,7 @@ export function LoginPage() {
       subtitle="Track your training, food and habits."
       footer={
         <>
-          No account? <Link to="/register" className="text-accent">Create one</Link>
+          No account? <Link to="/register" className="text-text underline underline-offset-4">Create one</Link>
         </>
       }
     >
