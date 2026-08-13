@@ -5,14 +5,16 @@ import * as apiModule from "../src/lib/api";
 import { ApiError } from "../src/lib/api";
 
 function Probe() {
-  const { user, loading, login, logout } = useAuth();
+  const { user, loading, sessionError, login, logout, refreshAuth } = useAuth();
   return (
     <div>
       <span data-testid="state">
         {loading ? "loading" : user ? `in:${user.email}` : "out"}
       </span>
+      <span data-testid="session-error">{sessionError ? sessionError.message : "none"}</span>
       <button onClick={() => void login("a@b.com", "password-1")}>login</button>
       <button onClick={() => void logout()}>logout</button>
+      <button onClick={() => void refreshAuth()}>refresh</button>
     </div>
   );
 }
@@ -70,5 +72,51 @@ describe("AuthProvider", () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(() => render(<Probe />)).toThrow(/within AuthProvider/);
     spy.mockRestore();
+  });
+
+  it("a non-401 failure on the initial check leaves user un-cleared and records sessionError", async () => {
+    vi.spyOn(apiModule, "api").mockRejectedValue(new ApiError(500, "Internal Server Error"));
+
+    render(<AuthProvider><Probe /></AuthProvider>);
+    expect(screen.getByTestId("state")).toHaveTextContent("loading");
+    expect(screen.getByTestId("session-error")).toHaveTextContent("none");
+
+    // loading must still resolve to false even though the check failed.
+    await waitFor(() => expect(screen.getByTestId("state")).not.toHaveTextContent("loading"));
+
+    // user was never set to a signed-in value (un-cleared, still its initial
+    // null) and — the actual point of the fix — sessionError is populated,
+    // which is what distinguishes this from a real 401 signed-out result.
+    expect(screen.getByTestId("state")).toHaveTextContent("out");
+    expect(screen.getByTestId("session-error")).toHaveTextContent("Internal Server Error");
+  });
+
+  it("a 401 rejection sets user to null and leaves sessionError null", async () => {
+    vi.spyOn(apiModule, "api").mockRejectedValue(new ApiError(401, "Not authenticated"));
+
+    render(<AuthProvider><Probe /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("state")).toHaveTextContent("out"));
+
+    // Assert both halves: this distinction is the whole point of the fix.
+    expect(screen.getByTestId("state")).toHaveTextContent("out");
+    expect(screen.getByTestId("session-error")).toHaveTextContent("none");
+  });
+
+  it("a successful refreshAuth() after a failed one clears sessionError", async () => {
+    const spy = vi.spyOn(apiModule, "api");
+    spy.mockRejectedValueOnce(new ApiError(500, "Internal Server Error")); // initial /me fails
+    spy.mockResolvedValueOnce({ id: "1", email: "a@b.com" }); // retry succeeds
+
+    render(<AuthProvider><Probe /></AuthProvider>);
+    await waitFor(() =>
+      expect(screen.getByTestId("session-error")).toHaveTextContent("Internal Server Error"),
+    );
+
+    await act(async () => {
+      screen.getByText("refresh").click();
+    });
+
+    await waitFor(() => expect(screen.getByTestId("state")).toHaveTextContent("in:a@b.com"));
+    expect(screen.getByTestId("session-error")).toHaveTextContent("none");
   });
 });
