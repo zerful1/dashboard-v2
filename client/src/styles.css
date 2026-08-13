@@ -28,6 +28,15 @@
   --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
+  /* Colour-free size primitive for micro-labels — same metrics as the `lbl`
+     utility below, minus its hardcoded muted colour, so elements that
+     recolour themselves (a nav item turning text-accent when active) can
+     still sit on the instrument-panel type scale instead of falling back to
+     a body size. */
+  --text-label: 0.5rem;
+  --text-label--line-height: 1;
+  --tracking-label: 0.16em;
+
   --radius-card: 11px;
 }
 
