@@ -2,18 +2,23 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LoginPage } from "../src/pages/LoginPage";
 import { AuthProvider } from "../src/auth/AuthProvider";
 import * as apiModule from "../src/lib/api";
 import { ApiError } from "../src/lib/api";
 
+// AuthProvider clears the query cache whenever the identity changes, so it
+// needs a QueryClientProvider above it — as it has in App.tsx.
 function renderPage() {
   return render(
-    <MemoryRouter>
-      <AuthProvider>
-        <LoginPage />
-      </AuthProvider>
-    </MemoryRouter>,
+    <QueryClientProvider client={new QueryClient()}>
+      <MemoryRouter>
+        <AuthProvider>
+          <LoginPage />
+        </AuthProvider>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 

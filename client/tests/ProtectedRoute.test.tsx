@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ProtectedRoute } from "../src/auth/ProtectedRoute";
 import { AuthProvider } from "../src/auth/AuthProvider";
 import * as apiModule from "../src/lib/api";
@@ -11,23 +12,27 @@ import { ApiError } from "../src/lib/api";
 // a spinner) so "no redirect happened" is checked directly: if ProtectedRoute
 // ever regressed to redirecting on sessionError or while loading, this route
 // would render and the assertions below would fail for the right reason.
+// The QueryClientProvider is there because AuthProvider clears the query cache
+// whenever the identity changes — same shape as App.tsx.
 function renderProtected() {
   return render(
-    <MemoryRouter initialEntries={["/"]}>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<div>Login Screen</div>} />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <div>Protected Content</div>
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </AuthProvider>
-    </MemoryRouter>,
+    <QueryClientProvider client={new QueryClient()}>
+      <MemoryRouter initialEntries={["/"]}>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<div>Login Screen</div>} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <div>Protected Content</div>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </AuthProvider>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 
