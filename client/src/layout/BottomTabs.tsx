@@ -7,7 +7,7 @@ export function BottomTabs({ onMore }: { onMore: () => void }) {
   const primary = NAV_ITEMS.filter((i) => i.primary);
 
   return (
-    <nav className="flex shrink-0 border-t border-raised bg-bg pb-[env(safe-area-inset-bottom)] md:hidden">
+    <nav className="flex shrink-0 border-t border-raised bg-bg pb-[env(safe-area-inset-bottom)] xl:hidden">
       {primary.map(({ to, label, icon: Icon }) => (
         <NavLink
           key={to}
