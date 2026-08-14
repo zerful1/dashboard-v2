@@ -1,46 +1,31 @@
-import './styles.css';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { RouterProvider } from "react-router-dom";
+import { Toaster, toast } from "sonner";
+import { AuthProvider } from "@/auth/AuthProvider";
+import { ApiError } from "@/lib/api";
+import { router } from "@/router";
 
-/**
- * Temporary token check — replaced by the real App in the router task.
- * Class names are written out in full rather than constructed, because
- * Tailwind scans source text and cannot see `bg-${name}`.
- */
-const SWATCHES = [
-  { cls: 'bg-bg', name: 'bg', note: 'page' },
-  { cls: 'bg-surface', name: 'surface', note: 'cards' },
-  { cls: 'bg-raised', name: 'raised', note: 'borders only' },
-  { cls: 'bg-muted', name: 'muted', note: 'secondary text' },
-  { cls: 'bg-dim', name: 'dim', note: 'decorative' },
-  { cls: 'bg-text', name: 'text', note: 'primary text' },
-  { cls: 'bg-accent', name: 'accent', note: 'once per screen' },
-  { cls: 'bg-sage', name: 'sage', note: 'positive' },
-  { cls: 'bg-gold', name: 'gold', note: 'caution' },
-  { cls: 'bg-negative', name: 'negative', note: 'destructive' },
-];
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { staleTime: 30_000, retry: 1 },
+    mutations: {
+      // One global failure toast, as in v1 — per-hook handlers roll back cache
+      // and never show UI, so error presentation stays in one place.
+      onError: (err) => {
+        const message = err instanceof ApiError ? err.message : "Something went wrong";
+        toast.error(message);
+      },
+    },
+  },
+});
 
-const App = () => (
-  <div className="min-h-dvh p-8">
-    <div className="lbl text-accent">Dashboard</div>
-    <h1 className="mt-2 text-2xl font-extrabold tracking-tight">Design tokens</h1>
-
-    <div className="mt-6 max-w-md rounded-card border border-raised bg-surface">
-      {SWATCHES.map((s) => (
-        <div
-          key={s.name}
-          className="flex items-center gap-3 border-b border-raised px-4 py-2.5 last:border-0"
-        >
-          <span className={`inline-block h-6 w-6 rounded border border-raised ${s.cls}`} />
-          <span className="font-mono text-xs text-text">{s.name}</span>
-          <span className="ml-auto text-xs text-muted">{s.note}</span>
-        </div>
-      ))}
-    </div>
-
-    <p className="mt-6 max-w-md text-sm text-muted">
-      Tabular figures: <span className="tnum font-bold text-text">82.4</span> kg ·{' '}
-      <span className="tnum font-bold text-accent">640</span> kcal left
-    </p>
-  </div>
-);
-
-export default App;
+export function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <RouterProvider router={router} />
+        <Toaster theme="dark" position="top-center" richColors />
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
