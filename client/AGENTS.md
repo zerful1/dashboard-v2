@@ -19,8 +19,19 @@ Run from the repo root, not here:
 - Design tokens live in `src/styles.css` under Tailwind v4's `@theme`. Use the
   role names (`bg`, `surface`, `raised`, `muted`, `accent`…), never raw hex.
 - `raised` (#292524) is for borders and gridlines only — never for data.
-- The accent appears roughly once per screen. Semantic state uses
+- The accent marks exactly three roles and nothing else: **filled** (the one
+  action to take), **tinted** (the currently selected item in a set), and the
+  `lbl` micro-label (identity and wayfinding chrome — wordmark, page eyebrow,
+  active nav item). Anything else is not terracotta. Semantic state uses
   `sage` / `gold` / `negative`.
+- **Errors: a form submission renders its own inline error next to its
+  controls; everything else toasts.** Inline is `FormError` (whole-submission)
+  or `Field`'s `error` (one field). Everything else — autosaves, background
+  refetches, mutations — goes to the app-wide toast wired in `App.tsx`, which
+  is also the only place a failed *query* can surface, since v5 has no
+  per-query `onError`. A query whose page cannot render without it may render
+  its own error state instead, and then it opts out with
+  `meta: { errorToast: false }` so one failure is not reported twice.
 - Dark only. There is no light token set.
 
 ## Docs

@@ -34,25 +34,44 @@ function normalizeTimeZone(tz: string): string | null {
 }
 
 /**
- * None of this page's mutations render their own error UI — every rejection
- * is left to the queryClient-level toast in App.tsx (one failure, one
- * message). That only holds as long as no mutation below grows its own
- * onError: `defaultMutationOptions` merges `defaultOptions.mutations` and a
- * hook's own options with a plain object spread, so a hook-level onError —
- * even a trivial one — would replace the global default for that mutation
- * instead of adding to it, and silently stop it from toasting.
+ * How this page reports failure, and the rule behind it (the whole rule is in
+ * App.tsx): a form submission renders its own inline error; everything else
+ * toasts. Nothing here is a submission — the two text fields autosave on blur,
+ * after the user has already moved on, and there is no submit button to anchor
+ * a message to — so none of the three mutations render error UI. Each rejection
+ * is left to the app-wide toast in App.tsx.
+ *
+ * That only holds as long as no mutation below grows its own onError:
+ * `defaultMutationOptions` merges `defaultOptions.mutations` and a hook's own
+ * options with a plain object spread, so a hook-level onError — even a trivial
+ * one — would replace the global default for that mutation instead of adding to
+ * it, and silently stop it from toasting.
+ *
+ * The profile query is the exception, because this page cannot render at all
+ * without it: it renders its own error state below and opts out of the toast,
+ * so one failure never reports itself twice.
  */
 export function SettingsPage() {
   const qc = useQueryClient();
   const { user, logout } = useAuth();
 
-  const { data: profile, isLoading } = useQuery({
+  const {
+    data: profile,
+    isLoading,
+    isError,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: ["profile"],
     queryFn: () => api<Profile>("/api/profile"),
+    meta: { errorToast: false },
   });
 
   const saveProfile = useMutation({
-    mutationFn: (patch: Partial<Profile>) =>
+    // Narrower than Partial<Profile> on purpose: the server accepts exactly
+    // these three (patchBody in server/src/routes/profile.ts), so a call
+    // passing user_id or updated_at should fail here rather than 400 there.
+    mutationFn: (patch: Partial<Pick<Profile, "display_name" | "units" | "timezone">>) =>
       api<Profile>("/api/profile", { method: "PATCH", body: JSON.stringify(patch) }),
     onSuccess: (updated) => {
       qc.setQueryData(["profile"], updated);
@@ -102,6 +121,32 @@ export function SettingsPage() {
     },
   });
 
+  // Before the spinner, not after it. A settled-with-error query in v5 has
+  // isLoading false and data undefined, so `isLoading || !profile` catches it
+  // and spins forever — a page that says "loading" about something that has
+  // already stopped. The database this reads through pauses when idle, which
+  // is exactly this case, and it is recoverable, so it gets a retry.
+  if (isError) {
+    return (
+      <div className="max-w-lg space-y-4">
+        <div>
+          <div className="lbl text-accent">Settings</div>
+          <h1 className="mt-1.5 text-2xl font-extrabold tracking-tight">Your account</h1>
+          <p className="mt-1 text-sm text-muted">{user?.email}</p>
+        </div>
+
+        <Card className="space-y-3">
+          <p role="alert" className="text-sm leading-relaxed text-muted">
+            We couldn&apos;t load your profile. The server may still be waking up.
+          </p>
+          <Button onClick={() => void refetch()} loading={isFetching}>
+            Try again
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
   if (isLoading || !profile) return <Spinner label="Loading your profile" />;
 
   return (
@@ -134,13 +179,24 @@ export function SettingsPage() {
           />
         </Field>
 
-        <Field label="Units" htmlFor="units">
+        {/* A fieldset rather than a Field: Field renders `<label for>`, which
+            only ever resolves to a single labelable control, so wrapping a
+            group of buttons in one produced a label pointing at nothing and a
+            button group with no accessible name at all. A legend names the
+            whole set, which is what a choice between two options needs. */}
+        <fieldset>
+          <legend className="lbl mb-1.5">Units</legend>
           <div className="flex gap-2">
             {(["kg", "lb"] as const).map((u) => (
               <Button
                 key={u}
                 type="button"
-                variant={profile.units === u ? "primary" : "ghost"}
+                // Tinted, not filled: this says "this is the current setting",
+                // and the filled accent 100px below it says "press this to
+                // change your password". Two different jobs must not share one
+                // treatment.
+                variant={profile.units === u ? "selected" : "ghost"}
+                aria-pressed={profile.units === u}
                 onClick={() => saveProfile.mutate({ units: u })}
                 className="flex-1"
               >
@@ -148,7 +204,7 @@ export function SettingsPage() {
               </Button>
             ))}
           </div>
-        </Field>
+        </fieldset>
 
         <Field
           label="Timezone"
