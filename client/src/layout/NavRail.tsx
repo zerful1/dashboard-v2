@@ -1,10 +1,14 @@
 import { NavLink } from "react-router-dom";
+import { LogOut } from "lucide-react";
 import { NAV_ITEMS } from "./navItems";
+import { useAuth } from "@/auth/AuthProvider";
 import { cn } from "@/lib/cn";
 
 export function NavRail() {
+  const { logout } = useAuth();
+
   return (
-    <aside className="hidden w-[168px] shrink-0 border-r border-raised p-3 xl:block">
+    <aside className="hidden w-[168px] shrink-0 flex-col border-r border-raised p-3 xl:flex">
       <div className="lbl px-2 pb-3 text-accent">Dashboard</div>
       {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
         <NavLink
@@ -22,6 +26,18 @@ export function NavRail() {
           {label}
         </NavLink>
       ))}
+      {/* Sign-out lives at both breakpoints or neither. Below 1280px it is in
+          the More sheet; without this the only one at 1280px and up was the
+          button on the settings page — behind the profile query, so a user
+          whose profile failed to load could not sign out from inside the app
+          at all. `mt-auto` is what the column layout on the aside is for. */}
+      <button
+        onClick={() => void logout()}
+        className="mt-auto flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-muted transition hover:bg-surface"
+      >
+        <LogOut size={15} />
+        Sign out
+      </button>
     </aside>
   );
 }

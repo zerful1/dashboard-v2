@@ -27,7 +27,7 @@ export function AppLayout() {
   // mobile affordance — the sheet is what the tab bar's "More" button opens)
   // are visible below 1280px; NavRail is visible at 1280px and up. Both
   // `xl:hidden` occurrences here must stay the exact complement of NavRail's
-  // `xl:block`: the same threshold, not just the same breakpoint name. A
+  // `xl:flex`: the same threshold, not just the same breakpoint name. A
   // mismatched pair — say one of these reverting to a smaller breakpoint's
   // hidden-utility while the other two stay put — doesn't fail loudly, it
   // opens a band of viewport widths with no nav at all (or, the other
@@ -73,7 +73,14 @@ export function AppLayout() {
               </button>
             ))}
             <button
-              onClick={() => void logout()}
+              // Closes the sheet first, unconditionally. Sign-out is
+              // fire-and-forget and cannot reject, but it is also not
+              // instant — leaving the sheet open over the screen behind it
+              // while the request is in flight reads as a dead button.
+              onClick={() => {
+                setMoreOpen(false);
+                void logout();
+              }}
               className="mt-2 w-full py-3.5 text-left text-base text-muted"
             >
               Sign out
