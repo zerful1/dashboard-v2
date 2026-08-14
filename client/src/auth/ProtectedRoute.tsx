@@ -25,7 +25,11 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     return (
       <div className="flex min-h-dvh items-center justify-center px-5 py-10">
         <Card className="w-full max-w-sm space-y-3 text-center">
-          <p className="text-sm leading-relaxed text-muted">
+          {/* role="alert" like every other inline error here. The case it is
+              for is the second failure: "Try again" fails again, the card
+              re-renders identically, and without a live region nothing at all
+              is announced to say the retry has been and gone. */}
+          <p role="alert" className="text-sm leading-relaxed text-muted">
             Something went wrong reaching the server. We couldn&apos;t check your session.
           </p>
           <Button className="w-full" onClick={() => void refreshAuth()}>

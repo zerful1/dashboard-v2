@@ -6,6 +6,7 @@ import { AuthShell } from "@/layout/AuthShell";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Field } from "@/components/ui/Field";
+import { FormError } from "@/components/ui/FormError";
 
 export function LoginPage() {
   const { user, loading, login } = useAuth();
@@ -66,11 +67,7 @@ export function LoginPage() {
           />
         </Field>
 
-        {error && (
-          <p role="alert" className="rounded-lg border border-negative/40 bg-negative/10 px-3 py-2 text-xs text-negative">
-            {error}
-          </p>
-        )}
+        {error && <FormError>{error}</FormError>}
 
         <Button type="submit" loading={busy} className="w-full">
           Sign in

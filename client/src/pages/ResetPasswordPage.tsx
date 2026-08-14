@@ -5,6 +5,7 @@ import { AuthShell } from "@/layout/AuthShell";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Field } from "@/components/ui/Field";
+import { FormError } from "@/components/ui/FormError";
 
 export function ResetPasswordPage() {
   const [params] = useSearchParams();
@@ -50,10 +51,22 @@ export function ResetPasswordPage() {
     <AuthShell
       title="Choose a new password"
       subtitle="This signs you out everywhere else."
+      // The footer follows the error, because a rejection here is nearly
+      // always an expired or already-used token — the link lives one hour —
+      // and "Back to sign in" sends a user who cannot sign in to the one page
+      // that cannot help them. Same destination and wording as the
+      // missing-token branch above, which is the same problem arriving
+      // earlier.
       footer={
-        <Link to="/login" className="text-text underline underline-offset-4">
-          Back to sign in
-        </Link>
+        error ? (
+          <Link to="/forgot-password" className="text-text underline underline-offset-4">
+            Request a new link
+          </Link>
+        ) : (
+          <Link to="/login" className="text-text underline underline-offset-4">
+            Back to sign in
+          </Link>
+        )
       }
     >
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
@@ -67,11 +80,7 @@ export function ResetPasswordPage() {
             onChange={(e) => setPassword(e.target.value)}
           />
         </Field>
-        {error && (
-          <p role="alert" className="rounded-lg border border-negative/40 bg-negative/10 px-3 py-2 text-xs text-negative">
-            {error}
-          </p>
-        )}
+        {error && <FormError>{error}</FormError>}
         <Button type="submit" loading={busy} className="w-full">
           Set new password
         </Button>
