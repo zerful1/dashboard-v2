@@ -14,12 +14,36 @@ import { createResetToken, consumeResetToken } from "../repositories/passwordRes
 import { sendPasswordResetEmail } from "../services/email";
 import { Unauthorized, BadRequest, Conflict } from "../errors";
 import { config } from "../config";
+import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from "@dashboard/shared";
 
 export const authRouter = Router();
 
+/**
+ * Every message below is written out rather than left to zod's default.
+ *
+ * The defaults leak the validator's vocabulary into the interface — a user
+ * shown "String must contain at least 8 character(s)" is reading about a zod
+ * type, not about their password. Spelling the message out also removes the
+ * "(s)": the minimum is a fixed number, so the plural is never in question.
+ *
+ * The object KEYS are the contract, not the messages. `details` is keyed by the
+ * field path (see middleware/validate.ts) and the client maps `details.password`
+ * onto the Password field, so renaming a key silently breaks that mapping while
+ * rewording a message is free.
+ */
+const emailField = z
+  .string()
+  .email("Enter a valid email address")
+  .max(254, "Email must be 254 characters or fewer");
+
+const passwordField = z
+  .string()
+  .min(PASSWORD_MIN_LENGTH, `Password must be at least ${PASSWORD_MIN_LENGTH} characters`)
+  .max(PASSWORD_MAX_LENGTH, `Password must be ${PASSWORD_MAX_LENGTH} characters or fewer`);
+
 const credentials = z.object({
-  email: z.string().email().max(254),
-  password: z.string().min(8).max(200),
+  email: emailField,
+  password: passwordField,
 });
 
 /** Promise wrapper around session.regenerate, which is callback-only. */
@@ -108,8 +132,11 @@ authRouter.get("/me", requireAuth, async (req, res, next) => {
 // ---------------------------------------------------------------------------
 
 const changeBody = z.object({
-  currentPassword: z.string().min(1).max(200),
-  newPassword: z.string().min(8).max(200),
+  currentPassword: z
+    .string()
+    .min(1, "Enter your current password")
+    .max(PASSWORD_MAX_LENGTH, `Password must be ${PASSWORD_MAX_LENGTH} characters or fewer`),
+  newPassword: passwordField,
 });
 
 authRouter.post(
@@ -143,7 +170,7 @@ authRouter.post(
 
 authRouter.post(
   "/forgot-password",
-  validate({ body: z.object({ email: z.string().email().max(254) }) }),
+  validate({ body: z.object({ email: emailField }) }),
   async (req, res, next) => {
     try {
       const { email } = req.body as { email: string };
@@ -167,8 +194,10 @@ authRouter.post(
 );
 
 const resetBody = z.object({
-  token: z.string().length(64),
-  newPassword: z.string().min(8).max(200),
+  // Not user-typed — it comes from the emailed link — so a length failure means
+  // a mangled URL, not something the user can correct by editing a field.
+  token: z.string().length(64, "That reset link is not valid"),
+  newPassword: passwordField,
 });
 
 authRouter.post("/reset-password", validate({ body: resetBody }), async (req, res, next) => {

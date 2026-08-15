@@ -45,7 +45,7 @@ describe("api", () => {
       mockFetch(400, {
         error: "bad_request",
         message: "Validation failed",
-        details: { password: "String must contain at least 8 character(s)" },
+        details: { password: "Password must be at least 8 characters" },
       }),
     );
 

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import type { Profile } from "@dashboard/shared";
+import { PASSWORD_MIN_LENGTH, type Profile } from "@dashboard/shared";
 import { api } from "@/lib/api";
+import { profileQuery } from "@/lib/profileQuery";
 import { useAuth } from "@/auth/AuthProvider";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -61,11 +62,7 @@ export function SettingsPage() {
     isError,
     isFetching,
     refetch,
-  } = useQuery({
-    queryKey: ["profile"],
-    queryFn: () => api<Profile>("/api/profile"),
-    meta: { errorToast: false },
-  });
+  } = useQuery(profileQuery);
 
   const saveProfile = useMutation({
     // Narrower than Partial<Profile> on purpose: the server accepts exactly
@@ -251,7 +248,11 @@ export function SettingsPage() {
             onChange={(e) => setCurrent(e.target.value)}
           />
         </Field>
-        <Field label="New password" htmlFor="next" hint="At least 8 characters.">
+        <Field
+          label="New password"
+          htmlFor="next"
+          hint={`At least ${PASSWORD_MIN_LENGTH} characters.`}
+        >
           <Input
             id="next"
             type="password"
@@ -263,7 +264,10 @@ export function SettingsPage() {
         <Button
           onClick={() => changePassword.mutate()}
           loading={changePassword.isPending}
-          disabled={!current || next.length < 8}
+          // The gate and the hint above read the same constant as the server's
+          // schema. A button that let through what the server rejects — or held
+          // back what it would have accepted — is the drift this prevents.
+          disabled={!current || next.length < PASSWORD_MIN_LENGTH}
         >
           Change password
         </Button>

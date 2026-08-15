@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
+import { PASSWORD_MIN_LENGTH } from "@dashboard/shared";
 import { useAuth } from "@/auth/AuthProvider";
 import { ApiError } from "@/lib/api";
 import { AuthShell } from "@/layout/AuthShell";
@@ -60,7 +61,7 @@ export function RegisterPage() {
         <Field
           label="Password"
           htmlFor="password"
-          hint="At least 8 characters."
+          hint={`At least ${PASSWORD_MIN_LENGTH} characters.`}
           error={fieldErrors.password}
         >
           <Input

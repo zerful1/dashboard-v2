@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { PASSWORD_MIN_LENGTH } from "@dashboard/shared";
 import { api, ApiError } from "@/lib/api";
 import { AuthShell } from "@/layout/AuthShell";
 import { Button } from "@/components/ui/Button";
@@ -52,7 +53,8 @@ export function ResetPasswordPage() {
       title="Choose a new password"
       subtitle="This signs you out everywhere else."
       // The footer follows the error, because a rejection here is nearly
-      // always an expired or already-used token — the link lives one hour —
+      // always an expired or already-used token — the window is short, see
+      // RESET_TTL_MINUTES in shared/src/policy.ts —
       // and "Back to sign in" sends a user who cannot sign in to the one page
       // that cannot help them. Same destination and wording as the
       // missing-token branch above, which is the same problem arriving
@@ -70,7 +72,11 @@ export function ResetPasswordPage() {
       }
     >
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
-        <Field label="New password" htmlFor="password" hint="At least 8 characters.">
+        <Field
+          label="New password"
+          htmlFor="password"
+          hint={`At least ${PASSWORD_MIN_LENGTH} characters.`}
+        >
           <Input
             id="password"
             type="password"

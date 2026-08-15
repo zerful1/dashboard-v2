@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
+import { RESET_TTL_MINUTES } from "@dashboard/shared";
 import { api } from "@/lib/api";
 import { AuthShell } from "@/layout/AuthShell";
 import { Button } from "@/components/ui/Button";
@@ -35,7 +36,7 @@ export function ForgotPasswordPage() {
     return (
       <AuthShell
         title="Check your email"
-        subtitle={`If an account exists for ${email}, a reset link is on its way. The link expires in an hour.`}
+        subtitle={`If an account exists for ${email}, a reset link is on its way. The link expires in ${RESET_TTL_MINUTES} minutes.`}
         footer={
           <Link to="/login" className="text-text underline underline-offset-4">
             Back to sign in

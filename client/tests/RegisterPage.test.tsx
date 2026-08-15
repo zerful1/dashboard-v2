@@ -35,7 +35,7 @@ describe("RegisterPage", () => {
     spy.mockRejectedValueOnce(new ApiError(401, "Not authenticated")); // initial /me
     spy.mockRejectedValueOnce(
       new ApiError(400, "Validation failed", "bad_request", {
-        password: "String must contain at least 8 character(s)",
+        password: "Password must be at least 8 characters",
       }),
     );
 
@@ -48,9 +48,9 @@ describe("RegisterPage", () => {
 
     // The password field's own error is shown, associated to the input.
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("String must contain at least 8 character(s)");
+    expect(alert).toHaveTextContent("Password must be at least 8 characters");
     expect(screen.getByLabelText(/password/i)).toHaveAccessibleDescription(
-      "String must contain at least 8 character(s)",
+      "Password must be at least 8 characters",
     );
 
     // The generic banner (the ApiError's top-level message) must NOT also

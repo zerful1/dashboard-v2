@@ -3,6 +3,7 @@ import request from "supertest";
 import { createApp } from "../src/app";
 import { pool } from "../src/db/pool";
 import { T } from "../src/config";
+import { PASSWORD_MIN_LENGTH } from "@dashboard/shared";
 
 const app = createApp();
 const creds = { email: "alice@example.com", password: "correct-horse-9" };
@@ -34,7 +35,16 @@ describe("register", () => {
 
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("bad_request");
-    expect(res.body.details.password).toBeDefined();
+
+    // Pinned to the exact text, not merely "defined": this string is rendered
+    // verbatim under the Password field, so it is interface copy rather than a
+    // diagnostic. zod's default here is "String must contain at least 8
+    // character(s)", which names the validator's own type at the user and
+    // carries a "(s)" that can never be singular — a regression back to it
+    // would be invisible to a toBeDefined() check.
+    expect(res.body.details.password).toBe(
+      `Password must be at least ${PASSWORD_MIN_LENGTH} characters`,
+    );
 
     const { rows } = await pool.query(`SELECT id FROM ${T.users}`);
     expect(rows).toHaveLength(0);
@@ -45,7 +55,7 @@ describe("register", () => {
       .post("/api/auth/register")
       .send({ email: "not-an-email", password: "correct-horse-9" });
     expect(res.status).toBe(400);
-    expect(res.body.details.email).toBeDefined();
+    expect(res.body.details.email).toBe("Enter a valid email address");
   });
 
   it("does not reveal whether an email is already registered", async () => {
