@@ -20,13 +20,30 @@
   --color-dim: #57534e; /* stone-600 — decorative, not for body copy */
 
   /* Data ink. Every one clears 4.5:1 against bg, so all are safe for text. */
-  --color-accent: #e07a5f; /* terracotta, 6.7:1 — roughly once per screen */
+  /* Terracotta marks exactly three roles and nothing else. FILLED
+     (bg-accent text-bg) is the one action to take. TINTED (bg-accent/10 with
+     text-accent) is the currently selected item in a set — a state, never an
+     action. The `lbl` micro-label below carries it for identity and wayfinding
+     chrome — wordmark, page eyebrow, active nav item — which is outside the
+     rule, being neither. Anything else that wants to be terracotta is one of
+     those three or it is not terracotta: a role is checkable while writing a
+     single element, which a per-screen count never was. */
+  --color-accent: #e07a5f; /* terracotta, 6.7:1 */
   --color-sage: #81b29a; /* positive,   8.3:1 */
   --color-gold: #f2cc8f; /* caution,    13:1  */
   --color-negative: #e5646d; /* destructive, 6.0:1 */
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Colour-free size primitive for micro-labels — same metrics as the `lbl`
+     utility below, minus its hardcoded muted colour, so elements that
+     recolour themselves (a nav item turning text-accent when active) can
+     still sit on the instrument-panel type scale instead of falling back to
+     a body size. */
+  --text-label: 0.5rem;
+  --text-label--line-height: 1;
+  --tracking-label: 0.16em;
 
   --radius-card: 11px;
 }

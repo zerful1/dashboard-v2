@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { config } from "../config";
+import { RESET_TTL_MINUTES } from "@dashboard/shared";
 
 const client = config.RESEND_API_KEY ? new Resend(config.RESEND_API_KEY) : null;
 
@@ -22,7 +23,7 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
       to,
       subject: "Reset your password",
       text:
-        `Reset your password using this link (valid for one hour):\n\n${resetUrl}\n\n` +
+        `Reset your password using this link (valid for ${RESET_TTL_MINUTES} minutes):\n\n${resetUrl}\n\n` +
         `If you did not request this, you can ignore this email.`,
     });
   } catch (err) {

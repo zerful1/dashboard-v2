@@ -1,8 +1,12 @@
 import { createHash, randomBytes } from "node:crypto";
 import { pool } from "../db/pool";
 import { T } from "../config";
+import { RESET_TTL_MINUTES } from "@dashboard/shared";
 
-const TTL_MS = 60 * 60 * 1000;
+// Derived, not written down again: the email body and the two screens that
+// promise a window all read the same constant, so they cannot disagree with
+// what this actually enforces.
+const TTL_MS = RESET_TTL_MINUTES * 60 * 1000;
 
 function hashToken(raw: string): string {
   return createHash("sha256").update(raw).digest("hex");
