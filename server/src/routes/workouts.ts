@@ -10,6 +10,8 @@ import {
 } from "../repositories/sessions";
 import { getSplit } from "../repositories/split";
 import { listSets, upsertSet, deleteSet, lastSessionSets } from "../repositories/sets";
+import { computeRecommendation } from "@dashboard/shared";
+import { recentSessionGroups } from "../repositories/coaching";
 import { NotFound } from "../errors";
 
 export const workoutsRouter = Router();
@@ -139,6 +141,22 @@ workoutsRouter.get(
     try {
       const q = req.query as unknown as { day_type: number; before: string };
       res.json(await lastSessionSets(req.userId, q.day_type, q.before));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+workoutsRouter.get(
+  "/coaching",
+  validate({ query: z.object({ exercise_name: z.string().trim().min(1).max(80) }) }),
+  async (req, res, next) => {
+    try {
+      const { exercise_name } = req.query as unknown as { exercise_name: string };
+      const groups = await recentSessionGroups(req.userId, exercise_name, 3);
+      // null for an exercise with no history — the client renders nothing
+      // rather than inventing encouragement.
+      res.json(computeRecommendation(groups, exercise_name));
     } catch (err) {
       next(err);
     }
