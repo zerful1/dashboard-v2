@@ -15,9 +15,11 @@
     "@tanstack/react-query": "^5.28.0",
     "clsx": "^2.1.0",
     "lucide-react": "^1.31.0",
+    "motion": "^13.1.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.1.0",
+    "recharts": "^3.10.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.0.0"
   },

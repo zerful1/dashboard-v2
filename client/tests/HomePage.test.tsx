@@ -36,6 +36,11 @@ function mockApi(profile: () => Promise<Profile>) {
   vi.spyOn(apiModule, "api").mockImplementation(async (path: string) => {
     if (path === "/api/auth/me") return { id: "1", email: "you@example.com" };
     if (path === "/api/profile") return profile();
+    // Home shows a weight card. Served as empty rather than left to the throw
+    // below: these tests are about the heading, and a rejected weight query
+    // would still pass them while quietly exercising a failure path nobody
+    // meant to test.
+    if (path === "/api/weight") return [];
     throw new Error(`unexpected ${path}`);
   });
 }

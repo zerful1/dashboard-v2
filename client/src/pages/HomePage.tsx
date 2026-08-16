@@ -1,8 +1,43 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { motion } from "motion/react";
+import { toLocalISO } from "@dashboard/shared";
 import { useAuth } from "@/auth/AuthProvider";
+import { useWeights } from "@/hooks/useWeights";
+import { deriveWeightSummary } from "@/features/weight/deriveWeight";
+import { TRANSITIONS, useMotionSafe, springOrNone } from "@/lib/motion";
 import { profileQuery } from "@/lib/profileQuery";
 import { Card } from "@/components/ui/Card";
+
+function WeightCard() {
+  const { entries } = useWeights();
+  const today = toLocalISO();
+  const summary = useMemo(() => deriveWeightSummary(entries, today), [entries, today]);
+  const safe = useMotionSafe();
+
+  return (
+    <motion.div
+      // A 2px lift on hover: enough to say "this is pressable" without the card
+      // appearing to detach from the page.
+      whileHover={safe ? { y: -2 } : undefined}
+      transition={springOrNone(TRANSITIONS.snappy, safe)}
+    >
+      <Link to="/weight" className="block rounded-card border border-raised bg-surface p-4">
+        <div className="lbl">Body weight</div>
+        <div className="tnum mt-1 text-3xl font-extrabold tracking-tight">
+          {summary.latest?.toFixed(1) ?? "—"}
+          <span className="ml-1 text-sm font-semibold text-muted">kg</span>
+        </div>
+        <div className="mt-1 text-xs text-muted">
+          {summary.deltaWeek === null
+            ? "No entry in the last week"
+            : `${summary.deltaWeek > 0 ? "+" : ""}${summary.deltaWeek.toFixed(1)} kg in 7 days`}
+        </div>
+      </Link>
+    </motion.div>
+  );
+}
 
 export function HomePage() {
   const { user } = useAuth();
@@ -22,8 +57,10 @@ export function HomePage() {
         <h1 className="mt-1.5 text-2xl font-extrabold tracking-tight">{heading}</h1>
       </div>
 
+      <WeightCard />
+
       <Card>
-        <div className="lbl">Nothing here yet</div>
+        <div className="lbl">Still to come</div>
         <p className="mt-2 text-sm leading-relaxed text-muted">
           Gym, nutrition, habits and media arrive in the next phases. Your account
           and profile are live now — try{" "}

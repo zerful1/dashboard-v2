@@ -8,6 +8,12 @@ export default defineConfig({
   source: {
     entry: { index: './src/index.tsx' },
   },
+  // Without this RSBuild generates its own HTML and src/index.html is ignored,
+  // so the tab read "Rsbuild App" — a title nobody chose, from a file nobody
+  // knew was being discarded.
+  html: {
+    template: './src/index.html',
+  },
   resolve: {
     alias: { '@': './src' },
   },
