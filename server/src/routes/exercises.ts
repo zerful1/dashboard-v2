@@ -53,6 +53,23 @@ exercisesRouter.post("/", validate({ body: addBody }), async (req, res, next) =>
   }
 });
 
+/**
+ * Every template row across all days, for the rename sheet's merge hint.
+ *
+ * Declared BEFORE any "/:id" route. There is no GET "/:id" today, so nothing
+ * shadows this yet — but the moment one is added, Express would match "names"
+ * as an id and the uuid validator would reject it with a confusing 400. The
+ * ordering is the guard; the accompanying test is a forward guard rather than a
+ * check on today's behaviour.
+ */
+exercisesRouter.get("/names", async (req, res, next) => {
+  try {
+    res.json(await listAllExerciseNames(req.userId));
+  } catch (err) {
+    next(err);
+  }
+});
+
 exercisesRouter.delete(
   "/:id",
   validate({ params: z.object({ id: z.string().uuid() }) }),
