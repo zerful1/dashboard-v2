@@ -2,7 +2,15 @@ import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../middleware/requireAuth";
 import { validate } from "../middleware/validate";
-import { findSession, listSessions, listHistoryDayNames } from "../repositories/sessions";
+import {
+  findSession,
+  listSessions,
+  listHistoryDayNames,
+  getOrCreateSession,
+} from "../repositories/sessions";
+import { getSplit } from "../repositories/split";
+import { listSets, upsertSet, deleteSet, lastSessionSets } from "../repositories/sets";
+import { NotFound } from "../errors";
 
 export const workoutsRouter = Router();
 workoutsRouter.use(requireAuth);
@@ -58,3 +66,81 @@ workoutsRouter.get("/day-names", async (req, res, next) => {
     next(err);
   }
 });
+
+const setBody = z.object({
+  date: isoDate,
+  day_type: z.number().int().positive(),
+  exercise_name: z.string().trim().min(1).max(80),
+  set_number: z.number().int().min(1).max(20),
+  weight_kg: z.number().min(0).max(500),
+  reps: z.number().int().min(1).max(200),
+  is_bodyweight: z.boolean().default(false),
+});
+
+workoutsRouter.post("/sets", validate({ body: setBody }), async (req, res, next) => {
+  try {
+    const b = req.body as z.infer<typeof setBody>;
+    // Logging a set is what creates the session — the client never has to
+    // create one first, and a viewed-but-unused day leaves nothing behind.
+    const split = await getSplit(req.userId);
+    const session = await getOrCreateSession(req.userId, b.date, b.day_type, split);
+
+    res.status(201).json(
+      await upsertSet(req.userId, {
+        sessionId: session.id,
+        exerciseName: b.exercise_name,
+        setNumber: b.set_number,
+        weightKg: b.weight_kg,
+        reps: b.reps,
+        isBodyweight: b.is_bodyweight,
+      }),
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
+workoutsRouter.get(
+  "/sets",
+  validate({ query: z.object({ session_id: z.string().uuid() }) }),
+  async (req, res, next) => {
+    try {
+      const { session_id } = req.query as unknown as { session_id: string };
+      res.json(await listSets(req.userId, session_id));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+workoutsRouter.delete(
+  "/sets/:id",
+  validate({ params: z.object({ id: z.string().uuid() }) }),
+  async (req, res, next) => {
+    try {
+      const ok = await deleteSet(req.userId, req.params.id!);
+      if (!ok) {
+        next(new NotFound("Set not found"));
+        return;
+      }
+      res.sendStatus(204);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+workoutsRouter.get(
+  "/last-session",
+  validate({
+    query: z.object({ day_type: z.coerce.number().int().positive(), before: isoDate }),
+  }),
+  async (req, res, next) => {
+    try {
+      const q = req.query as unknown as { day_type: number; before: string };
+      res.json(await lastSessionSets(req.userId, q.day_type, q.before));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
