@@ -1,7 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run build -w @dashboard/shared",
-  "outputDirectory": "public",
-  "rewrites": [{ "source": "/api/(.*)", "destination": "/api" }],
+  "buildCommand": "npm run build -w @dashboard/shared && npm run build -w @dashboard/client",
+  "outputDirectory": "client/dist",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ],
   "crons": [{ "path": "/api/cron/keepalive", "schedule": "0 6 * * *" }]
 }
