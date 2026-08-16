@@ -7,6 +7,7 @@ import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { HomePage } from "@/pages/HomePage";
 import { SettingsPage } from "@/pages/SettingsPage";
+import { WeightPage } from "@/features/weight/WeightPage";
 import { ComingSoonPage } from "@/pages/ComingSoonPage";
 import { RouteErrorPage } from "@/pages/RouteErrorPage";
 
@@ -30,6 +31,7 @@ export const router = createBrowserRouter([
         ),
         children: [
           { path: "/", element: <HomePage /> },
+          { path: "/weight", element: <WeightPage /> },
           { path: "/settings", element: <SettingsPage /> },
           // Inside the protected children, not beside them, so an address that
           // matches nothing still renders with the nav and sign-out around it.
