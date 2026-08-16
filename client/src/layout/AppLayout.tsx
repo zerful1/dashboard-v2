@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { NAV_ITEMS } from "./navItems";
 import { NavRail } from "./NavRail";
 import { BottomTabs } from "./BottomTabs";
 import { useAuth } from "@/auth/AuthProvider";
+import { Spinner } from "@/components/ui/Spinner";
 
 export function AppLayout() {
   const [moreOpen, setMoreOpen] = useState(false);
@@ -42,7 +43,14 @@ export function AppLayout() {
           {/* Single column below 1280px; two-pane layouts are introduced
               per-feature from phase 4, only where a detail view exists. */}
           <div className="mx-auto w-full max-w-2xl px-4 py-5 xl:max-w-none xl:px-6">
-            <Outlet />
+            {/* Every page inside the shell is a lazy chunk, and this is the one
+                boundary they all share. It sits INSIDE the layout deliberately:
+                the nav and sign-out stay on screen while a chunk loads, so a
+                navigation never blanks the app. A boundary above the layout
+                would take the whole shell down on every transition. */}
+            <Suspense fallback={<Spinner label="Loading" />}>
+              <Outlet />
+            </Suspense>
           </div>
         </main>
       </div>

@@ -1,3 +1,4 @@
+import { lazy } from "react";
 import { createBrowserRouter } from "react-router-dom";
 import { ProtectedRoute } from "@/auth/ProtectedRoute";
 import { AppLayout } from "@/layout/AppLayout";
@@ -5,11 +6,36 @@ import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
-import { HomePage } from "@/pages/HomePage";
-import { SettingsPage } from "@/pages/SettingsPage";
-import { WeightPage } from "@/features/weight/WeightPage";
-import { ComingSoonPage } from "@/pages/ComingSoonPage";
 import { RouteErrorPage } from "@/pages/RouteErrorPage";
+
+/**
+ * Every page inside the app shell is a separate chunk.
+ *
+ * The Suspense boundary lives in AppLayout, around its Outlet, so the nav and
+ * sign-out stay on screen while a chunk loads — navigation never blanks. Doing
+ * this per-route instead would put a boundary above the layout and take the
+ * whole shell down for every transition.
+ *
+ * `.then` unwrapping is needed because these are named exports and React.lazy
+ * expects a module whose `default` is the component.
+ *
+ * The four unauthenticated screens above are deliberately NOT split. They are
+ * small forms with no heavy dependencies, and they sit on the cold-start
+ * critical path: splitting them would add a load-the-entry-then-discover-the-
+ * chunk round trip to the one route every signed-out visitor hits first.
+ */
+const HomePage = lazy(() =>
+  import("@/pages/HomePage").then((m) => ({ default: m.HomePage })),
+);
+const WeightPage = lazy(() =>
+  import("@/features/weight/WeightPage").then((m) => ({ default: m.WeightPage })),
+);
+const SettingsPage = lazy(() =>
+  import("@/pages/SettingsPage").then((m) => ({ default: m.SettingsPage })),
+);
+const ComingSoonPage = lazy(() =>
+  import("@/pages/ComingSoonPage").then((m) => ({ default: m.ComingSoonPage })),
+);
 
 export const router = createBrowserRouter([
   {
