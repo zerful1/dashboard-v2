@@ -7,6 +7,7 @@ import { weightRouter } from "./routes/weight";
 import { splitRouter } from "./routes/split";
 import { exercisesRouter } from "./routes/exercises";
 import { workoutsRouter } from "./routes/workouts";
+import { cardioRouter } from "./routes/cardio";
 import { pool } from "./db/pool";
 import { config } from "./config";
 
@@ -68,6 +69,7 @@ export function createApp(): Express {
   app.use("/api/split", splitRouter);
   app.use("/api/exercises", exercisesRouter);
   app.use("/api/workouts", workoutsRouter);
+  app.use("/api/cardio", cardioRouter);
 
   app.use(errorHandler);
   return app;
