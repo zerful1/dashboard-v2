@@ -38,11 +38,51 @@ async function main(): Promise<void> {
     .join("\n")
     .replaceAll(":'v1user'", `'${V1_USER_ID}'`);
 
+  /*
+   * Positive control, part 1: the substitution actually happened.
+   *
+   * Every check below is a SELECT that returns rows only on failure, so a
+   * checks file filtered on a uuid that matches nothing returns zero rows
+   * everywhere and reports a confident all-clear. "No blockers found" and "no
+   * blockers exist" are different claims, and without this they look identical.
+   */
+  if (sql.includes("v1user")) {
+    throw new Error("Substitution failed: :'v1user' is still present in the SQL");
+  }
+  const substitutions = (sql.match(new RegExp(V1_USER_ID, "g")) ?? []).length;
+  if (substitutions === 0) {
+    throw new Error(`Substitution failed: ${V1_USER_ID} appears nowhere in the SQL`);
+  }
+
   const client = new Client({ connectionString: config.MIGRATION_DATABASE_URL });
   await client.connect();
 
   let blockers = 0;
   try {
+    /*
+     * Positive control, part 2: the id selects a real population.
+     *
+     * A syntactically perfect substitution of the WRONG uuid still examines
+     * nothing. Requiring the account to own rows is what turns "these checks
+     * found no blockers" into "these checks looked at the data and there are
+     * none".
+     */
+    const { rows: population } = await client.query<{ sets: number; weights: number }>(
+      `SELECT (SELECT count(*)::int FROM public.workout_sets  WHERE user_id = $1) AS sets,
+              (SELECT count(*)::int FROM public.body_weight   WHERE user_id = $1) AS weights`,
+      [V1_USER_ID],
+    );
+    const { sets, weights } = population[0]!;
+    if (sets === 0 && weights === 0) {
+      throw new Error(
+        `${V1_USER_ID} owns no workout_sets and no body_weight rows in public. ` +
+          `The checks would examine nothing and report a false all-clear.`,
+      );
+    }
+    console.log(
+      `scope   : ${V1_USER_ID} (${substitutions} substitutions, ${sets} sets, ${weights} weigh-ins)`,
+    );
+
     const statements = sql
       .split(";")
       .map((s) => s.trim())
