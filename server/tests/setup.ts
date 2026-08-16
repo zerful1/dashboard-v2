@@ -23,8 +23,18 @@ beforeAll(async () => {
 export async function truncateAll(): Promise<void> {
   // Qualified: this runs over the transaction pooler, where there is no usable
   // search_path.
+  //
+  // CASCADE handles the FK order for us; listing the parents would be enough,
+  // but naming every table makes it obvious when a new one is forgotten.
+  // cofid_foods is deliberately absent — it is global reference data, not
+  // per-user state, and truncating it between tests would be wasted work.
   await pool.query(
-    `TRUNCATE ${T.users}, ${T.profiles}, ${T.passwordResetTokens}, ${T.session}
+    `TRUNCATE ${T.users}, ${T.profiles}, ${T.passwordResetTokens}, ${T.session},
+              ${T.bodyWeight}, ${T.progressPhotos}, ${T.exercises},
+              ${T.workoutSessions}, ${T.workoutSets}, ${T.cardioEntries},
+              ${T.workoutSplit}, ${T.habits}, ${T.habitCompletions},
+              ${T.nutritionTargets}, ${T.foodItems}, ${T.foodLogEntries},
+              ${T.media}, ${T.mediaSeasons}
      RESTART IDENTITY CASCADE`,
   );
 }
