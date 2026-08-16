@@ -17,7 +17,10 @@
     "dev": "npm run dev -w @dashboard/server",
     "dev:api": "npm run dev -w @dashboard/server",
     "dev:web": "npm run dev -w @dashboard/client",
-    "migrate": "npm run migrate -w @dashboard/server"
+    "migrate": "npm run migrate -w @dashboard/server",
+    "import-v1": "tsx server/src/db/importV1.ts",
+    "verify-v1": "tsx server/src/db/verifyV1.ts",
+    "check-v1": "tsx server/src/db/importV1.checks.ts"
   },
   "devDependencies": {
     "typescript": "^6.0.3"
