@@ -88,3 +88,48 @@ export async function reorderExercises(
     return rows;
   });
 }
+
+export interface RenameResult {
+  exercisesUpdated: number;
+  setsUpdated: number;
+  /** The casing actually written — may differ from the request when merging. */
+  finalName: string;
+}
+
+/**
+ * Rename an exercise everywhere it appears.
+ *
+ * Matches by NAME, not id. The same exercise can exist on several days, and all
+ * of them plus every historical set must move together — renaming by id would
+ * move one template row and strand the rest, plus ten months of sets, under the
+ * old name.
+ *
+ * Both updates run in ONE transaction. v1 ran them sequentially, so a failure
+ * between them left history under a name the template no longer contained:
+ * workout_sets.exercise_name is denormalised with no foreign key, so nothing in
+ * the database would have flagged the inconsistency.
+ */
+export async function renameExercise(
+  userId: string,
+  oldName: string,
+  newName: string,
+): Promise<RenameResult> {
+  const trimmed = newName.trim();
+  return withTransaction(async (client) => {
+    const ex = await client.query(
+      `UPDATE ${T.exercises} SET exercise_name = $3
+        WHERE user_id = $1 AND exercise_name = $2`,
+      [userId, oldName, trimmed],
+    );
+    const sets = await client.query(
+      `UPDATE ${T.workoutSets} SET exercise_name = $3
+        WHERE user_id = $1 AND exercise_name = $2`,
+      [userId, oldName, trimmed],
+    );
+    return {
+      exercisesUpdated: ex.rowCount ?? 0,
+      setsUpdated: sets.rowCount ?? 0,
+      finalName: trimmed,
+    };
+  });
+}
