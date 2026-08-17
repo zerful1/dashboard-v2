@@ -12,6 +12,7 @@ import { getSplit } from "../repositories/split";
 import { listSets, upsertSet, deleteSet, lastSessionSets } from "../repositories/sets";
 import { computeRecommendation } from "@dashboard/shared";
 import { recentSessionGroups } from "../repositories/coaching";
+import { exerciseStatRows, sessionDetail, historyExerciseNames } from "../repositories/stats";
 import { NotFound } from "../errors";
 
 export const workoutsRouter = Router();
@@ -162,3 +163,39 @@ workoutsRouter.get(
     }
   },
 );
+
+workoutsRouter.get(
+  "/stats",
+  validate({ query: z.object({ exercise_name: z.string().trim().min(1).max(80) }) }),
+  async (req, res, next) => {
+    try {
+      const { exercise_name } = req.query as unknown as { exercise_name: string };
+      res.json(await exerciseStatRows(req.userId, exercise_name));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+workoutsRouter.get(
+  "/session-detail",
+  validate({ query: z.object({ session_id: z.string().uuid() }) }),
+  async (req, res, next) => {
+    try {
+      const { session_id } = req.query as unknown as { session_id: string };
+      // Scoped by user, so an unknown or foreign id yields empty rather than
+      // another account's session.
+      res.json(await sessionDetail(req.userId, session_id));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+workoutsRouter.get("/exercise-names", async (req, res, next) => {
+  try {
+    res.json(await historyExerciseNames(req.userId));
+  } catch (err) {
+    next(err);
+  }
+});
