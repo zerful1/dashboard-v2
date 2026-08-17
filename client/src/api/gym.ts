@@ -2,6 +2,7 @@ import { api } from "@/lib/api";
 import type {
   Exercise,
   ExerciseNameRow,
+  StatSetRow,
   WorkoutSession,
   WorkoutSet,
   CardioEntry,
@@ -17,6 +18,12 @@ export interface SetInput {
   weight_kg: number;
   reps: number;
   is_bodyweight: boolean;
+}
+
+export interface StatsPayload {
+  sets: StatSetRow[];
+  /** session_id -> YYYY-MM-DD. An object, not a Map — JSON has no Map. */
+  sessionDates: Record<string, string>;
 }
 
 export interface CardioInput {
@@ -77,6 +84,15 @@ export const gymApi = {
     api<CoachingResult | null>(
       `/api/workouts/coaching?exercise_name=${encodeURIComponent(exerciseName)}`,
     ),
+
+  stats: (exerciseName: string) =>
+    api<StatsPayload>(`/api/workouts/stats?exercise_name=${encodeURIComponent(exerciseName)}`),
+  sessionDetail: (sessionId: string) =>
+    api<{ sets: WorkoutSet[]; cardio: CardioEntry[] }>(
+      `/api/workouts/session-detail?session_id=${sessionId}`,
+    ),
+  historyExerciseNames: () => api<string[]>("/api/workouts/exercise-names"),
+  dayNames: () => api<string[]>("/api/workouts/day-names"),
 
   listCardio: (sessionId: string) => api<CardioEntry[]>(`/api/cardio?session_id=${sessionId}`),
   addCardio: (date: string, dayType: number, fields: CardioInput) =>
