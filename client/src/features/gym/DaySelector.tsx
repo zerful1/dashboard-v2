@@ -15,7 +15,10 @@ export function DaySelector({
   const safe = useMotionSafe();
 
   return (
-    <div className="flex gap-1.5 overflow-x-auto pb-1">
+    // A labelled group: these buttons are one control, and on the History tab
+    // the same labels also appear as filter chips — without a name here, "Legs"
+    // is ambiguous to a screen reader exactly as it is to a test.
+    <div role="group" aria-label="Training day" className="flex gap-1.5 overflow-x-auto pb-1">
       {days.map(({ day_type, label }) => {
         const active = selected === day_type;
         return (
