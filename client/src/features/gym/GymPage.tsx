@@ -16,7 +16,17 @@ import { ExerciseSheet } from "./ExerciseSheet";
 import { SplitEditorSheet } from "./SplitEditorSheet";
 import { RenameExerciseSheet } from "./RenameExerciseSheet";
 import { CardioSection } from "./CardioSection";
+import { StatsTab } from "./StatsTab";
+import { HistoryTab } from "./HistoryTab";
 import { cn } from "@/lib/cn";
+
+type SubTab = "log" | "stats" | "history";
+
+const SUB_TABS: { key: SubTab; label: string }[] = [
+  { key: "log", label: "Log" },
+  { key: "stats", label: "Stats" },
+  { key: "history", label: "History" },
+];
 
 export function GymPage() {
   const { user } = useAuth();
@@ -30,11 +40,12 @@ export function GymPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { dayType, date, selectDay, selectDate } = useGymDay(split, lastLogged);
+  const { dayType, date, selectDay, selectDate, jumpTo } = useGymDay(split, lastLogged);
   const { exercises, addExercise, deleteExercise, reorder, renameExercise } =
     useExercises(dayType);
   const { session, sets, lastSets, logSet, deleteSet } = useWorkoutDay(dayType, date);
 
+  const [tab, setTab] = useState<SubTab>("log");
   const [editMode, setEditMode] = useState(false);
   const [active, setActive] = useState<Exercise | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
@@ -81,20 +92,59 @@ export function GymPage() {
         <DateSelector value={date} onChange={selectDate} />
       </div>
 
-      <ExerciseList
-        exercises={exercises}
-        sets={sets}
-        lastSets={lastSets}
-        editMode={editMode}
-        onOpen={setActive}
-        onDelete={(id) => deleteExercise.mutate(id)}
-        onReorder={(ids) => reorder.mutate(ids)}
-        onRename={setRenaming}
-        onAdd={(name) => addExercise.mutate(name)}
-      />
+      {/* The day selector and date picker above stay visible on ALL three tabs.
+          They are the page's context, and hiding them on History would make the
+          Edit-in-Log hand-off look like it did nothing. */}
+      <div className="flex rounded-lg border border-raised bg-surface p-0.5">
+        {SUB_TABS.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            aria-pressed={tab === t.key}
+            className={cn(
+              "flex-1 rounded-md py-1.5 font-mono text-[10px] uppercase tracking-[0.12em]",
+              // Tinted — a selection, not the screen's action.
+              tab === t.key ? "bg-accent/10 text-accent" : "text-muted",
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-      {!editMode && (
-        <CardioSection sessionId={session?.id ?? null} date={date} dayType={dayType} />
+      {tab === "stats" && <StatsTab />}
+
+      {tab === "history" && (
+        <HistoryTab
+          onEditInLog={(s) => {
+            // jumpTo sets both AND latches, so a slow lastLoggedDay query cannot
+            // pull the user back to today's rotation slot after the hand-off.
+            // A plain selectDay + selectDate pair would reintroduce exactly the
+            // v1 bug phase 6 fixed.
+            jumpTo(s.day_type, s.date);
+            setTab("log");
+          }}
+        />
+      )}
+
+      {tab === "log" && (
+        <>
+          <ExerciseList
+            exercises={exercises}
+            sets={sets}
+            lastSets={lastSets}
+            editMode={editMode}
+            onOpen={setActive}
+            onDelete={(id) => deleteExercise.mutate(id)}
+            onReorder={(ids) => reorder.mutate(ids)}
+            onRename={setRenaming}
+            onAdd={(name) => addExercise.mutate(name)}
+          />
+
+          {!editMode && (
+            <CardioSection sessionId={session?.id ?? null} date={date} dayType={dayType} />
+          )}
+        </>
       )}
 
       <ExerciseSheet
