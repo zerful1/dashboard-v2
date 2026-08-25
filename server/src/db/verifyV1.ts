@@ -3,6 +3,14 @@ import { config } from "../config";
 import { resolveV1UserId, JUNK_SET_RULE } from "./v1Source";
 
 /**
+ * NOTE (post-cutover, 2026-08-25): this is a DRIFT METER, not a correctness
+ * check.
+ *
+ * Count mismatches against `public` are now expected and meaningless - v1 is
+ * frozen and v2 has moved on. Only the content checks still mean anything:
+ * date ranges, total volume, distinct exercise names. Read it that way, or it
+ * will look like a permanently failing migration.
+ *
  * Compares the migrated data against `public` row for row.
  *
  * Every date is selected as ::text. Reading a `date` into JavaScript would
