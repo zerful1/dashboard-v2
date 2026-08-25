@@ -20,6 +20,8 @@
     "migrate": "npm run migrate -w @dashboard/server",
     "import-v1": "tsx server/src/db/importV1.ts",
     "verify-v1": "tsx server/src/db/verifyV1.ts",
+    "drift": "tsx server/src/db/driftReport.ts",
+    "delta-v1": "tsx server/src/db/deltaV1.ts",
     "check-v1": "tsx server/src/db/importV1.checks.ts"
   },
   "devDependencies": {
