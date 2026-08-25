@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import { config } from "../config";
+import { V1_USER_SQL, JUNK_SET_RULE } from "./v1Source";
 
 /**
  * Re-copies anything v1 has accumulated since the Phase 3 migration.
@@ -14,10 +15,12 @@ import { config } from "../config";
  * Habits, nutrition and media are excluded by decision - barely used, and their
  * Phase 3 snapshot stands.
  *
+ * JUNK_SET_RULE is applied to workout_sets. It removed nothing in Phase 3, but
+ * its justification - "a mis-entry could land in the real account between now
+ * and the run" - describes THIS window, not that one.
+ *
  * Pure SQL, so no value passes through a JavaScript Date.
  */
-
-const V1_USER = `(SELECT user_id FROM public.workout_sets GROUP BY 1 ORDER BY count(*) DESC LIMIT 1)`;
 
 function statements(schema: string): { table: string; sql: string }[] {
   const S = `"${schema}"`;
@@ -26,7 +29,7 @@ function statements(schema: string): { table: string; sql: string }[] {
       table: "body_weight",
       sql: `INSERT INTO ${S}.body_weight (id, user_id, date, weight_kg, notes, created_at)
             SELECT id, $1, date, weight_kg, notes, COALESCE(created_at, now())
-              FROM public.body_weight WHERE user_id = ${V1_USER}
+              FROM public.body_weight WHERE user_id = ${V1_USER_SQL}
             ON CONFLICT DO NOTHING`,
     },
 
@@ -34,7 +37,7 @@ function statements(schema: string): { table: string; sql: string }[] {
       table: "exercises",
       sql: `INSERT INTO ${S}.exercises (id, user_id, day_type, exercise_name, sort_order)
             SELECT id, $1, day_type, exercise_name, sort_order
-              FROM public.exercises WHERE user_id = ${V1_USER}
+              FROM public.exercises WHERE user_id = ${V1_USER_SQL}
             ON CONFLICT DO NOTHING`,
     },
 
@@ -43,7 +46,7 @@ function statements(schema: string): { table: string; sql: string }[] {
       table: "workout_sessions",
       sql: `INSERT INTO ${S}.workout_sessions (id, user_id, date, day_type, day_name, notes, created_at)
             SELECT id, $1, date, day_type, day_name, notes, COALESCE(created_at, now())
-              FROM public.workout_sessions WHERE user_id = ${V1_USER}
+              FROM public.workout_sessions WHERE user_id = ${V1_USER_SQL}
             ON CONFLICT DO NOTHING`,
     },
 
@@ -57,7 +60,8 @@ function statements(schema: string): { table: string; sql: string }[] {
             SELECT s.id, $1, s.session_id, s.exercise_name, s.set_number,
                    s.weight_kg, s.reps, s.is_bodyweight
               FROM public.workout_sets s
-             WHERE s.user_id = ${V1_USER}
+             WHERE s.user_id = ${V1_USER_SQL}
+               AND ${JUNK_SET_RULE}
                AND EXISTS (SELECT 1 FROM ${S}.workout_sessions ws WHERE ws.id = s.session_id)
             ON CONFLICT DO NOTHING`,
     },
@@ -69,7 +73,7 @@ function statements(schema: string): { table: string; sql: string }[] {
             SELECT c.id, $1, c.session_id, c.exercise, c.distance_miles,
                    c.duration_minutes, c.speed, c.incline, c.calories_burned
               FROM public.cardio_sessions c
-             WHERE c.user_id = ${V1_USER}
+             WHERE c.user_id = ${V1_USER_SQL}
                AND EXISTS (SELECT 1 FROM ${S}.workout_sessions ws WHERE ws.id = c.session_id)
             ON CONFLICT DO NOTHING`,
     },
@@ -78,7 +82,7 @@ function statements(schema: string): { table: string; sql: string }[] {
       table: "workout_split",
       sql: `INSERT INTO ${S}.workout_split (user_id, config, updated_at)
             SELECT $1, config, updated_at
-              FROM public.workout_split WHERE user_id = ${V1_USER}
+              FROM public.workout_split WHERE user_id = ${V1_USER_SQL}
             ON CONFLICT DO NOTHING`,
     },
   ];

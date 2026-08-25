@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import { config } from "../config";
+import { resolveV1UserId, JUNK_SET_RULE } from "./v1Source";
 
 /**
  * Compares the migrated data against `public` row for row.
@@ -8,9 +9,6 @@ import { config } from "../config";
  * reintroduce exactly the BST off-by-one this migration was designed to avoid,
  * and a verifier that shares the bug it is verifying is worse than none.
  */
-
-const V1_USER_ID = process.env.V1_USER_ID ?? "";
-const JUNK = "NOT (weight_kg > 300 OR reps > 50)";
 
 interface Row {
   check: string;
@@ -22,7 +20,6 @@ interface Row {
 async function main(): Promise<void> {
   const email = process.argv[process.argv.indexOf("--email") + 1];
   if (!email) throw new Error("Usage: npm run verify-v1 -- --email <you@example.com>");
-  if (!V1_USER_ID) throw new Error("V1_USER_ID must be set in the environment");
 
   const schema = config.DB_SCHEMA;
   const pool = new Pool({ connectionString: config.MIGRATION_DATABASE_URL, max: 1 });
@@ -37,8 +34,15 @@ async function main(): Promise<void> {
     const target = u[0]?.id;
     if (!target) throw new Error(`No account with email ${email}`);
 
+    // Derived from the data, not an environment variable: the v1 account is the
+    // one owning the most sets. An env var here was a step that could be
+    // forgotten, and forgetting it stopped this script running at all.
+    const v1User = await resolveV1UserId(c);
+    console.log(`v1 account: ${v1User}`);
+    console.log(`v2 account: ${target} in "${schema}"\n`);
+
     const pair = async (check: string, v1sql: string, v2sql: string) => {
-      const a = await c.query(v1sql, [V1_USER_ID]);
+      const a = await c.query(v1sql, [v1User]);
       const b = await c.query(v2sql, [target]);
       const v1 = String(Object.values(a.rows[0] ?? { v: "-" })[0]);
       const v2 = String(Object.values(b.rows[0] ?? { v: "-" })[0]);
@@ -68,7 +72,7 @@ async function main(): Promise<void> {
 
     await pair(
       "count workout_sets (guard applied)",
-      `SELECT count(*)::int FROM public.workout_sets WHERE user_id = $1 AND ${JUNK}`,
+      `SELECT count(*)::int FROM public.workout_sets WHERE user_id = $1 AND ${JUNK_SET_RULE}`,
       `SELECT count(*)::int FROM "${schema}".workout_sets WHERE user_id = $1`,
     );
 
@@ -101,22 +105,25 @@ async function main(): Promise<void> {
     // Content, not just cardinality.
     await pair(
       "total reps across all sets",
-      `SELECT sum(reps)::int FROM public.workout_sets WHERE user_id = $1 AND ${JUNK}`,
+      `SELECT sum(reps)::int FROM public.workout_sets WHERE user_id = $1 AND ${JUNK_SET_RULE}`,
       `SELECT sum(reps)::int FROM "${schema}".workout_sets WHERE user_id = $1`,
     );
     await pair(
       "total volume (kg x reps)",
-      `SELECT round(sum(weight_kg * reps))::int FROM public.workout_sets WHERE user_id = $1 AND ${JUNK}`,
+      `SELECT round(sum(weight_kg * reps))::int FROM public.workout_sets WHERE user_id = $1 AND ${JUNK_SET_RULE}`,
       `SELECT round(sum(weight_kg * reps))::int FROM "${schema}".workout_sets WHERE user_id = $1`,
     );
+    // ::float8, NOT ::text. `numeric` preserves the scale it was given, so the
+    // same weigh-in written by v1 and by v2 renders as '78.20' and '78.2' - two
+    // different strings for one number, and a check that fails on formatting.
     await pair(
       "latest body weight",
-      `SELECT weight_kg::text FROM public.body_weight WHERE user_id = $1 ORDER BY date DESC LIMIT 1`,
-      `SELECT weight_kg::text FROM "${schema}".body_weight WHERE user_id = $1 ORDER BY date DESC LIMIT 1`,
+      `SELECT weight_kg::float8 FROM public.body_weight WHERE user_id = $1 ORDER BY date DESC LIMIT 1`,
+      `SELECT weight_kg::float8 FROM "${schema}".body_weight WHERE user_id = $1 ORDER BY date DESC LIMIT 1`,
     );
     await pair(
       "distinct exercise names in history",
-      `SELECT count(DISTINCT exercise_name)::int FROM public.workout_sets WHERE user_id = $1 AND ${JUNK}`,
+      `SELECT count(DISTINCT exercise_name)::int FROM public.workout_sets WHERE user_id = $1 AND ${JUNK_SET_RULE}`,
       `SELECT count(DISTINCT exercise_name)::int FROM "${schema}".workout_sets WHERE user_id = $1`,
     );
     await pair(
@@ -136,8 +143,8 @@ async function main(): Promise<void> {
      * account, this fails loudly rather than quietly discarding a real set.
      */
     const excluded = await c.query<{ n: number }>(
-      `SELECT count(*)::int n FROM public.workout_sets WHERE user_id = $1 AND NOT (${JUNK})`,
-      [V1_USER_ID],
+      `SELECT count(*)::int n FROM public.workout_sets WHERE user_id = $1 AND NOT (${JUNK_SET_RULE})`,
+      [v1User],
     );
     results.push({
       check: "guard excluded nothing",
