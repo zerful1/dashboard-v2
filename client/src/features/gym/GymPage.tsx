@@ -10,7 +10,7 @@ import { useGymDay } from "@/hooks/useGymDay";
 import { useExercises } from "@/hooks/useExercises";
 import { useWorkoutDay } from "@/hooks/useWorkoutDay";
 import { DaySelector } from "./DaySelector";
-import { DateSelector } from "./DateSelector";
+import { DateSelector } from "@/components/ui/DateSelector";
 import { ExerciseList } from "./ExerciseList";
 import { ExerciseSheet } from "./ExerciseSheet";
 import { SplitEditorSheet } from "./SplitEditorSheet";
