@@ -5,6 +5,7 @@ export * from "./domain/trend";
 export * from "./domain/streak";
 export * from "./domain/format";
 export * from "./domain/splitRotation";
+export * from "./domain/home";
 export * from "./domain/splitEditor";
 export * from "./domain/overloadCoaching";
 export * from "./domain/workoutStats";
