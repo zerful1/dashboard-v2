@@ -7,6 +7,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useMotionSafe } from "@/lib/motion";
 
 export interface ChartPoint {
   /**
@@ -133,6 +134,39 @@ export function WeightChart({ points, trend }: Props) {
           </LineChart>
         </ResponsiveContainer>
       </div>
+    </div>
+  );
+}
+
+/**
+ * A sparkline, not a chart: no axes, no grid, no tooltip, no legend. It shows
+ * shape only — the Weight page is where the detail lives.
+ *
+ * It lives here because this file is the swappable charting boundary declared
+ * at the top. Importing Recharts into the Home tile instead would give the
+ * codebase a second import site and quietly retire that rule.
+ */
+export function WeightSparkline({ points }: { points: ChartPoint[] }) {
+  const safe = useMotionSafe();
+  if (points.length < 2) return null;
+
+  return (
+    <div className="h-8">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={points}>
+          {/* Without a domain Recharts pads to round numbers and a 0.4 kg move
+              renders as a flat line. dataMin/dataMax uses the full height. */}
+          <YAxis hide domain={["dataMin", "dataMax"]} />
+          <Line
+            type="monotone"
+            dataKey="kg"
+            stroke="var(--color-accent)"
+            strokeWidth={2}
+            dot={false}
+            isAnimationActive={safe}
+          />
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 }
