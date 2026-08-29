@@ -38,6 +38,12 @@ export function useHomeOverview() {
   return {
     ...home,
     weight,
-    isLoading: sessionsQuery.isLoading || weightLoading,
+    // isPending, NOT isLoading. While auth is still resolving these queries are
+    // DISABLED, and a disabled query reports isLoading false in v5 (pending but
+    // not fetching). Home would then render a complete overview derived from
+    // DEFAULT_SPLIT and zero sessions - a real day name, "Not started", a Log
+    // button - and only afterwards swap to the spinner and the truth. isPending
+    // is true from mount until data exists, which is the question being asked.
+    isLoading: sessionsQuery.isPending || weightLoading,
   };
 }
