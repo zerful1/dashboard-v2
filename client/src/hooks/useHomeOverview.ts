@@ -20,8 +20,8 @@ const RECENT_LIMIT = 20;
 
 export function useHomeOverview() {
   const { user } = useAuth();
-  const { split } = useSplit();
-  const { entries, isLoading: weightLoading } = useWeights();
+  const { split, isPending: splitPending } = useSplit();
+  const { entries, isPending: weightPending } = useWeights();
 
   const sessionsQuery = useQuery({
     queryKey: ["homeSessions", user?.id ?? "anon"],
@@ -38,12 +38,19 @@ export function useHomeOverview() {
   return {
     ...home,
     weight,
-    // isPending, NOT isLoading. While auth is still resolving these queries are
-    // DISABLED, and a disabled query reports isLoading false in v5 (pending but
-    // not fetching). Home would then render a complete overview derived from
-    // DEFAULT_SPLIT and zero sessions - a real day name, "Not started", a Log
-    // button - and only afterwards swap to the spinner and the truth. isPending
-    // is true from mount until data exists, which is the question being asked.
-    isLoading: sessionsQuery.isPending || weightLoading,
+    // isPending everywhere, NOT isLoading. Two distinct traps:
+    //
+    // 1. While auth resolves, these queries are DISABLED, and a disabled query
+    //    reports isLoading false in v5 (pending but not fetching). Home would
+    //    render a complete overview built from DEFAULT_SPLIT and zero sessions
+    //    - a real day name, "Not started", a Log button - then swap to the
+    //    spinner and then to the truth.
+    // 2. THE SPLIT MUST BE IN THE GATE. useSplit returns `data ?? DEFAULT_SPLIT`,
+    //    so an unloaded split is indistinguishable from a default one. Today
+    //    sessionsQuery covers it by accident; once the query cache is persisted
+    //    a hydrated sessions query reports success - and isPending false - while
+    //    still disabled, so Home could paint a day name from DEFAULT_SPLIT. On a
+    //    customised split that is the WRONG day, not a harmless one.
+    isLoading: splitPending || sessionsQuery.isPending || weightPending,
   };
 }

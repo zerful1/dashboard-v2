@@ -142,6 +142,12 @@ export function WeightChart({ points, trend }: Props) {
  * A sparkline, not a chart: no axes, no grid, no tooltip, no legend. It shows
  * shape only — the Weight page is where the detail lives.
  *
+ * It DOES animate, where the chart above hardcodes isAnimationActive={false}.
+ * Deliberate, not an oversight: the chart is the page you navigated to and is
+ * already on screen when you arrive, so a redraw there is noise; the sparkline
+ * enters with the Home tile and the draw is what makes it read as a trend
+ * rather than a static glyph. Gated on useMotionSafe either way.
+ *
  * It lives here because this file is the swappable charting boundary declared
  * at the top. Importing Recharts into the Home tile instead would give the
  * codebase a second import site and quietly retire that rule.

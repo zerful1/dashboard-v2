@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HomePage } from "../src/pages/HomePage";
@@ -61,6 +61,8 @@ function renderPage() {
 
 interface Overrides {
   profile?: () => Promise<Profile>;
+  /** Leave /api/split hanging, so the split query stays pending. */
+  splitNeverResolves?: boolean;
   sessions?: WorkoutSession[];
   sets?: unknown[];
   weights?: unknown[];
@@ -78,7 +80,7 @@ function mockApi(o: Overrides = {}) {
   const routes: [string, () => unknown][] = [
     ["/api/auth/me", () => ({ id: "1", email: "you@example.com" })],
     ["/api/profile", () => (o.profile ? o.profile() : PROFILE)],
-    ["/api/split", () => DEFAULT_SPLIT],
+    ["/api/split", () => (o.splitNeverResolves ? new Promise(() => {}) : DEFAULT_SPLIT)],
     ["/api/workouts/session-detail", () => ({ sets: o.sets ?? [], cardio: [] })],
     ["/api/workouts/sessions", () => o.sessions ?? []],
     ["/api/weight", () => o.weights ?? []],
@@ -152,6 +154,33 @@ describe("HomePage overview", () => {
 
     // And only then the real thing.
     expect(await screen.findByRole("link", { name: /^continue$/i })).toBeInTheDocument();
+  });
+
+  it("waits for the SPLIT before naming a day", async () => {
+    // The trap that persistence activates. useSplit returns `data ?? DEFAULT_SPLIT`,
+    // so an unloaded split is indistinguishable from a default one. Today the
+    // sessions query happens to cover it, but a persisted-hydrated sessions query
+    // reports success — and isPending false — while still disabled. Without
+    // splitPending in the gate, Home names the day from DEFAULT_SPLIT, which on a
+    // customised split is the WRONG day rather than a harmless one.
+    freeze(WED);
+    mockApi({ sessions: [session(WED, 1, "Legs")], splitNeverResolves: true });
+    renderPage();
+
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Alice"),
+    );
+    // Let sessions and weight actually settle. Asserting straight after the
+    // heading passes even WITHOUT the fix, because the profile resolves first
+    // and the spinner is still up for an unrelated reason — a guard that holds
+    // either way is no guard.
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+
+    expect(screen.getByLabelText(/loading your overview/i)).toBeInTheDocument();
+    expect(screen.queryByText("Legs")).toBeNull();
+    expect(screen.queryByRole("link", { name: /^continue$/i })).toBeNull();
   });
 
   it("names today's training day from the split", async () => {
