@@ -30,7 +30,7 @@ function workerSource(): string {
   return src;
 }
 
-function loadWorker() {
+function loadWorker(opts: { response?: () => Response } = {}) {
   const src = workerSource();
   const listeners: Record<string, Listener> = {};
 
@@ -50,7 +50,7 @@ function loadWorker() {
     match: vi.fn(async () => undefined),
     delete: vi.fn(async () => true),
   };
-  const fetchStub = vi.fn(async () => new Response("ok"));
+  const fetchStub = vi.fn(async () => (opts.response ? opts.response() : new Response("ok")));
 
   // eslint-disable-next-line @typescript-eslint/no-implied-eval
   new Function("self", "caches", "fetch", src)(scope, caches, fetchStub);
@@ -69,6 +69,16 @@ function fire(
     respondWith,
   });
   return respondWith;
+}
+
+/**
+ * Wait for the promise handed to respondWith, and then for the detached
+ * `caches.open(...).then(put)` chain it kicks off — that one is deliberately
+ * not awaited by the worker, so a single tick is not enough.
+ */
+async function settle(respondWith: ReturnType<typeof vi.fn>) {
+  await respondWith.mock.calls[0]?.[0];
+  await new Promise((r) => setTimeout(r, 0));
 }
 
 describe("service worker", () => {
@@ -143,5 +153,24 @@ describe("service worker", () => {
     const { listeners } = loadWorker();
     const respondWith = fire(listeners, "https://app.test/gym", { mode: "navigate" });
     expect(respondWith).toHaveBeenCalled();
+  });
+
+  it("caches a successful navigation as the offline shell", async () => {
+    const { listeners, cache } = loadWorker();
+    const respondWith = fire(listeners, "https://app.test/gym", { mode: "navigate" });
+    await settle(respondWith);
+    expect(cache.put).toHaveBeenCalledWith("/index.html", expect.anything());
+  });
+
+  it("does NOT cache an error page as the offline shell", async () => {
+    // fetch() resolves on a 500, so without the res.ok guard a mid-deploy error
+    // page becomes the shell every offline load is served. Self-healing only via
+    // a successful navigation — the one thing an offline user cannot produce.
+    const { listeners, cache } = loadWorker({
+      response: () => new Response("gateway error", { status: 502 }),
+    });
+    const respondWith = fire(listeners, "https://app.test/gym", { mode: "navigate" });
+    await settle(respondWith);
+    expect(cache.put).not.toHaveBeenCalled();
   });
 });

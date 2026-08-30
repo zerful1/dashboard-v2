@@ -4,7 +4,10 @@ const CACHE = 'dashboard-v1';
 self.addEventListener('install', (e) => {
   // The shell only. Hashed assets arrive through the fetch handler as they are
   // requested — precaching them would mean parsing the build manifest here.
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['/', '/index.html'])));
+  // Just /index.html. `/` is the same document, and addAll is atomic - if
+  // either entry fails the whole install rejects and the worker never
+  // activates. Only /index.html is ever read back.
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['/index.html'])));
   self.skipWaiting();
 });
 
@@ -67,8 +70,14 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(
       fetch(request)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put('/index.html', copy));
+          // Only cache a REAL shell. fetch() resolves on a 500, so without this a
+          // mid-deploy error page becomes the offline shell - and the only
+          // thing that can replace it is a successful navigation, which is
+          // precisely what an offline user cannot produce.
+          if (res.ok && !res.redirected) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put('/index.html', copy));
+          }
           return res;
         })
         .catch(() => caches.match('/index.html').then((hit) => hit || Response.error())),
