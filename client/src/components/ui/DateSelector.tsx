@@ -28,6 +28,10 @@ export function DateSelector({
   return (
     <button
       type="button"
+      // The button's only content is the formatted date and the real input is
+      // aria-hidden, so a screen reader announced "Today, button" with no hint
+      // that it opens a picker.
+      aria-label={`Change date — currently ${label(value, today)}`}
       onClick={() => {
         try {
           inputRef.current?.showPicker?.();

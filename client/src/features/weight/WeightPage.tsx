@@ -6,7 +6,7 @@ import { deriveWeightSummary } from "./deriveWeight";
 import { WeightChart } from "./WeightChart";
 import { WeightStats } from "./WeightStats";
 import { WeightList } from "./WeightList";
-import { LogTodayCard } from "./LogTodayCard";
+import { LogWeightCard } from "./LogWeightCard";
 import { EditWeightSheet } from "./EditWeightSheet";
 import { Spinner } from "@/components/ui/Spinner";
 import { Card } from "@/components/ui/Card";
@@ -17,7 +17,6 @@ export function WeightPage() {
 
   const today = toLocalISO();
   const summary = useMemo(() => deriveWeightSummary(entries, today), [entries, today]);
-  const todayValue = entries.find((e) => e.date === today)?.weight_kg ?? null;
 
   if (isLoading) return <Spinner label="Loading your weight history" />;
 
@@ -42,7 +41,7 @@ export function WeightPage() {
         <h1 className="mt-1.5 text-2xl font-extrabold tracking-tight">Body weight</h1>
       </div>
 
-      <LogTodayCard save={saveWeight} todayValue={todayValue} />
+      <LogWeightCard save={saveWeight} entries={entries} />
       <WeightStats summary={summary} />
       <WeightChart points={summary.points} trend={summary.trend} />
       <WeightList entries={entries} onSelect={setEditing} />
