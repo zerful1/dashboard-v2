@@ -1,9 +1,11 @@
-import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryCache, QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { RouterProvider } from "react-router-dom";
 import { Toaster, toast } from "sonner";
 import { AuthProvider } from "@/auth/AuthProvider";
 import { ApiError } from "@/lib/api";
 import { router } from "@/router";
+import { MAX_AGE, persister } from "@/lib/persister";
 
 /**
  * ERROR PRESENTATION — the whole rule, in one sentence:
@@ -38,7 +40,14 @@ const queryClient = new QueryClient({
     },
   }),
   defaultOptions: {
-    queries: { staleTime: 30_000, retry: 1 },
+    queries: {
+      staleTime: 30_000,
+      retry: 1,
+      // Must be >= the persister maxAge. Below it, a query is garbage collected
+      // from memory before its persisted copy expires, and the restored cache
+      // silently comes back empty.
+      gcTime: MAX_AGE,
+    },
     mutations: {
       // One global failure toast, as in v1 — per-hook handlers roll back cache
       // and never show UI, so error presentation stays in one place.
@@ -52,11 +61,21 @@ const queryClient = new QueryClient({
 
 export function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister,
+        maxAge: MAX_AGE,
+        // Bump on ANY change to a cached query shape. Without it a restored
+        // cache from the previous deploy is handed to components expecting the
+        // new shape, which fails far from the cause.
+        buster: "v1",
+      }}
+    >
       <AuthProvider>
         <RouterProvider router={router} />
         <Toaster theme="dark" position="top-center" richColors />
       </AuthProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }

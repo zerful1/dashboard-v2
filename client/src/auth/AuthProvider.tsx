@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { persister } from "@/lib/persister";
 import { toast } from "sonner";
 import { api, ApiError } from "@/lib/api";
 
@@ -109,6 +110,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // place so no caller can do half of it. See the cache note above.
   const endSession = useCallback(() => {
     qc.clear();
+    // clear() empties MEMORY only. The persisted copy in localStorage is a
+    // separate artifact and is restored on next boot, so without this one
+    // user's data sits on disk until it expires — on a device the next person
+    // may also use. That is exactly the cross-account leak clear() was added to
+    // fix, reintroduced by persistence.
+    void persister.removeClient();
     setUser(null);
     setSessionError(null);
   }, [qc]);
@@ -117,6 +124,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (email: string, password: string) => {
       await api("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
       qc.clear();
+      // Same reason as endSession: clear() never touches the persisted copy,
+      // and signing in as someone else is an identity transition too.
+      void persister.removeClient();
       // The POST succeeding only proves the credentials were right; it does not
       // prove the browser kept the cookie. Without this check a session that
       // failed to stick resolves as success, the page navigates to "/",
@@ -135,6 +145,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
       qc.clear();
+      // Same reason as endSession.
+      void persister.removeClient();
       const me = await refreshAuth();
       if (!me) throw new Error("Account created, but the session did not stick on this device.");
     },
