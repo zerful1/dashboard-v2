@@ -5,6 +5,7 @@ import { NavRail } from "./NavRail";
 import { BottomTabs } from "./BottomTabs";
 import { useAuth } from "@/auth/AuthProvider";
 import { Spinner } from "@/components/ui/Spinner";
+import { OfflineBanner } from "@/components/ui/OfflineBanner";
 
 export function AppLayout() {
   const [moreOpen, setMoreOpen] = useState(false);
@@ -40,6 +41,15 @@ export function AppLayout() {
       <div className="flex min-h-0 flex-1">
         <NavRail />
         <main className="flex-1 overflow-y-auto">
+          {/* Inside <main>, so it sits in the content column - under the nav rail
+              on desktop, above the content on mobile - and cannot cover the tab
+              bar, which is a sibling below. Sticky because <main> is the scroll
+              container: a plain block would scroll away, and a banner saying
+              "these numbers may be stale" is worth nothing if it is only true
+              at the top of the page. */}
+          <div className="sticky top-0 z-10">
+            <OfflineBanner />
+          </div>
           {/* Single column below 1280px; two-pane layouts are introduced
               per-feature from phase 4, only where a detail view exists. */}
           <div className="mx-auto w-full max-w-2xl px-4 py-5 xl:max-w-none xl:px-6">
