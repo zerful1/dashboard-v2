@@ -17,6 +17,7 @@
     "dev": "npm run dev -w @dashboard/server",
     "dev:api": "npm run dev -w @dashboard/server",
     "dev:web": "npm run dev -w @dashboard/client",
+    "dev:web:lan": "npm run dev -w @dashboard/client -- --host",
     "migrate": "npm run migrate -w @dashboard/server",
     "import-v1": "tsx server/src/db/importV1.ts",
     "verify-v1": "tsx server/src/db/verifyV1.ts",
