@@ -12,13 +12,17 @@ import { Spinner } from "@/components/ui/Spinner";
 import { Card } from "@/components/ui/Card";
 
 export function WeightPage() {
-  const { entries, isLoading, isError, saveWeight, deleteWeight } = useWeights();
+  // isPending, not isLoading: while auth resolves the query is DISABLED, and a
+  // disabled query reports isLoading false - so the page would paint "No
+  // entries yet" over a history that simply had not arrived. Same defect as
+  // the one fixed in useHomeOverview, in the smaller of the two places.
+  const { entries, isPending, isError, saveWeight, deleteWeight } = useWeights();
   const [editing, setEditing] = useState<BodyWeightEntry | null>(null);
 
   const today = toLocalISO();
   const summary = useMemo(() => deriveWeightSummary(entries, today), [entries, today]);
 
-  if (isLoading) return <Spinner label="Loading your weight history" />;
+  if (isPending) return <Spinner label="Loading your weight history" />;
 
   // Distinguished from empty: a failed fetch must not read as "no data yet".
   // Someone with ten months of history seeing "No entries" would reasonably

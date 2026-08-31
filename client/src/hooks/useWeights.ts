@@ -82,6 +82,10 @@ export function useWeights() {
   return {
     entries: query.data ?? [],
     isLoading: query.isLoading,
+    // For callers that render derived values rather than a bare list: a disabled
+    // query reports isLoading false, so isLoading alone lets a page paint
+    // conclusions drawn from an empty array. See useHomeOverview.
+    isPending: query.isPending,
     isError: query.isError,
     saveWeight,
     deleteWeight,

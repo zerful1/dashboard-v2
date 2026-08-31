@@ -31,8 +31,15 @@ export function useSplit() {
     onSettled: () => void qc.invalidateQueries({ queryKey: key }),
   });
 
-  // ALWAYS defined. The default covers the cold first paint as well as a user
-  // who has never customised, so nothing downstream branches on "loaded yet"
-  // and there is no flicker between two different day lists.
-  return { split: query.data ?? DEFAULT_SPLIT, isLoading: query.isLoading, saveSplit };
+  // `split` is ALWAYS defined. The default covers the cold first paint as well
+  // as a user who has never customised, so nothing downstream branches on
+  // "loaded yet" and there is no flicker between two different day lists.
+  //
+  // Which is exactly why `isPending` is exposed and `isLoading` is not: an
+  // unloaded split is INDISTINGUISHABLE from a default one, so any caller that
+  // renders a day name has to know whether the real split has arrived. A
+  // disabled query reports isLoading false, and a persisted-hydrated one
+  // reports isPending false while still disabled - only isPending answers
+  // "is there data yet" in both cases.
+  return { split: query.data ?? DEFAULT_SPLIT, isPending: query.isPending, saveSplit };
 }
