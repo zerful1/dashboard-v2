@@ -22,8 +22,10 @@ C:\Users\zerful\Desktop\dashboard    branch: docs/dashboard-v2-design
                                      path:   docs/superpowers/
 ```
 
-That branch is **local-only** — it is not on any remote. Searching only inside
-`dashboard-v2` finds no spec and makes nine phases of work look unplanned. Read
+That path is this machine’s; the repo is private but cloneable, so on any other
+machine it is wherever you put it. That branch is **currently local-only** — on
+no remote as of 2026-08-31. Searching only inside `dashboard-v2` finds no spec
+and makes nine phases of work look unplanned. Read
 the plan from there before starting anything, and tell any subagent where it is
 and that looking in this repo will not find it.
 
@@ -107,6 +109,20 @@ by shape rather than by a list:
 
 The point is that a misconfigured environment cannot reach real data, rather
 than that someone remembered not to. New writing scripts get the same treatment.
+
+---
+
+## `importV1.ts` is a historical record, not live code
+
+It produced the migrated data on 2026-08-15 and will not run again. It keeps
+**private copies of `V1_USER` and `JUNK_SET_RULE` on purpose.**
+
+`v1Source.ts` is the shared source for everything else — `verifyV1`, `deltaV1`,
+`driftReport` — and a duplicate-constant sweep will find the restated copies in
+`importV1.ts` and want to consolidate them. Doing that would mean the file no
+longer matches what actually ran, and **nothing would fail to tell you.** It is
+a landmine triggered by good instinct, which is the only reason it is written
+down here.
 
 ---
 
