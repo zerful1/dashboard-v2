@@ -24,11 +24,11 @@ function renderCard(entries: BodyWeightEntry[] = []) {
 /**
  * Set the date the way the real control does.
  *
- * NOT userEvent.clear + type. That input is aria-hidden, tabIndex -1 and
- * pointer-events-none: a user never types into it, showPicker() sets the whole
- * value at once. clear() fires a change with "", which DateSelector's
- * `if (e.target.value)` guard deliberately ignores — so the controlled input
- * snaps straight back and onChange is never called at all.
+ * NOT userEvent.clear + type. A native date picker commits one whole value;
+ * nobody types into this input character by character. clear() fires a change
+ * with "", which DateSelector's `if (e.target.value)` guard deliberately
+ * ignores — so the controlled input snaps straight back and onChange is never
+ * called at all.
  */
 function pickDate(value: string) {
   const input = document.querySelector('input[type="date"]') as HTMLInputElement;
