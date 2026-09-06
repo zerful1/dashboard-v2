@@ -44,8 +44,6 @@ self.addEventListener('fetch', (e) => {
 
   // Hashed build output: the filename changes when the content does, so a hit
   // can never be stale.
-  if (url.pathname.startsWith('/api')) return;
-
   if (url.pathname.startsWith('/static/')) {
     e.respondWith(
       caches.match(request).then(

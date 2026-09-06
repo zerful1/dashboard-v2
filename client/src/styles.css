@@ -86,3 +86,23 @@
 @utility tnum {
   font-variant-numeric: tabular-nums;
 }
+
+/* iOS Safari zooms the viewport whenever a focused form control's font-size is
+   under 16px, and it does not zoom back out — you are left pinching your way
+   back on every field. The controls here are 14px for density, so the size is
+   raised only where the zoom actually happens: coarse pointers.
+
+   The other fix is `maximum-scale=1` or `user-scalable=no` on the viewport meta.
+   It also works, by disabling pinch-zoom for everyone permanently — which fails
+   WCAG 1.4.4 and takes zoom away from exactly the people who rely on it.
+
+   Deliberately UNLAYERED. Tailwind's utilities layer beats its base layer, so
+   the same rule inside `@layer base` would lose to the `text-sm` on the control
+   itself; unlayered declarations outrank every layer. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
