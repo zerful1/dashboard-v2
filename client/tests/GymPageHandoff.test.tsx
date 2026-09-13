@@ -81,7 +81,7 @@ describe("GymPage sub-tabs and hand-off", () => {
     // The day chips are the page's context. Hiding them on History would make
     // the hand-off look like it did nothing.
     for (const tab of ["Stats", "History"]) {
-      await userEvent.click(screen.getByRole("button", { name: tab }));
+      await userEvent.click(await screen.findByRole("button", { name: tab }));
       // Scoped to the day-selector group: on History the same labels also
       // appear as filter chips, so an unscoped query is ambiguous.
       const days = within(screen.getByRole("group", { name: "Training day" }));
@@ -94,7 +94,7 @@ describe("GymPage sub-tabs and hand-off", () => {
     mockByPath();
     const { selectedDate } = renderPage();
 
-    await userEvent.click(screen.getByRole("button", { name: "History" }));
+    await userEvent.click(await screen.findByRole("button", { name: "History" }));
     await userEvent.click(await screen.findByText("2026-05-20"));
     await userEvent.click(await screen.findByRole("button", { name: /edit in log/i }));
 
@@ -125,7 +125,7 @@ describe("GymPage sub-tabs and hand-off", () => {
     });
 
     renderPage();
-    await userEvent.click(screen.getByRole("button", { name: "History" }));
+    await userEvent.click(await screen.findByRole("button", { name: "History" }));
     await userEvent.click(await screen.findByText("2026-05-20"));
     await userEvent.click(await screen.findByRole("button", { name: /edit in log/i }));
     await waitFor(() =>

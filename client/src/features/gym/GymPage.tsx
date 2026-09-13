@@ -19,6 +19,7 @@ import { CardioSection } from "./CardioSection";
 import { StatsTab } from "./StatsTab";
 import { HistoryTab } from "./HistoryTab";
 import { cn } from "@/lib/cn";
+import { Spinner } from "@/components/ui/Spinner";
 
 type SubTab = "log" | "stats" | "history";
 
@@ -30,7 +31,7 @@ const SUB_TABS: { key: SubTab; label: string }[] = [
 
 export function GymPage() {
   const { user } = useAuth();
-  const { split } = useSplit();
+  const { split, isPending: splitPending } = useSplit();
 
   // The most recently logged day, for the rest-day fallback in useGymDay.
   const { data: lastLogged } = useQuery({
@@ -40,7 +41,11 @@ export function GymPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { dayType, date, selectDay, selectDate, jumpTo } = useGymDay(split, lastLogged);
+  const { dayType, date, selectDay, selectDate, jumpTo } = useGymDay(
+    split,
+    splitPending,
+    lastLogged,
+  );
   const { exercises, addExercise, deleteExercise, reorder, renameExercise } =
     useExercises(dayType);
   const { session, sets, lastSets, logSet, deleteSet } = useWorkoutDay(dayType, date);
@@ -56,6 +61,12 @@ export function GymPage() {
         .filter((s) => s.exercise_name === active.exercise_name)
         .sort((a, b) => a.set_number - b.set_number)
     : [];
+
+  // After every hook, before anything derived from dayType. The same rule Home
+  // follows: an unloaded split is indistinguishable from a default one, so
+  // rendering now would name the default split's day and fire the exercises
+  // query for it, then again for the real one.
+  if (splitPending) return <Spinner label="Loading your split" />;
 
   return (
     <div className="space-y-3">
