@@ -137,7 +137,7 @@ describe("account deletion", () => {
     const reg = await agent.post("/api/auth/register").send(alice);
     const userId = reg.body.id;
 
-    await agent.delete("/api/profile").expect(204);
+    await agent.delete("/api/profile").send({ password: alice.password }).expect(204);
 
     const users = await pool.query(`SELECT 1 FROM ${T.users} WHERE id = $1`, [userId]);
     const profiles = await pool.query(`SELECT 1 FROM ${T.profiles} WHERE user_id = $1`, [userId]);
@@ -155,7 +155,7 @@ describe("account deletion", () => {
     await deviceB.post("/api/auth/login").send(alice);
 
     const userId = (await findUserByEmail(alice.email))!.id;
-    await deviceA.delete("/api/profile").expect(204);
+    await deviceA.delete("/api/profile").send({ password: alice.password }).expect(204);
 
     const { rows } = await pool.query(
       `SELECT sid FROM ${T.session} WHERE sess->>'userId' = $1`,
@@ -171,7 +171,7 @@ describe("account deletion", () => {
     const bobAgent = request.agent(app);
     await bobAgent.post("/api/auth/register").send(bob);
 
-    await aliceAgent.delete("/api/profile").expect(204);
+    await aliceAgent.delete("/api/profile").send({ password: alice.password }).expect(204);
 
     await bobAgent.get("/api/auth/me").expect(200);
     expect(await findUserByEmail(bob.email)).not.toBeNull();

@@ -127,7 +127,7 @@ describe("body weight ownership scoping", () => {
     await agent.post("/api/auth/register").send(alice);
     await agent.post("/api/weight").send({ date: "2026-08-15", weight_kg: 82 }).expect(201);
 
-    await agent.delete("/api/profile").expect(204);
+    await agent.delete("/api/profile").send({ password: alice.password }).expect(204);
 
     const { rows } = await pool.query(`SELECT count(*)::int n FROM ${T.bodyWeight}`);
     expect(rows[0].n).toBe(0);
