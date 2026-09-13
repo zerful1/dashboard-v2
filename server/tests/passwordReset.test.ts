@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { createHash } from "node:crypto";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { pool } from "../src/db/pool";
@@ -189,5 +190,72 @@ describe("reset password", () => {
       .post("/api/auth/reset-password")
       .send({ token: "too-short", newPassword: "reset-password-7" })
       .expect(400);
+  });
+});
+
+describe("password reset tokens — the repository's guarantees", () => {
+  async function aUser() {
+    await request(app).post("/api/auth/register").send(creds);
+    return (await findUserByEmail(creds.email))!;
+  }
+
+  it("stores exactly the SHA-256 of the raw token, not merely something different", async () => {
+    // The existing test asserts the stored value is not the raw token and is 64
+    // characters — which any other 64-char string would satisfy. This pins the
+    // actual derivation, so a change of algorithm cannot pass unnoticed.
+    const user = await aUser();
+    const raw = await createResetToken(user.id);
+
+    const { rows } = await pool.query<{ token_hash: string }>(
+      `SELECT token_hash FROM ${T.passwordResetTokens} WHERE user_id = $1`,
+      [user.id],
+    );
+    expect(rows[0]!.token_hash).toBe(createHash("sha256").update(raw).digest("hex"));
+  });
+
+  it("returns null for an unknown token at the repository, not just the route", async () => {
+    await aUser();
+    // Well-formed but never issued. The route's 400 could come from validation;
+    // this proves the repository itself refuses it.
+    expect(await consumeResetToken("a".repeat(64))).toBeNull();
+  });
+
+  it("lets exactly one of two concurrent consumers win", async () => {
+    // The property UPDATE ... RETURNING exists for. A read-then-write would let
+    // both callers see used_at IS NULL and both succeed — two password resets
+    // from one emailed link.
+    const user = await aUser();
+    const raw = await createResetToken(user.id);
+
+    // WARM TWO CONNECTIONS FIRST, or this test proves nothing.
+    //
+    // Without it the pool holds one idle client: the first call takes it and
+    // the second waits on a NEW connection being established, which costs long
+    // enough for the first to finish both statements. The calls never overlap,
+    // and a read-then-write implementation passes this test unchanged —
+    // measured, not assumed. With both clients warm the reads genuinely
+    // interleave, and the broken version returns the user id twice.
+    const [c1, c2] = await Promise.all([pool.connect(), pool.connect()]);
+    c1.release();
+    c2.release();
+
+    const results = await Promise.all([consumeResetToken(raw), consumeResetToken(raw)]);
+
+    expect(results.filter((r) => r !== null)).toEqual([user.id]);
+    expect(results.filter((r) => r === null)).toHaveLength(1);
+  });
+
+  it("scopes to the token, so one user's token never resets another's password", async () => {
+    // The ownership invariant for this repository: the token is the only thing
+    // that identifies the account, so it must map to its own user and no other.
+    const alice = await aUser();
+    await request(app).post("/api/auth/register").send(other);
+    const bob = (await findUserByEmail(other.email))!;
+
+    const aliceToken = await createResetToken(alice.id);
+    const bobToken = await createResetToken(bob.id);
+
+    expect(await consumeResetToken(aliceToken)).toBe(alice.id);
+    expect(await consumeResetToken(bobToken)).toBe(bob.id);
   });
 });

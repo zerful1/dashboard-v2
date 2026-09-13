@@ -3,7 +3,7 @@ import request from "supertest";
 import { createApp } from "../src/app";
 import { pool } from "../src/db/pool";
 import { T } from "../src/config";
-import { getProfile, updateProfile } from "../src/repositories/profiles";
+import { getProfile, updateProfile, deleteAccount } from "../src/repositories/profiles";
 import { findUserByEmail } from "../src/repositories/users";
 
 const app = createApp();
@@ -174,6 +174,119 @@ describe("account deletion", () => {
     await aliceAgent.delete("/api/profile").send({ password: alice.password }).expect(204);
 
     await bobAgent.get("/api/auth/me").expect(200);
+    expect(await findUserByEmail(bob.email)).not.toBeNull();
+  });
+});
+
+describe("account deletion requires the password", () => {
+  it("rejects a request with no body", async () => {
+    const agent = request.agent(app);
+    await agent.post("/api/auth/register").send(alice);
+    await agent.delete("/api/profile").expect(400);
+
+    // Still there. A 400 that deleted anyway would be the worst outcome.
+    expect(await findUserByEmail(alice.email)).not.toBeNull();
+  });
+
+  it("rejects a wrong password and leaves the account intact", async () => {
+    const agent = request.agent(app);
+    await agent.post("/api/auth/register").send(alice);
+
+    await agent.delete("/api/profile").send({ password: "not-it-at-all" }).expect(401);
+
+    expect(await findUserByEmail(alice.email)).not.toBeNull();
+    // And the session survives — a failed delete must not sign you out.
+    await agent.get("/api/profile").expect(200);
+  });
+
+  it("does not apply the length policy - a wrong password is 401, not 400", async () => {
+    // The body schema is min(1), NOT passwordField, because this CHECKS a
+    // password rather than setting one. A one-character password must reach
+    // the verify step and fail there, not be turned away by validation.
+    //
+    // Why it matters, since it is not about legacy passwords: /login uses
+    // passwordField too, so an account whose password is below the minimum
+    // cannot sign in at all and could never reach this route. What this
+    // protects against is the policy being TIGHTENED later - every account
+    // between the old and new minimum would keep working everywhere except
+    // deleting itself, and only here.
+    const agent = request.agent(app);
+    await agent.post("/api/auth/register").send(alice);
+
+    await agent.delete("/api/profile").send({ password: "x" }).expect(401);
+    expect(await findUserByEmail(alice.email)).not.toBeNull();
+
+    // Empty is still a validation error - min(1), not min(0).
+    await agent.delete("/api/profile").send({ password: "" }).expect(400);
+  });});
+
+describe("deleteAccount cascades across every owned table", () => {
+  it("removes all of alice's rows and none of bob's", async () => {
+    const aliceAgent = request.agent(app);
+    await aliceAgent.post("/api/auth/register").send(alice);
+    const bobAgent = request.agent(app);
+    await bobAgent.post("/api/auth/register").send(bob);
+
+    const aliceId = (await findUserByEmail(alice.email))!.id;
+    const bobId = (await findUserByEmail(bob.email))!.id;
+
+    // Give both users a row in every table the account owns.
+    for (const agent of [aliceAgent, bobAgent]) {
+      await agent.post("/api/weight").send({ date: "2026-08-15", weight_kg: 82 }).expect(201);
+      await agent
+        .post("/api/workouts/sets")
+        .send({
+          date: "2026-08-16",
+          day_type: 1,
+          exercise_name: "Squat",
+          set_number: 1,
+          weight_kg: 100,
+          reps: 5,
+          is_bodyweight: false,
+        })
+        .expect(201);
+      await agent
+        .put("/api/split")
+        .send({
+          days: [{ day_type: 1, label: "Full Body" }],
+          week: [1, "rest", 1, "rest", 1, "rest", "rest"],
+        })
+        .expect(200);
+    }
+
+    const countFor = async (table: string, id: string) => {
+      const { rows } = await pool.query<{ n: number }>(
+        `SELECT count(*)::int n FROM ${table} WHERE user_id = $1`,
+        [id],
+      );
+      return rows[0]!.n;
+    };
+    // `session` has no user_id column and no foreign key — it is the one the
+    // explicit DELETE inside deleteAccount exists for, and the one a cascade
+    // would silently miss.
+    const sessionsFor = async (id: string) => {
+      const { rows } = await pool.query<{ n: number }>(
+        `SELECT count(*)::int n FROM ${T.session} WHERE sess->>'userId' = $1`,
+        [id],
+      );
+      return rows[0]!.n;
+    };
+
+    const owned = [T.bodyWeight, T.workoutSessions, T.workoutSets, T.workoutSplit, T.profiles];
+
+    // Every table genuinely holds alice rows first — otherwise the assertions
+    // after the delete would pass against a table that was empty all along.
+    for (const table of owned) expect(await countFor(table, aliceId), table).toBeGreaterThan(0);
+    expect(await sessionsFor(aliceId)).toBeGreaterThan(0);
+
+    await deleteAccount(aliceId);
+
+    for (const table of owned) expect(await countFor(table, aliceId), table).toBe(0);
+    expect(await sessionsFor(aliceId)).toBe(0);
+
+    // Bob is untouched in every one of them.
+    for (const table of owned) expect(await countFor(table, bobId), table).toBeGreaterThan(0);
+    expect(await sessionsFor(bobId)).toBeGreaterThan(0);
     expect(await findUserByEmail(bob.email)).not.toBeNull();
   });
 });
