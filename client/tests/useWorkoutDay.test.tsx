@@ -3,6 +3,7 @@ import { renderHook, waitFor, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useWorkoutDay } from "../src/hooks/useWorkoutDay";
+import { SESSION_READERS } from "../src/hooks/invalidate";
 import * as apiModule from "../src/lib/api";
 import { ApiError } from "../src/lib/api";
 
@@ -169,6 +170,44 @@ describe("useWorkoutDay", () => {
     });
 
     await waitFor(() => expect(result.current.sets).toHaveLength(1));
+  });
+
+  it("marks every session reader stale after logging a set", async () => {
+    // The defect: logSet invalidated workoutDay and coaching only. Seven other
+    // queries read the same rows and were never invalidated by any mutation,
+    // so Home said "Not started" after the first set of the day, History was
+    // missing the session, and Stats lacked the set — until a hard reload,
+    // since the cache is persisted.
+    //
+    // SESSION_READERS is imported from the module the hook uses, so this
+    // cannot drift from what is actually invalidated.
+    mockApi({ session, sets: [] });
+    const qc = fresh();
+
+    // Seed one entry per reader, under the user id the mock above returns.
+    for (const prefix of SESSION_READERS) {
+      qc.setQueryData([prefix, "u1", "any"], { seeded: true });
+    }
+
+    const { result } = renderHook(() => useWorkoutDay(1, "2026-08-16"), {
+      wrapper: wrapper(qc),
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => {
+      await result.current.logSet.mutateAsync({
+        exercise_name: "Squat",
+        set_number: 1,
+        weight_kg: 100,
+        reps: 5,
+        is_bodyweight: false,
+      });
+    });
+
+    for (const prefix of SESSION_READERS) {
+      const state = qc.getQueryState([prefix, "u1", "any"]);
+      expect(state?.isInvalidated, prefix).toBe(true);
+    }
   });
 
   it("keeps sets ordered by exercise then set number", async () => {
