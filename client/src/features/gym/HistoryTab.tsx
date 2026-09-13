@@ -12,7 +12,7 @@ export function HistoryTab({ onEditInLog }: { onEditInLog: (s: WorkoutSession) =
 
   const { split } = useSplit();
   const { data: historicalNames = [] } = useHistoryDayNames();
-  const { sessions, hasMore, loadMore, isLoading, isFetchingMore } = useWorkoutHistory(dayName);
+  const { sessions, hasMore, loadMore, isPending, isFetchingMore } = useWorkoutHistory(dayName);
 
   // Current split labels first, then any retired names still present in the
   // data — so 'Upper A' surfaces without a hardcoded legacy list.
@@ -41,8 +41,8 @@ export function HistoryTab({ onEditInLog }: { onEditInLog: (s: WorkoutSession) =
         ))}
       </div>
 
-      {isLoading && <p className="py-4 text-center text-xs text-dim">Loading…</p>}
-      {!isLoading && sessions.length === 0 && (
+      {isPending && <p className="py-4 text-center text-xs text-dim">Loading…</p>}
+      {!isPending && sessions.length === 0 && (
         <p className="py-8 text-center text-xs text-dim">No sessions logged yet</p>
       )}
 

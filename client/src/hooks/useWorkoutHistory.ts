@@ -32,7 +32,12 @@ export function useWorkoutHistory(dayName: string | null) {
     sessions: query.data?.pages.flat() ?? [],
     hasMore: query.hasNextPage,
     loadMore: query.fetchNextPage,
-    isLoading: query.isLoading,
+    // isPending, not isLoading: a disabled query (auth still resolving) reports
+    // isLoading false, so the caller would render "No sessions logged yet"
+    // over a list that simply had not arrived. Nothing else read isLoading,
+    // and leaving the wrong signal beside the right one is how the next
+    // caller picks it.
+    isPending: query.isPending,
     isFetchingMore: query.isFetchingNextPage,
   };
 }
