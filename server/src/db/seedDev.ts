@@ -30,8 +30,9 @@ import { shiftISO } from "@dashboard/shared";
  * does not end in `_dev`. `DB_SCHEMA=app npx tsx …` is an established habit in
  * this repo for read-only checks, and this script is not read-only.
  *
- * Usage:
- *   npm run seed-dev -w @dashboard/server -- --email dev@local.test --reset
+ * Usage. It seeds an account that already exists and never creates one, so
+ * register in the local app first and pass that address:
+ *   npm run seed-dev -w @dashboard/server -- --email <address> --reset
  */
 
 /**
@@ -519,7 +520,7 @@ async function insertRows(
 
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
-  const email = argv.includes("--email") ? argv[argv.indexOf("--email") + 1] : "dev@local.test";
+  const email = argv.includes("--email") ? argv[argv.indexOf("--email") + 1] : undefined;
   const reset = argv.includes("--reset");
 
   if (!SEEDABLE_SCHEMA.test(config.DB_SCHEMA)) {
@@ -529,7 +530,14 @@ async function main(): Promise<void> {
         `the app_test fixtures are all off limits.`,
     );
   }
-  if (!email || email.startsWith("--")) throw new Error("--email needs a value");
+  // Required, with no default: dev accounts are registered by hand and come and
+  // go, so any address baked in here eventually names nobody.
+  if (!email || email.startsWith("--")) {
+    throw new Error(
+      "--email is required: register an account in the local app first, then " +
+        "seed it by that address. This script never creates users.",
+    );
+  }
 
   const user = await pool.query<{ id: string }>(
     `SELECT id FROM ${T.users} WHERE lower(email) = lower($1)`,
