@@ -97,6 +97,7 @@ export function SettingsPage() {
 
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
+  const [deletePw, setDeletePw] = useState("");
 
   const changePassword = useMutation({
     mutationFn: () =>
@@ -112,7 +113,8 @@ export function SettingsPage() {
   });
 
   const deleteAccount = useMutation({
-    mutationFn: () => api("/api/profile", { method: "DELETE" }),
+    mutationFn: () =>
+      api("/api/profile", { method: "DELETE", body: JSON.stringify({ password: deletePw }) }),
     onSuccess: () => {
       window.location.href = "/login";
     },
@@ -278,10 +280,23 @@ export function SettingsPage() {
         <Button variant="ghost" onClick={() => void logout()} className="w-full">
           Sign out
         </Button>
+        {/* The password proves identity; the confirm below prevents a slip.
+            They answer different questions, so both stay. Without this, anyone
+            at an unlocked device could erase the account with one click. */}
+        <Field label="Confirm with your password" htmlFor="delete-pw">
+          <Input
+            id="delete-pw"
+            type="password"
+            autoComplete="current-password"
+            value={deletePw}
+            onChange={(e) => setDeletePw(e.target.value)}
+          />
+        </Field>
         <Button
           variant="danger"
           className="w-full"
           loading={deleteAccount.isPending}
+          disabled={!deletePw}
           onClick={() => {
             // A native confirm, not a custom modal, deliberately: this
             // cascades through every table the account owns. Blunt, but

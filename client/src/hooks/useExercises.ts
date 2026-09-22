@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Exercise } from "@dashboard/shared";
 import { useAuth } from "@/auth/AuthProvider";
 import { gymApi } from "@/api/gym";
+import { invalidateSessionReaders } from "./invalidate";
 
 export const exercisesKey = (userId: string, dayType: number) =>
   ["exercises", userId, dayType] as const;
@@ -63,16 +64,15 @@ export function useExercises(dayType: number) {
   const renameExercise = useMutation({
     mutationFn: ({ oldName, newName }: { oldName: string; newName: string }) =>
       gymApi.renameExercise(oldName, dayType, newName),
-    // A rename touches EVERY day's template plus all history, so invalidate the
-    // whole exercises tree and everything that groups by exercise_name — not
-    // just this day's key. Scoping this narrowly is how a renamed exercise ends
-    // up showing its old name on another day until a refresh.
+    // A rename touches EVERY day's template plus all history: it rewrites
+    // exercise_name on every historical set, so the whole exercises tree AND
+    // every reader of sessions and sets must refetch — not just this day's
+    // key. Scoping this narrowly is how a renamed exercise ends up showing its
+    // old name on another day until a refresh.
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: ["exercises"] });
       void qc.invalidateQueries({ queryKey: ["exerciseNames"] });
-      void qc.invalidateQueries({ queryKey: ["workoutDay"] });
-      void qc.invalidateQueries({ queryKey: ["lastSession"] });
-      void qc.invalidateQueries({ queryKey: ["coaching"] });
+      invalidateSessionReaders(qc);
     },
   });
 

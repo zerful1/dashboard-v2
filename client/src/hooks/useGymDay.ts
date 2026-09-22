@@ -26,6 +26,8 @@ function initialDay(split: SplitConfig): number {
  */
 export function useGymDay(
   split: SplitConfig,
+  /** True until the user's real split has loaded. */
+  splitPending: boolean,
   lastLoggedDayType: number | null | undefined,
 ): GymDay {
   const [dayType, setDayType] = useState(() => initialDay(split));
@@ -44,6 +46,13 @@ export function useGymDay(
 
   useEffect(() => {
     if (userHasChosen.current) return;
+    // Nothing may be decided from DEFAULT_SPLIT. useSplit returns
+    // `data ?? DEFAULT_SPLIT`, so an unloaded split is indistinguishable from
+    // a default one - and whether today is a rest day depends on the REAL
+    // split. Deciding it early on a day the default calls rest latches the
+    // rest-day fallback below, after which the real split arriving cannot
+    // undo it. Same class as the Home first-paint flash, but sticky.
+    if (splitPending) return;
 
     const todayType = getTodayDayType(split);
     if (todayType !== "rest") {
@@ -54,7 +63,7 @@ export function useGymDay(
       setDayType(lastLoggedDayType);
       userHasChosen.current = true;
     }
-  }, [split, lastLoggedDayType]);
+  }, [split, splitPending, lastLoggedDayType]);
 
   const selectDay = (d: number) => {
     userHasChosen.current = true;

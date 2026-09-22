@@ -27,6 +27,60 @@ function renderPage() {
 
 afterEach(() => vi.restoreAllMocks());
 
+const PROFILE = {
+  user_id: "1",
+  display_name: "Alice",
+  avatar_path: null,
+  units: "kg",
+  timezone: "Europe/London",
+  updated_at: "",
+};
+
+/** Serves the page, and captures the DELETE it sends. Mocked by PATH. */
+function mockWithDelete() {
+  const calls: { path: string; init?: RequestInit }[] = [];
+  vi.spyOn(apiModule, "api").mockImplementation(async (path: string, init?: RequestInit) => {
+    if (path === "/api/auth/me") return { id: "1", email: "a@b.com" } as never;
+    if (path === "/api/profile" && (init?.method ?? "GET") === "GET") return PROFILE as never;
+    if (path === "/api/profile" && init?.method === "DELETE") {
+      calls.push({ path, init });
+      // Never resolves: onSuccess would assign window.location, which jsdom
+      // cannot perform. The body is captured at call time regardless.
+      return new Promise(() => {}) as never;
+    }
+    throw new Error(`unexpected ${init?.method ?? "GET"} ${path}`);
+  });
+  return calls;
+}
+
+describe("SettingsPage account deletion", () => {
+  it("keeps the delete button disabled until a password is typed", async () => {
+    mockWithDelete();
+    renderPage();
+    const button = await screen.findByRole("button", { name: /delete account/i });
+    expect(button).toBeDisabled();
+
+    await userEvent.type(screen.getByLabelText(/confirm with your password/i), "hunter2");
+    expect(button).toBeEnabled();
+  });
+
+  it("sends the typed password with the delete request", async () => {
+    const calls = mockWithDelete();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderPage();
+
+    await userEvent.type(
+      await screen.findByLabelText(/confirm with your password/i),
+      "hunter2",
+    );
+    await userEvent.click(screen.getByRole("button", { name: /delete account/i }));
+
+    await waitFor(() => expect(calls).toHaveLength(1));
+    expect(calls[0]!.init?.method).toBe("DELETE");
+    expect(JSON.parse(String(calls[0]!.init?.body))).toEqual({ password: "hunter2" });
+  });
+});
+
 describe("SettingsPage", () => {
   // The failure this pins is silent by construction: in TanStack Query v5 a
   // settled-with-error query has isLoading false and data undefined, so a

@@ -1,4 +1,5 @@
 import express, { type Express } from "express";
+import helmet from "helmet";
 import { sessionMiddleware } from "./middleware/session";
 import { errorHandler } from "./middleware/errorHandler";
 import { authRouter } from "./routes/auth";
@@ -21,7 +22,13 @@ export function createApp(): Express {
 
   // Required for `secure` cookies to be set behind a TLS-terminating proxy.
   app.set("trust proxy", 1);
-  app.disable("x-powered-by");
+
+  // CSP is OFF. The client uses inline style attributes - Motion writes
+  // transforms, Recharts sizes its SVG - which a default policy blocks, and a
+  // working policy needs its own pass with the built client in front of it.
+  // Everything else helmet sets is safe as-is, including the x-powered-by
+  // removal that used to be explicit above.
+  app.use(helmet({ contentSecurityPolicy: false }));
 
   app.use(express.json({ limit: "1mb" }));
 

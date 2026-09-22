@@ -306,6 +306,65 @@ interface CardioRow {
   calories_burned: number | null;
 }
 
+interface WeightRow {
+  id: string;
+  date: string;
+  weight_kg: number;
+  notes: string | null;
+}
+
+const WEIGHT_NOTES = [
+  "Post-holiday.",
+  "Morning, after gym.",
+  "Felt lighter than this.",
+  "Scale on carpet, probably off.",
+];
+
+/**
+ * Ninety days of weigh-ins ending YESTERDAY, so today is still loggable.
+ *
+ * THE SHAPE IS THE POINT, and it is the one knob here worth turning. A steady
+ * slope would make the OLS trend line sit exactly on the data and the chart
+ * would have nothing to say. This is a cut, then a plateau, then a slower cut:
+ * the trend runs visibly straight through a middle section that does not.
+ *
+ * Daily noise is ±0.35 kg, which is roughly real — water alone moves more than
+ * a day of deficit does, and a seed without it produces a suspiciously clean
+ * line that makes the 7-day delta look far more meaningful than it is.
+ */
+function generateWeights(rand: () => number, endDate: string): WeightRow[] {
+  const DAYS = 90;
+  const SKIP_RATE = 0.26;
+  const START_KG = 84.5;
+
+  const rows: WeightRow[] = [];
+  let trueWeight = START_KG;
+
+  for (let i = 0; i < DAYS; i++) {
+    // Walk forward from the start so the trend runs the right way round.
+    const date = shiftISO(endDate, -(DAYS - 1 - i));
+
+    // Three phases across the window: cut, plateau, slower cut.
+    const perDay = i < 34 ? -0.055 : i < 58 ? -0.004 : -0.032;
+    trueWeight += perDay;
+
+    // Not every day gets weighed. Real history has gaps, and a complete series
+    // hides the fact that the chart has to cope with them.
+    if (rand() < SKIP_RATE) continue;
+
+    const observed = trueWeight + (rand() - 0.5) * 0.7;
+    rows.push({
+      id: randomUUID(),
+      date,
+      // One decimal, like a bathroom scale reports.
+      weight_kg: Math.round(observed * 10) / 10,
+      notes: rand() < 0.06 ? WEIGHT_NOTES[Math.floor(rand() * WEIGHT_NOTES.length)]! : null,
+    });
+  }
+
+  return rows;
+}
+
 // ---------------------------------------------------------------------------
 // Generation
 // ---------------------------------------------------------------------------
@@ -493,12 +552,16 @@ async function main(): Promise<void> {
   const rand = mulberry32(20260824);
   const { sessions, sets, cardio } = generate(rand);
   const planted = plantEdgeCases(sessions, sets);
+  // Ends on HISTORY_END, the same yesterday the sessions stop at, so today is
+  // an empty slate on both the Weight page and Home.
+  const weights = generateWeights(rand, HISTORY_END);
 
   await withTransaction(async (client) => {
     if (reset) {
       // Sets and cardio go with the sessions via ON DELETE CASCADE.
       await client.query(`DELETE FROM ${T.workoutSessions} WHERE user_id = $1`, [userId]);
       await client.query(`DELETE FROM ${T.exercises} WHERE user_id = $1`, [userId]);
+      await client.query(`DELETE FROM ${T.bodyWeight} WHERE user_id = $1`, [userId]);
     }
 
     const templateRows = Object.entries(TEMPLATE).flatMap(([dayType, names]) =>
@@ -569,6 +632,13 @@ async function main(): Promise<void> {
         c.calories_burned,
       ]),
     );
+
+    await insertRows(
+      client,
+      T.bodyWeight,
+      ["id", "user_id", "date", "weight_kg", "notes"],
+      weights.map((w) => [w.id, userId, w.date, w.weight_kg, w.notes]),
+    );
   });
 
   const templateNames = new Set(Object.values(TEMPLATE).flat());
@@ -578,6 +648,11 @@ async function main(): Promise<void> {
 
   console.log(`Seeded ${email} in ${config.DB_SCHEMA}:`);
   console.log(`  sessions ${sessions.length}  sets ${sets.length}  cardio ${cardio.length}`);
+  console.log(
+    `  weights ${weights.length}: ${weights[0]!.weight_kg} -> ` +
+      `${weights[weights.length - 1]!.weight_kg} kg over ${weights[0]!.date} -> ` +
+      `${weights[weights.length - 1]!.date}`,
+  );
   console.log(`  ${sessions[0]!.date} -> ${sessions[sessions.length - 1]!.date}`);
   console.log(`  day names: ${[...new Set(sessions.map((s) => s.day_name))].join(", ")}`);
   console.log(`  history-only exercises (${historyOnly.length}): ${historyOnly.join(", ")}`);

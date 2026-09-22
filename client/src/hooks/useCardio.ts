@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CardioEntry } from "@dashboard/shared";
 import { useAuth } from "@/auth/AuthProvider";
 import { gymApi, type CardioInput } from "@/api/gym";
+import { invalidateSessionReaders } from "./invalidate";
 
 export function useCardio(sessionId: string | null, date: string, dayType: number) {
   const qc = useQueryClient();
@@ -17,9 +18,11 @@ export function useCardio(sessionId: string | null, date: string, dayType: numbe
 
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["cardio"] });
-    // Adding cardio can CREATE the session, so the day must refetch too — the
-    // session id this hook is keyed by did not exist a moment ago.
-    void qc.invalidateQueries({ queryKey: ["workoutDay"] });
+    // Adding cardio can CREATE the session, so everything that reads sessions
+    // must refetch — the session id this hook is keyed by did not exist a
+    // moment ago. Not just workoutDay: Home, History and the rest-day fallback
+    // all read the row that just appeared.
+    invalidateSessionReaders(qc);
   };
 
   const addCardio = useMutation({

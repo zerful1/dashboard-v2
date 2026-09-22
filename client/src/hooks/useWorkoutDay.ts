@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { WorkoutSet } from "@dashboard/shared";
 import { useAuth } from "@/auth/AuthProvider";
 import { gymApi, type SetInput } from "@/api/gym";
+import { invalidateSessionReaders } from "./invalidate";
 
 export const workoutDayKey = (userId: string, dayType: number, date: string) =>
   ["workoutDay", userId, dayType, date] as const;
@@ -74,11 +75,9 @@ export function useWorkoutDay(dayType: number, date: string) {
     onError: (_e, _v, ctx) => {
       if (ctx?.previous) qc.setQueryData(key, ctx.previous);
     },
-    onSettled: () => {
-      void qc.invalidateQueries({ queryKey: key });
-      // The set just logged changes the recommendation.
-      void qc.invalidateQueries({ queryKey: ["coaching"] });
-    },
+    // ["workoutDay"] is a prefix of `key`, so this hook's own query is covered
+    // along with every other reader of sessions and sets.
+    onSettled: () => invalidateSessionReaders(qc),
   });
 
   const deleteSet = useMutation({
@@ -95,10 +94,7 @@ export function useWorkoutDay(dayType: number, date: string) {
     onError: (_e, _v, ctx) => {
       if (ctx?.previous) qc.setQueryData(key, ctx.previous);
     },
-    onSettled: () => {
-      void qc.invalidateQueries({ queryKey: key });
-      void qc.invalidateQueries({ queryKey: ["coaching"] });
-    },
+    onSettled: () => invalidateSessionReaders(qc),
   });
 
   return {

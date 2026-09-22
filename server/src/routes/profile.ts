@@ -3,7 +3,10 @@ import { z } from "zod";
 import { requireAuth } from "../middleware/requireAuth";
 import { validate } from "../middleware/validate";
 import { getProfile, updateProfile, deleteAccount } from "../repositories/profiles";
-import { NotFound } from "../errors";
+import { findUserByIdWithPassword } from "../repositories/users";
+import { verifyPassword } from "../services/password";
+import { NotFound, Unauthorized } from "../errors";
+import { PASSWORD_MAX_LENGTH } from "@dashboard/shared";
 
 export const profileRouter = Router();
 
@@ -47,8 +50,21 @@ profileRouter.patch("/", validate({ body: patchBody }), async (req, res, next) =
   }
 });
 
-profileRouter.delete("/", async (req, res, next) => {
+// Not `passwordField`: this CHECKS a password, it does not set one, so the
+// length policy must not apply - a legacy short password still has to work.
+const deleteBody = z.object({ password: z.string().min(1).max(PASSWORD_MAX_LENGTH) });
+
+// Deleting cascades through every table the account owns. A bare authenticated
+// request let anyone at an unlocked device erase it with one click and a
+// confirm; the password proves it is the account holder asking.
+profileRouter.delete("/", validate({ body: deleteBody }), async (req, res, next) => {
   try {
+    const { password } = req.body as z.infer<typeof deleteBody>;
+    const user = await findUserByIdWithPassword(req.userId);
+    if (!user || !(await verifyPassword(user.password_hash, password))) {
+      next(new Unauthorized("Password is incorrect"));
+      return;
+    }
     await deleteAccount(req.userId);
     req.session.destroy(() => {
       res.clearCookie("dash.sid");

@@ -6,8 +6,13 @@ import { HistoryTab } from "../src/features/gym/HistoryTab";
 import { DEFAULT_SPLIT } from "@dashboard/shared";
 import * as apiModule from "../src/lib/api";
 
+// Mutable so one test can render with NO user. vi.mock is hoisted above every
+// import, so the state it reads has to be hoisted with it.
+const auth = vi.hoisted(() => ({
+  user: { id: "u1", email: "a@b.com" } as { id: string; email: string } | null,
+}));
 vi.mock("@/auth/AuthProvider", () => ({
-  useAuth: () => ({ user: { id: "u1", email: "a@b.com" }, loading: false }),
+  useAuth: () => ({ user: auth.user, loading: false }),
 }));
 
 const session = (id: string, date: string, dayName: string) => ({
@@ -38,7 +43,10 @@ function renderTab(onEdit = vi.fn()) {
   return onEdit;
 }
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  auth.user = { id: "u1", email: "a@b.com" };
+  vi.restoreAllMocks();
+});
 
 describe("HistoryTab", () => {
   it("lists sessions", async () => {
@@ -49,6 +57,24 @@ describe("HistoryTab", () => {
     });
     renderTab();
     expect(await screen.findByText("2026-08-16")).toBeInTheDocument();
+  });
+
+  it("shows Loading, not the empty state, while the query is disabled", async () => {
+    // The plan suggested a request that never resolves - but an ENABLED query
+    // that hangs has isLoading true as well, so that test passes either way.
+    // The defect is a DISABLED query: while auth resolves, enabled is false,
+    // isLoading is false, and the old guard rendered "No sessions logged yet"
+    // over a list that simply had not been asked for yet.
+    auth.user = null;
+    mockByPath({
+      "/api/split": DEFAULT_SPLIT,
+      "/api/workouts/day-names": [],
+      "/api/workouts/sessions": [],
+    });
+    renderTab();
+
+    expect(screen.getByText("Loading…")).toBeInTheDocument();
+    expect(screen.queryByText(/no sessions logged yet/i)).toBeNull();
   });
 
   it("surfaces retired split names as chips without a hardcoded list", async () => {
