@@ -18,8 +18,9 @@ Specs, plans and reviews for this project are **not here**. They are in the
 sibling v1 repo:
 
 ```
-C:\Users\zerful\Desktop\dashboard    branch: docs/dashboard-v2-design
-                                     path:   docs/superpowers/
+C:\Users\zerful\Desktop\daboards\dashboard-v1    branch: docs/dashboard-v2-design
+                                                 path:   docs/superpowers/
+                                                 repo:   github.com/zerful1/dashboard
 ```
 
 That path is this machine’s; the repo is private but cloneable, so on any other
