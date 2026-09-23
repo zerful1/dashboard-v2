@@ -24,6 +24,8 @@ const schema = z.object({
   RESEND_API_KEY: z.string().default(""),
   RESEND_FROM: z.string().default("Dashboard <onboarding@resend.dev>"),
   APP_ORIGIN: z.string().url().default("http://localhost:5173"),
+  /** Who may register: empty = nobody new, "*" = anyone, or a list. See signups.ts. */
+  SIGNUP_ALLOWLIST: z.string().default(""),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().default(3001),
 });

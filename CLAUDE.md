@@ -266,6 +266,12 @@ The proxy exists so the browser sees **one origin**. Without it the session
 cookie is cross-site and is dropped, and nothing authenticated works locally
 however correct the server is.
 
+**Sign-ups are closed unless `SIGNUP_ALLOWLIST` says otherwise.** Unset means
+nobody new can register, and production relies on that: holding other people's
+health data brings legal duties this app is not set up for. To register locally,
+set `SIGNUP_ALLOWLIST=*` in `.env`, or put it in front of `npm run dev:api` for
+one run. The test suite sets `*` in `server/vitest.config.mts`.
+
 `npm run dev:web:lan` adds `--host` for testing on a real device. It binds to
 `0.0.0.0`, and because `/api` is proxied through that same process, **it puts
 the app and its `app_dev` data on the local network.** Fine at home, not fine on

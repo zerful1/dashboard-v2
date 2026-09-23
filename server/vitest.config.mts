@@ -15,6 +15,10 @@ export default defineConfig({
     env: {
       NODE_ENV: "test",
       DB_SCHEMA: "app_test",
+      // Sign-ups are closed by default, and nearly every suite registers users.
+      // The closed and listed policies are tested by handing one to createApp
+      // (tests/signups.test.ts), so the default here is open.
+      SIGNUP_ALLOWLIST: "*",
     },
   },
 });
