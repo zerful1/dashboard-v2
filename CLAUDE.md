@@ -280,5 +280,6 @@ by that address.
 
 ## Commits
 
-No `Co-Authored-By` trailers. Stage explicit paths rather than `git add -A` —
+No `Co-Authored-By` trailers, and no "Generated with Claude Code" line in
+commits or PR descriptions. Stage explicit paths rather than `git add -A` —
 that has swept an unrelated file into a commit before.
