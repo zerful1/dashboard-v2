@@ -18,8 +18,9 @@ Specs, plans and reviews for this project are **not here**. They are in the
 sibling v1 repo:
 
 ```
-C:\Users\zerful\Desktop\dashboard    branch: docs/dashboard-v2-design
-                                     path:   docs/superpowers/
+C:\Users\zerful\Desktop\daboards\dashboard-v1    branch: docs/dashboard-v2-design
+                                                 path:   docs/superpowers/
+                                                 repo:   github.com/zerful1/dashboard
 ```
 
 That path is this machine’s; the repo is private but cloneable, so on any other
@@ -270,8 +271,10 @@ however correct the server is.
 the app and its `app_dev` data on the local network.** Fine at home, not fine on
 shared wifi. It is a separate script rather than the default for that reason.
 
-`npm run seed-dev -w @dashboard/server -- --email dev@local.test --reset`
-populates an empty `app_dev`, which otherwise renders every gym screen blank.
+`npm run seed-dev -w @dashboard/server -- --email <address> --reset` populates
+an account in `app_dev`, which otherwise renders every gym screen blank. It
+never creates users: register an account in the local app first, then seed it
+by that address.
 
 ---
 
