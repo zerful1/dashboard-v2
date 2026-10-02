@@ -1,0 +1,51 @@
+import type { PoolClient } from "pg";
+import { T } from "../config";
+import type { FoodInput } from "@dashboard/shared";
+
+/** The nutrition columns, in one order shared by every insert and select. */
+export const NUTRITION_COLUMNS = [
+  "serving_description", "serving_grams",
+  "kcal_per_serving", "protein_per_serving", "fat_per_serving", "carbs_per_serving",
+  "kcal_per_100g", "protein_per_100g", "fat_per_100g", "carbs_per_100g",
+  "fibre_per_100g", "sugar_per_100g", "sat_fat_per_100g", "salt_per_100g",
+  "fibre_per_serving", "sugar_per_serving", "sat_fat_per_serving", "salt_per_serving",
+] as const satisfies readonly (keyof FoodInput)[];
+
+// Every nutrition column but the description is numeric, which arrives as a
+// string without the cast.
+export const ITEM_COLS = [
+  "id", "user_id", "name", "brand", "is_favourite", "external_source", "external_id", "barcode", "created_at",
+  "serving_description",
+  ...NUTRITION_COLUMNS.filter((c) => c !== "serving_description").map((c) => `${c}::float8 AS ${c}`),
+].join(", ");
+
+/**
+ * Store `food` in the user's library and return its id, inside the caller's
+ * transaction. Search foods upsert on (user_id, external_source, external_id),
+ * refreshing their values, so logging one product twice keeps one row. Manual
+ * foods always insert: they have no external id, and NULLs never conflict.
+ */
+export async function upsertFoodItem(client: PoolClient, userId: string, food: FoodInput): Promise<string> {
+  const columns = ["user_id", "external_source", "external_id", "name", "brand", ...NUTRITION_COLUMNS];
+  const values = [userId, food.source, food.external_id, food.name, food.brand, ...NUTRITION_COLUMNS.map((c) => food[c])];
+  const onConflict =
+    food.source === "manual"
+      ? ""
+      : `ON CONFLICT (user_id, external_source, external_id) DO UPDATE SET ${["name", "brand", ...NUTRITION_COLUMNS]
+          .map((c) => `${c} = EXCLUDED.${c}`)
+          .join(", ")}`;
+  const { rows } = await client.query<{ id: string }>(
+    `INSERT INTO ${T.foodItems} (${columns.join(", ")})
+     VALUES (${values.map((_, i) => `$${i + 1}`).join(", ")})
+     ${onConflict}
+     RETURNING id`,
+    values,
+  );
+  return rows[0]!.id;
+}
+
+/** Whether `id` is one of `userId`'s foods. Linking to anyone else's would leak it through Recent. */
+export async function ownsFoodItem(client: PoolClient, userId: string, id: string): Promise<boolean> {
+  const res = await client.query(`SELECT 1 FROM ${T.foodItems} WHERE user_id = $1 AND id = $2`, [userId, id]);
+  return (res.rowCount ?? 0) > 0;
+}
