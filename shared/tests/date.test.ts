@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getDayOfYear, getWeekOfYear, shiftISO, todayISO } from '../src/domain/date'
+import { daysBetweenISO, getDayOfYear, getWeekOfYear, shiftISO, todayISO } from '../src/domain/date'
 
 describe('getDayOfYear', () => {
   it('returns 1 for Jan 1', () => {
@@ -59,5 +59,17 @@ describe('todayISO', () => {
     const ahead = todayISO('Pacific/Kiritimati')
     const behind = todayISO('Pacific/Midway')
     expect(ahead >= behind).toBe(true)
+  })
+})
+
+describe('daysBetweenISO', () => {
+  it('counts whole days, signed', () => {
+    expect(daysBetweenISO('2026-09-01', '2026-09-28')).toBe(27)
+    expect(daysBetweenISO('2026-09-28', '2026-09-01')).toBe(-27)
+    expect(daysBetweenISO('2026-09-01', '2026-09-01')).toBe(0)
+  })
+
+  it('is not moved by the October clock change', () => {
+    expect(daysBetweenISO('2026-10-24', '2026-10-26')).toBe(2)
   })
 })

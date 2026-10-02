@@ -16,6 +16,7 @@ export * from "./domain/nutrition/serving";
 export * from "./domain/nutrition/labels";
 export * from "./domain/nutrition/dedup";
 export * from "./domain/nutrition/tdee";
+export * from "./domain/nutrition/tdeeInputs";
 export * from "./domain/nutrition/adherence";
 export * from "./domain/nutrition/barcode";
 export * from "./domain/nutrition/composition";
