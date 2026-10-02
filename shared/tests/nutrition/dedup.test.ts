@@ -16,6 +16,7 @@ function e(partial: Partial<FoodLogEntry>): FoodLogEntry {
     protein_g: 10,
     fat_g: 1,
     carbs_g: 10,
+    fibre_g: null, sugar_g: null, sat_fat_g: null, salt_g: null,
   }
 }
 

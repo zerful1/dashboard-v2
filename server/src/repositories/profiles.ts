@@ -8,6 +8,11 @@ export interface ProfilePatch {
   timezone?: string;
 }
 
+// birth_year is smallint, which node-pg returns as a number; height_cm is
+// numeric, which would arrive as a string without the cast.
+const PROFILE_COLS = `user_id, display_name, avatar_path, units, timezone, updated_at,
+       height_cm::float8 AS height_cm, birth_year, sex, activity_level`;
+
 /**
  * Every function here takes `userId` FIRST and scopes its WHERE by it.
  *
@@ -18,7 +23,7 @@ export interface ProfilePatch {
 
 export async function getProfile(userId: string): Promise<Profile | null> {
   const { rows } = await pool.query<Profile>(
-    `SELECT user_id, display_name, avatar_path, units, timezone, updated_at
+    `SELECT ${PROFILE_COLS}
        FROM ${T.profiles}
       WHERE user_id = $1`,
     [userId],
@@ -37,7 +42,7 @@ export async function updateProfile(
             timezone     = COALESCE($4, timezone),
             updated_at   = now()
       WHERE user_id = $1
-      RETURNING user_id, display_name, avatar_path, units, timezone, updated_at`,
+      RETURNING ${PROFILE_COLS}`,
     [userId, patch.display_name ?? null, patch.units ?? null, patch.timezone ?? null],
   );
   return rows[0] ?? null;
