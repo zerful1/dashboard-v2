@@ -30,6 +30,15 @@ export default defineConfig({
       },
     },
   },
+  dev: {
+    // RSBuild 2 compiles dynamic imports on first request by default
+    // (lazyCompilation: { imports: true }). Every page here is React.lazy, and
+    // under that default /gym could sit on the Suspense fallback indefinitely
+    // while its chunk came back 200 through lazy-compilation-proxy. The built
+    // client never did. Eager compilation costs a slower first start and is
+    // dev-only: `rsbuild build` is unaffected.
+    lazyCompilation: false,
+  },
   output: {
     distPath: { root: 'dist' },
   },
