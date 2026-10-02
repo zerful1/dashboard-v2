@@ -1,11 +1,15 @@
 import { pool, withTransaction } from "../db/pool";
 import { T } from "../config";
-import type { Profile, WeightUnit } from "@dashboard/shared";
+import type { ActivityLevel, Profile, Sex, WeightUnit } from "@dashboard/shared";
 
 export interface ProfilePatch {
   display_name?: string;
   units?: WeightUnit;
   timezone?: string;
+  height_cm?: number;
+  birth_year?: number;
+  sex?: Sex;
+  activity_level?: ActivityLevel;
 }
 
 // birth_year is smallint, which node-pg returns as a number; height_cm is
@@ -35,15 +39,24 @@ export async function updateProfile(
   userId: string,
   patch: ProfilePatch,
 ): Promise<Profile | null> {
+  // COALESCE keeps an unmentioned field as it was. The consequence is that a
+  // body detail can be changed but not cleared, which the hint never needs.
   const { rows } = await pool.query<Profile>(
     `UPDATE ${T.profiles}
-        SET display_name = COALESCE($2, display_name),
-            units        = COALESCE($3, units),
-            timezone     = COALESCE($4, timezone),
-            updated_at   = now()
+        SET display_name   = COALESCE($2, display_name),
+            units          = COALESCE($3, units),
+            timezone       = COALESCE($4, timezone),
+            height_cm      = COALESCE($5, height_cm),
+            birth_year     = COALESCE($6, birth_year),
+            sex            = COALESCE($7, sex),
+            activity_level = COALESCE($8, activity_level),
+            updated_at     = now()
       WHERE user_id = $1
       RETURNING ${PROFILE_COLS}`,
-    [userId, patch.display_name ?? null, patch.units ?? null, patch.timezone ?? null],
+    [
+      userId, patch.display_name ?? null, patch.units ?? null, patch.timezone ?? null,
+      patch.height_cm ?? null, patch.birth_year ?? null, patch.sex ?? null, patch.activity_level ?? null,
+    ],
   );
   return rows[0] ?? null;
 }

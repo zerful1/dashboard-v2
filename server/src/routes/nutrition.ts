@@ -4,8 +4,16 @@ import { requireAuth } from "../middleware/requireAuth";
 import { validate } from "../middleware/validate";
 import { listTargets, insertTarget } from "../repositories/nutritionTargets";
 import { NotFound } from "../errors";
-import { addEntry, copyDay, deleteEntry, listDiary, listRecents, rescaleEntry } from "../repositories/foodLog";
+import {
+  addEntry, copyDay, deleteEntry, listDiary, listEntryCalories, listRecents, rescaleEntry,
+} from "../repositories/foodLog";
 import type { DiaryEntryInput } from "@dashboard/shared";
+import {
+  distinctLoggedDates, mifflinStJeor, shiftISO, tdeeFromLog, TDEE_WINDOW_DAYS,
+} from "@dashboard/shared";
+import type { BodyWeightEntry, Profile, TdeeHint } from "@dashboard/shared";
+import { getProfile } from "../repositories/profiles";
+import { listWeights } from "../repositories/bodyWeight";
 
 export const nutritionRouter = Router();
 
@@ -163,6 +171,44 @@ nutritionRouter.delete("/diary/:id", validate({ params: idParam }), async (req, 
 nutritionRouter.get("/recents", async (req, res, next) => {
   try {
     res.json(await listRecents(req.userId));
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** The formula hint, or null until all four body details and a weigh-in exist. */
+function formulaHint(profile: Profile | null, latest: BodyWeightEntry | null, today: string): TdeeHint["formula"] {
+  if (!profile || !latest) return null;
+  const { height_cm, birth_year, sex, activity_level } = profile;
+  if (height_cm === null || birth_year === null || sex === null || activity_level === null) return null;
+  // A hint, so the year is precise enough: nobody's maintenance moves on their birthday.
+  const age = Number(today.slice(0, 4)) - birth_year;
+  return {
+    kcal: mifflinStJeor({ weightKg: latest.weight_kg, heightCm: height_cm, age, sex, activity: activity_level }),
+    weight_kg: latest.weight_kg,
+    age,
+  };
+}
+
+nutritionRouter.get("/tdee", validate({ query: z.object({ today: isoDate }) }), async (req, res, next) => {
+  try {
+    const { today } = req.query as { today: string };
+    // The 28 days ending YESTERDAY: today is still being eaten.
+    const windowStart = shiftISO(today, -TDEE_WINDOW_DAYS);
+    const windowEnd = shiftISO(today, -1);
+    const [profile, weightsNewestFirst, entries] = await Promise.all([
+      getProfile(req.userId),
+      listWeights(req.userId),
+      listEntryCalories(req.userId, windowStart, windowEnd),
+    ]);
+    const latest = weightsNewestFirst.find((w) => w.date <= today) ?? null;
+    const adaptive = tdeeFromLog({ entries, weights: [...weightsNewestFirst].reverse(), windowStart, windowEnd });
+    const body: TdeeHint = {
+      formula: formulaHint(profile, latest, today),
+      adaptive: adaptive && { kcal: adaptive.kcal, days_logged: adaptive.daysLogged, weigh_ins: adaptive.weighIns },
+      days_logged: distinctLoggedDates(entries).length,
+    };
+    res.json(body);
   } catch (err) {
     next(err);
   }

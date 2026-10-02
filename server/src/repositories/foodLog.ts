@@ -124,3 +124,18 @@ export async function listRecents(userId: string, limit = 30): Promise<RecentFoo
     item: entry.food_item_id ? (byId.get(entry.food_item_id) ?? null) : null,
   }));
 }
+
+/** Calories per entry between two dates inclusive: the TDEE hint's intake. */
+export async function listEntryCalories(
+  userId: string,
+  from: string,
+  to: string,
+): Promise<{ date: string; calories: number }[]> {
+  const { rows } = await pool.query<{ date: string; calories: number }>(
+    `SELECT date::text AS date, calories::float8 AS calories
+       FROM ${T.foodLogEntries}
+      WHERE user_id = $1 AND date BETWEEN $2 AND $3`,
+    [userId, from, to],
+  );
+  return rows;
+}
