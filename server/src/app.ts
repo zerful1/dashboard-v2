@@ -9,6 +9,7 @@ import { splitRouter } from "./routes/split";
 import { exercisesRouter } from "./routes/exercises";
 import { workoutsRouter } from "./routes/workouts";
 import { cardioRouter } from "./routes/cardio";
+import { nutritionRouter } from "./routes/nutrition";
 import { pool } from "./db/pool";
 import { config } from "./config";
 import { parseSignupPolicy, type SignupPolicy } from "./signups";
@@ -84,6 +85,7 @@ export function createApp(options: { signups?: SignupPolicy } = {}): Express {
   app.use("/api/exercises", exercisesRouter);
   app.use("/api/workouts", workoutsRouter);
   app.use("/api/cardio", cardioRouter);
+  app.use("/api/nutrition", nutritionRouter);
 
   app.use(errorHandler);
   return app;
