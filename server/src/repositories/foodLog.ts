@@ -1,7 +1,8 @@
 import { pool, withTransaction } from "../db/pool";
 import { T } from "../config";
-import type { DiaryEntryInput, FoodLogEntry } from "@dashboard/shared";
-import { ownsFoodItem, upsertFoodItem } from "./foodItems";
+import { dedupRecents } from "@dashboard/shared";
+import type { DiaryEntryInput, FoodLogEntry, RecentFood } from "@dashboard/shared";
+import { listFoodItemsByIds, ownsFoodItem, upsertFoodItem } from "./foodItems";
 
 const NUMERIC = ["quantity", "calories", "protein_g", "fat_g", "carbs_g", "fibre_g", "sugar_g", "sat_fat_g", "salt_g"] as const;
 const SNAPSHOT = ["calories", "protein_g", "fat_g", "carbs_g", "fibre_g", "sugar_g", "sat_fat_g", "salt_g"] as const;
@@ -98,4 +99,28 @@ export async function copyDay(userId: string, from: string, to: string): Promise
     [userId, from, to],
   );
   return rows;
+}
+
+/**
+ * Distinct foods the user logged most recently, each with its latest entry
+ * (whose amount is the default next time) and its library item when linked.
+ * Two scoped queries rather than a join, so an item can only ever come from
+ * the caller's own library.
+ */
+export async function listRecents(userId: string, limit = 30): Promise<RecentFood[]> {
+  const { rows } = await pool.query<FoodLogEntry>(
+    `SELECT ${ENTRY_COLS} FROM ${T.foodLogEntries}
+      WHERE user_id = $1
+      ORDER BY logged_at DESC, id DESC
+      LIMIT 200`,
+    [userId],
+  );
+  const recents = dedupRecents(rows, limit);
+  const ids = [...new Set(recents.map((e) => e.food_item_id).filter((v): v is string => v !== null))];
+  const items = ids.length > 0 ? await listFoodItemsByIds(userId, ids) : [];
+  const byId = new Map(items.map((i) => [i.id, i]));
+  return recents.map((entry) => ({
+    entry,
+    item: entry.food_item_id ? (byId.get(entry.food_item_id) ?? null) : null,
+  }));
 }

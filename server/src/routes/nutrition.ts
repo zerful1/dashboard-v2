@@ -4,7 +4,7 @@ import { requireAuth } from "../middleware/requireAuth";
 import { validate } from "../middleware/validate";
 import { listTargets, insertTarget } from "../repositories/nutritionTargets";
 import { NotFound } from "../errors";
-import { addEntry, copyDay, deleteEntry, listDiary, rescaleEntry } from "../repositories/foodLog";
+import { addEntry, copyDay, deleteEntry, listDiary, listRecents, rescaleEntry } from "../repositories/foodLog";
 import type { DiaryEntryInput } from "@dashboard/shared";
 
 export const nutritionRouter = Router();
@@ -155,6 +155,14 @@ nutritionRouter.delete("/diary/:id", validate({ params: idParam }), async (req, 
       return;
     }
     res.sendStatus(204);
+  } catch (err) {
+    next(err);
+  }
+});
+
+nutritionRouter.get("/recents", async (req, res, next) => {
+  try {
+    res.json(await listRecents(req.userId));
   } catch (err) {
     next(err);
   }

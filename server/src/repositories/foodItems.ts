@@ -1,6 +1,7 @@
 import type { PoolClient } from "pg";
+import { pool } from "../db/pool";
 import { T } from "../config";
-import type { FoodInput } from "@dashboard/shared";
+import type { FoodInput, FoodItem } from "@dashboard/shared";
 
 /** The nutrition columns, in one order shared by every insert and select. */
 export const NUTRITION_COLUMNS = [
@@ -48,4 +49,12 @@ export async function upsertFoodItem(client: PoolClient, userId: string, food: F
 export async function ownsFoodItem(client: PoolClient, userId: string, id: string): Promise<boolean> {
   const res = await client.query(`SELECT 1 FROM ${T.foodItems} WHERE user_id = $1 AND id = $2`, [userId, id]);
   return (res.rowCount ?? 0) > 0;
+}
+
+export async function listFoodItemsByIds(userId: string, ids: string[]): Promise<FoodItem[]> {
+  const { rows } = await pool.query<FoodItem>(
+    `SELECT ${ITEM_COLS} FROM ${T.foodItems} WHERE user_id = $1 AND id = ANY($2::uuid[])`,
+    [userId, ids],
+  );
+  return rows;
 }
