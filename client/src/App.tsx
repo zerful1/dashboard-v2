@@ -6,6 +6,7 @@ import { AuthProvider } from "@/auth/AuthProvider";
 import { ApiError } from "@/lib/api";
 import { router } from "@/router";
 import { MAX_AGE, persister } from "@/lib/persister";
+import { shouldPersistQuery } from "@/lib/persistFilter";
 
 /**
  * ERROR PRESENTATION — the whole rule, in one sentence:
@@ -69,7 +70,9 @@ export function App() {
         // Bump on ANY change to a cached query shape. Without it a restored
         // cache from the previous deploy is handed to components expecting the
         // new shape, which fails far from the cause.
-        buster: "v1",
+        // v2: Profile gained the body-detail fields (nutrition, phase 1).
+        buster: "v2",
+        dehydrateOptions: { shouldDehydrateQuery: shouldPersistQuery },
       }}
     >
       <AuthProvider>
