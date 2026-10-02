@@ -12,8 +12,9 @@ import {
 } from "../repositories/users";
 import { createResetToken, consumeResetToken } from "../repositories/passwordResets";
 import { sendPasswordResetEmail } from "../services/email";
-import { Unauthorized, BadRequest, Conflict } from "../errors";
+import { Unauthorized, BadRequest, Conflict, Forbidden } from "../errors";
 import { config } from "../config";
+import { signupAllowed, type SignupPolicy } from "../signups";
 import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from "@dashboard/shared";
 
 export const authRouter = Router();
@@ -56,6 +57,17 @@ function regenerate(req: import("express").Request): Promise<void> {
 authRouter.post("/register", validate({ body: credentials }), async (req, res, next) => {
   try {
     const { email, password } = req.body as z.infer<typeof credentials>;
+
+    // Before hashing and before the database: a refused sign-up costs nothing
+    // and creates nothing. A plain 403 rather than the deliberately vague 400
+    // below. It does tell a caller whether an address is on the allowlist -
+    // acceptable because that list is empty in production and only ever holds
+    // a demo address, never a real person's.
+    if (!signupAllowed(req.app.locals.signupPolicy as SignupPolicy, email)) {
+      next(new Forbidden("Sign-ups are closed"));
+      return;
+    }
+
     const passwordHash = await hashPassword(password);
     const user = await createUserWithProfile(email, passwordHash);
 

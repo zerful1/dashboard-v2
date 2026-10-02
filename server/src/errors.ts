@@ -36,6 +36,16 @@ export class NotFound extends AppError {
   }
 }
 
+/**
+ * A policy refusal that reveals nothing about any account, such as closed
+ * sign-ups. Never for someone else's row: that is NotFound, for the reason above.
+ */
+export class Forbidden extends AppError {
+  constructor(message = "Forbidden") {
+    super(403, message, "forbidden");
+  }
+}
+
 export class Conflict extends AppError {
   constructor(message = "Already exists") {
     super(409, message, "conflict");

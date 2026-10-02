@@ -11,14 +11,21 @@ import { workoutsRouter } from "./routes/workouts";
 import { cardioRouter } from "./routes/cardio";
 import { pool } from "./db/pool";
 import { config } from "./config";
+import { parseSignupPolicy, type SignupPolicy } from "./signups";
 
 /**
  * Builds the Express app. A factory rather than a module-level singleton so tests
  * can construct isolated instances, and so nothing mutable lives at module scope
  * where concurrent serverless invocations would share it.
+ *
+ * `signups` defaults to SIGNUP_ALLOWLIST. Tests pass one explicitly to exercise
+ * a closed or listed policy while the rest of the suite registers freely.
  */
-export function createApp(): Express {
+export function createApp(options: { signups?: SignupPolicy } = {}): Express {
   const app = express();
+
+  // Per app instance, read by the register route through req.app.locals.
+  app.locals.signupPolicy = options.signups ?? parseSignupPolicy(config.SIGNUP_ALLOWLIST);
 
   // Required for `secure` cookies to be set behind a TLS-terminating proxy.
   app.set("trust proxy", 1);
