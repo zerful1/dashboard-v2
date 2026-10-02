@@ -27,7 +27,7 @@ Run from the repo root, not here:
 - **Errors: a form submission renders its own inline error next to its
   controls; everything else toasts.** Inline is `FormError` (whole-submission)
   or `Field`'s `error` (one field). Everything else — autosaves, background
-  refetches, mutations — goes to the app-wide toast wired in `App.tsx`, which
+  refetches, mutations — goes to the app-wide toast in `src/lib/queryClient.ts`, which
   is also the only place a failed *query* can surface, since v5 has no
   per-query `onError`. A query whose page cannot render without it may render
   its own error state instead, and then it opts out with

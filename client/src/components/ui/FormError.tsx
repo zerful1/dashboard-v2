@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 /**
  * The inline half of the client's two error mechanisms: a form submission
  * renders its own error next to its controls, and everything else toasts (the
- * whole rule is in App.tsx). This is the banner for a submission that failed
+ * whole rule is in lib/queryClient.ts). This is the banner for a submission that failed
  * as a whole — a field that failed on its own belongs in `Field`'s `error`.
  *
  * `role="alert"` because the banner appears without the user moving focus, and

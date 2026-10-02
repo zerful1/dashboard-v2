@@ -229,8 +229,14 @@ band of viewport widths with no navigation at all, and jsdom never evaluates
 media queries so no test will catch it.
 
 **Optimistic mutations**: `onMutate` snapshots and writes, `onError` rolls back
-*only*, `onSettled` invalidates. The global handler in `App.tsx` owns the
-message — per-hook handlers never touch UI, so one failure produces one message.
+*only*, `onSettled` invalidates. The global handler owns the message — per-hook
+handlers never touch UI, so one failure produces one message. It lives on the
+**`MutationCache`** in `client/src/lib/queryClient.ts`, and must stay there:
+TanStack merges a hook's options over `defaultOptions.mutations` with a plain
+spread, so a handler there is replaced by every hook's own rollback `onError`,
+and failures go unreported. Writes also spread `failOffline`
+(`client/src/lib/failOffline.ts`), because TanStack's default pauses a write
+while offline and replays it later instead of failing it.
 
 ---
 

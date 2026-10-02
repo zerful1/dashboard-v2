@@ -49,7 +49,7 @@ export function useDiary(date: string, { enabled = true }: { enabled?: boolean }
       qc.setQueryData<FoodLogEntry[]>(k, [...(previous ?? []), optimistic]);
       return { k, previous };
     },
-    // Roll back only. The MutationCache default in App.tsx owns the message.
+    // Roll back only. The MutationCache in lib/queryClient.ts owns the message.
     onError: (_e, _v, ctx) => {
       if (ctx?.previous) qc.setQueryData(ctx.k, ctx.previous);
     },

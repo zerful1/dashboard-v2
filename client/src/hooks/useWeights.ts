@@ -54,7 +54,7 @@ export function useWeights() {
 
       return { previous };
     },
-    // Roll back only. The global MutationCache handler in App.tsx owns the
+    // Roll back only. The global MutationCache handler (lib/queryClient.ts) owns the
     // message, so per-hook handlers never touch UI — one failure, one message.
     onError: (_e, _v, ctx) => {
       if (ctx?.previous) qc.setQueryData(key, ctx.previous);
