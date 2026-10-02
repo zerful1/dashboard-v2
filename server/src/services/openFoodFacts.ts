@@ -12,8 +12,15 @@ const USER_AGENT = "dashboard-v2/1.0 (personal nutrition tracker)";
 export interface OffProduct {
   code?: string | number;
   product_name?: string;
-  brands?: string;
+  /** Search-a-licious sends an array; the v2 product endpoint sends a string. */
+  brands?: string | string[];
   nutriments?: Record<string, unknown>;
+}
+
+/** One display string from either shape of `brands`, or undefined when there is none. */
+function brandOf(brands: OffProduct["brands"]): string | undefined {
+  const s = Array.isArray(brands) ? brands.filter(Boolean).join(", ") : brands;
+  return s || undefined;
 }
 
 const num = (v: unknown): number | null => {
@@ -41,7 +48,7 @@ export function mapSearchHit(p: OffProduct): FoodHit | null {
     source: "off",
     externalId: String(p.code ?? p.product_name),
     name: p.product_name,
-    brand: p.brands || undefined,
+    brand: brandOf(p.brands),
     // Search-a-licious does not index serving sizes, so text hits offer 100 g only.
     servings: [{ label: "100 g", grams: 100, ...per100g }],
     per100g,

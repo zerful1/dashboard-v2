@@ -142,6 +142,17 @@ describe("food search", () => {
 });
 
 describe("Open Food Facts", () => {
+  // Found in the browser, not by a test: Search-a-licious returns `brands` as an
+  // ARRAY. Passed through, it reached the diary POST as ["Oatly"] and failed
+  // validation, so no branded product from search could ever be logged.
+  it("turns a brands array into one brand string", () => {
+    const n = { "energy-kcal_100g": 61 };
+    expect(mapSearchHit({ code: "1", product_name: "Oat drink", brands: ["Oatly", "Oatly AB"], nutriments: n })!.brand)
+      .toBe("Oatly, Oatly AB");
+    expect(mapSearchHit({ code: "1", product_name: "Oat drink", brands: "Oatly", nutriments: n })!.brand).toBe("Oatly");
+    expect(mapSearchHit({ code: "1", product_name: "Oat drink", brands: [], nutriments: n })!.brand).toBeUndefined();
+  });
+
   it("drops products that cannot be logged", () => {
     expect(mapSearchHit({ code: "1", product_name: "No energy", nutriments: {} })).toBeNull();
     expect(mapSearchHit({ code: "1", nutriments: { "energy-kcal_100g": 100 } })).toBeNull();
