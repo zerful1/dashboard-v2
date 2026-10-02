@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useDiary, diaryKey } from "../src/hooks/useDiary";
 import { NUTRITION_READERS } from "../src/hooks/invalidate";
@@ -37,7 +37,10 @@ const wrapper = (client: QueryClient) => ({ children }: { children: ReactNode })
   <QueryClientProvider client={client}>{children}</QueryClientProvider>
 );
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  onlineManager.setOnline(true);
+});
 
 describe("useDiary", () => {
   it("scopes the cache key by user and date", () => {
@@ -67,6 +70,24 @@ describe("useDiary", () => {
 
     act(() => result.current.addEntry.mutate(input));
     await waitFor(() => expect(result.current.addEntry.isError).toBe(true));
+    expect(result.current.entries.map((e) => e.name)).toEqual(["Oats"]);
+  });
+
+  // CLAUDE.md: writes are not queued offline. TanStack's default PAUSES a
+  // mutation while offline and replays it on reconnect - the optimistic row
+  // looks saved, and closing the app loses it. Found in the browser.
+  it("fails an add made offline instead of queueing it", async () => {
+    mockApi([
+      ["POST /api/nutrition/diary", () => Promise.reject(new TypeError("Failed to fetch"))],
+      ["GET /api/nutrition/diary", () => [saved]],
+    ]);
+    const { result } = renderHook(() => useDiary("2026-09-21"), { wrapper: wrapper(fresh()) });
+    await waitFor(() => expect(result.current.entries).toHaveLength(1));
+
+    onlineManager.setOnline(false);
+    act(() => result.current.addEntry.mutate(input));
+    await waitFor(() => expect(result.current.addEntry.isError).toBe(true));
+    expect(result.current.addEntry.isPaused).toBe(false);
     expect(result.current.entries.map((e) => e.name)).toEqual(["Oats"]);
   });
 
