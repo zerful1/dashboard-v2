@@ -1,18 +1,11 @@
 import { Calendar } from "lucide-react";
 import { toLocalISO } from "@dashboard/shared";
 import { cn } from "@/lib/cn";
+import { prettyDate } from "@/lib/dates";
 
 function label(value: string, today: string): string {
   if (value === today) return "Today";
-  // Split and rebuild as a LOCAL date. new Date('2026-08-16') parses as UTC and
-  // would render the previous day for anyone behind it — the same class of
-  // shift the whole date-as-string discipline exists to avoid.
-  const [y, m, d] = value.split("-").map(Number);
-  return new Date(y!, m! - 1, d!).toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
+  return prettyDate(value);
 }
 
 /**
