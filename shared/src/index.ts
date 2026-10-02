@@ -13,6 +13,7 @@ export * from "./domain/exerciseName";
 export * from "./domain/media";
 export * from "./domain/nutrition/queries";
 export * from "./domain/nutrition/serving";
+export * from "./domain/nutrition/labels";
 export * from "./domain/nutrition/dedup";
 export * from "./domain/nutrition/tdee";
 export * from "./domain/nutrition/adherence";
