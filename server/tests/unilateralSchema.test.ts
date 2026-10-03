@@ -26,6 +26,10 @@ describe("004_unilateral_sets", () => {
     // Negative: one side alone, and a counted number that is not the lower side.
     await expect(insert(5, 6, null)).rejects.toThrow(/workout_sets_sides/);
     await expect(insert(6, 6, 5)).rejects.toThrow(/workout_sets_sides/);
+    // One side alone whose value IS the counted number. LEAST ignores NULL, so
+    // only an explicit NOT NULL on both sides refuses these (fixed in 005).
+    await expect(insert(6, 6, null)).rejects.toThrow(/workout_sets_sides/);
+    await expect(insert(5, null, 5)).rejects.toThrow(/workout_sets_sides/);
     // Positive complement: a single-sided set, equal sides, and a plain set.
     await expect(insert(5, 6, 5)).resolves.toBeDefined();
     await expect(insert(8, 8, 8)).resolves.toBeDefined();
