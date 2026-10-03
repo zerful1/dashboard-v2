@@ -4,8 +4,13 @@ import type { NutritionTarget, TargetInput } from "@dashboard/shared";
 
 // effective_from as ::text for the reason bodyWeight selects date::text:
 // node-pg would hand back a local-midnight Date that shifts a day during BST.
+// created_at as an ISO string, as the type says: latestActiveTarget breaks a
+// same-day tie with created_at.localeCompare, and node-pg would hand back a
+// Date (the weekly review crashed on exactly that). Byte-identical to the JSON
+// a Date serialises to, so the API's wire format does not change.
 const COLS = `id, user_id, effective_from::text AS effective_from, goal_mode,
-              calories, protein_g, fat_g, carbs_g, created_at`;
+              calories, protein_g, fat_g, carbs_g,
+              to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS created_at`;
 
 /** Every row, newest first. latestActiveTarget in shared picks the one in force on a day. */
 export async function listTargets(userId: string): Promise<NutritionTarget[]> {

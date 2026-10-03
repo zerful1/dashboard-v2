@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { daysBetweenISO, getDayOfYear, getWeekOfYear, shiftISO, todayISO } from '../src/domain/date'
+import { daysBetweenISO, getDayOfYear, getWeekOfYear, isMonday, isRealDate, mondayOf, shiftISO, todayISO } from '../src/domain/date'
 
 describe('getDayOfYear', () => {
   it('returns 1 for Jan 1', () => {
@@ -71,5 +71,30 @@ describe('daysBetweenISO', () => {
 
   it('is not moved by the October clock change', () => {
     expect(daysBetweenISO('2026-10-24', '2026-10-26')).toBe(2)
+  })
+})
+
+describe('week helpers', () => {
+  it('finds the Monday of a week from any day in it', () => {
+    expect(mondayOf('2026-09-21')).toBe('2026-09-21') // Monday
+    expect(mondayOf('2026-09-27')).toBe('2026-09-21') // Sunday
+    expect(mondayOf('2026-10-01')).toBe('2026-09-28') // across a month end
+    expect(mondayOf('2027-01-02')).toBe('2026-12-28') // across a year end
+  })
+
+  it('accepts only a real Monday', () => {
+    expect(isMonday('2026-09-21')).toBe(true)
+    expect(isMonday('2026-12-28')).toBe(true)
+    expect(isMonday('2026-09-22')).toBe(false)
+    expect(isMonday('2026-02-30')).toBe(false)
+    expect(isMonday('nope')).toBe(false)
+  })
+
+  it('tells a real calendar date from a malformed or impossible one', () => {
+    expect(isRealDate('2026-10-03')).toBe(true)
+    expect(isRealDate('2028-02-29')).toBe(true)
+    expect(isRealDate('2026-02-29')).toBe(false)
+    expect(isRealDate('2026-13-01')).toBe(false)
+    expect(isRealDate('03-10-2026')).toBe(false)
   })
 })

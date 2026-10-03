@@ -77,3 +77,25 @@ export function getWeekOfYear(d: Date = new Date()): number {
 export function getDaysInYear(d: Date = new Date()): number {
   return getDayOfYear(new Date(d.getFullYear(), 11, 31))
 }
+
+/** A YYYY-MM-DD that names a day that exists: no 30 February, no month 13. */
+export function isRealDate(iso: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false
+  const [y, m, d] = iso.split('-').map(Number)
+  const dt = new Date(Date.UTC(y!, m! - 1, d!))
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m! - 1 && dt.getUTCDate() === d
+}
+
+/** A real date that falls on a Monday: how a Monday-to-Sunday week is named. */
+export function isMonday(iso: string): boolean {
+  if (!isRealDate(iso)) return false
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay() === 1
+}
+
+/** The Monday of the week holding `iso`. The same UTC calendar cursor as shiftISO. */
+export function mondayOf(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  const weekday = new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay() // 0 = Sunday
+  return shiftISO(iso, -((weekday + 6) % 7))
+}
