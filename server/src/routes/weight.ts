@@ -4,6 +4,7 @@ import { requireAuth } from "../middleware/requireAuth";
 import { validate } from "../middleware/validate";
 import { listWeights, upsertWeight, deleteWeight } from "../repositories/bodyWeight";
 import { NotFound } from "../errors";
+import { fillWeightGoalStart } from "../repositories/goals";
 
 export const weightRouter = Router();
 
@@ -34,7 +35,10 @@ weightRouter.get("/", async (req, res, next) => {
 // would just be a second way to reach the same statement.
 weightRouter.post("/", validate({ body: entryBody }), async (req, res, next) => {
   try {
-    res.status(201).json(await upsertWeight(req.userId, req.body as z.infer<typeof entryBody>));
+    const entry = await upsertWeight(req.userId, req.body as z.infer<typeof entryBody>);
+    // A weight goal set before any weigh-in takes this one as its start.
+    await fillWeightGoalStart(req.userId, entry.weight_kg);
+    res.status(201).json(entry);
   } catch (err) {
     next(err);
   }

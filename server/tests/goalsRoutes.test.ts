@@ -59,6 +59,22 @@ describe("projections endpoint", () => {
     ]);
   });
 
+  // Review focus 3, found broken in the part 2 review: with no start, the
+  // direction was re-derived from the trend each time, so a goal set before
+  // any weigh-in could never be reached ("Trending away" once past it).
+  it("reaches a weight goal set before any weigh-in, once the trend passes it", async () => {
+    const agent = await signedIn(alice);
+    const today = "2026-09-30";
+    expect((await agent.put("/api/goals/weight").send({ target_kg: 78 })).body.start_kg).toBeNull();
+    // Oldest first, falling from 80 to 77.5: the first weigh-in becomes the start.
+    for (let i = 13; i >= 0; i--) {
+      await agent.post("/api/weight").send({ date: shiftISO(today, -i), weight_kg: 77.5 + (2.5 * i) / 13 }).expect(201);
+    }
+    expect((await agent.get("/api/goals")).body[0].start_kg).toBe(80);
+    const res = await agent.get(`/api/insights/projections?today=${today}`).expect(200);
+    expect(res.body).toEqual([expect.objectContaining({ status: "reached" })]);
+  });
+
   it("refuses an impossible date", async () => {
     const agent = await signedIn(alice);
     await agent.get("/api/insights/projections?today=2026-02-30").expect(400);
