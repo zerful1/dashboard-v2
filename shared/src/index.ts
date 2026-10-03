@@ -6,6 +6,7 @@ export * from "./domain/streak";
 export * from "./domain/format";
 export * from "./domain/insights/review";
 export * from "./domain/insights/records";
+export * from "./domain/insights/projection";
 export * from "./domain/splitRotation";
 export * from "./domain/home";
 export * from "./domain/splitEditor";
