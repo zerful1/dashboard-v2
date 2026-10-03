@@ -6,13 +6,19 @@ import type { NutritionTarget, TargetInput } from "@dashboard/shared";
 
 export const targetsKey = (userId: string) => ["targets", userId] as const;
 
-export function useTargets() {
+export function useTargets({ errorToast = true }: { errorToast?: boolean } = {}) {
   const qc = useQueryClient();
   const { user } = useAuth();
   const userId = user?.id ?? "anon";
   const key = targetsKey(userId);
 
-  const query = useQuery({ queryKey: key, queryFn: nutritionApi.targets, enabled: !!user });
+  const query = useQuery({
+    queryKey: key,
+    queryFn: nutritionApi.targets,
+    enabled: !!user,
+    // false only for a caller that renders the failure itself (lib/queryClient.ts).
+    meta: { errorToast },
+  });
 
   const addTarget = useMutation({
     ...failOffline,
@@ -32,5 +38,12 @@ export function useTargets() {
     onSettled: () => void qc.invalidateQueries({ queryKey: ["targets"] }),
   });
 
-  return { targets: query.data ?? [], isPending: query.isPending, isError: query.isError, addTarget };
+  return {
+    targets: query.data ?? [],
+    isPending: query.isPending,
+    isError: query.isError,
+    hasData: query.data !== undefined,
+    refetch: query.refetch,
+    addTarget,
+  };
 }

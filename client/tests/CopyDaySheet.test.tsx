@@ -50,6 +50,20 @@ describe("CopyDaySheet", () => {
     expect(screen.getByRole("button", { name: "Copy" })).toBeDisabled();
   });
 
+  // A day that failed to load is unknown, not empty.
+  it("does not call a day it could not read empty", async () => {
+    const calls: string[] = [];
+    vi.spyOn(apiModule, "api").mockImplementation(async (path: string) => {
+      calls.push(path);
+      throw new Error("offline");
+    });
+    renderSheet();
+    await waitFor(() => expect(calls.length).toBeGreaterThan(0));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryByText(/Nothing logged/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy" })).toBeDisabled();
+  });
+
   it("cannot copy twice while a copy is in flight", async () => {
     mockDiary({ "2026-09-22": [row("a")] });
     renderSheet({ mutate: vi.fn(), isPending: true });

@@ -26,10 +26,12 @@ export function CopyDaySheet({
   const source = useDiary(from, { enabled: open });
   const n = source.entries.length;
   const same = from === to;
-  const empty = !source.isPending && n === 0;
+  // A failed read is unknown, not empty: the global toast reports it, and this
+  // stays quiet rather than claim the day has nothing in it.
+  const empty = !source.isPending && !source.isError && n === 0;
   // Disabled while the copy is pending: there is no optimistic write to hide a
   // double tap behind, so the second tap would copy the day again.
-  const blocked = same || source.isPending || n === 0 || copy.isPending;
+  const blocked = same || source.isPending || source.isError || n === 0 || copy.isPending;
 
   return (
     <Sheet open={open} onClose={onClose} title={`Copy into ${prettyDate(to)}`}>

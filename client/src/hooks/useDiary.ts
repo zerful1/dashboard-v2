@@ -8,7 +8,10 @@ import type { DiaryEntryInput, FoodLogEntry } from "@dashboard/shared";
 /** User id AND date in the key: see weightKey on why identity is structural. */
 export const diaryKey = (userId: string, date: string) => ["diary", userId, date] as const;
 
-export function useDiary(date: string, { enabled = true }: { enabled?: boolean } = {}) {
+export function useDiary(
+  date: string,
+  { enabled = true, errorToast = true }: { enabled?: boolean; errorToast?: boolean } = {},
+) {
   const qc = useQueryClient();
   const { user } = useAuth();
   const userId = user?.id ?? "anon";
@@ -18,6 +21,8 @@ export function useDiary(date: string, { enabled = true }: { enabled?: boolean }
     queryKey: key,
     queryFn: () => nutritionApi.diary(date),
     enabled: !!user && enabled,
+    // false only for a caller that renders the failure itself (lib/queryClient.ts).
+    meta: { errorToast },
   });
 
   const addEntry = useMutation({
@@ -112,6 +117,10 @@ export function useDiary(date: string, { enabled = true }: { enabled?: boolean }
     // isPending, not isLoading: a disabled query reports isLoading false (CLAUDE.md).
     isPending: query.isPending,
     isError: query.isError,
+    // A failed refetch keeps the last good data: isError alone does not mean
+    // there is nothing to show.
+    hasData: query.data !== undefined,
+    refetch: query.refetch,
     addEntry,
     rescaleEntry,
     removeEntry,
