@@ -3,6 +3,7 @@ import { renderHook, waitFor, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useWeights, weightKey } from "../src/hooks/useWeights";
+import { INSIGHTS_READERS } from "../src/hooks/invalidate";
 import * as apiModule from "../src/lib/api";
 import { ApiError } from "../src/lib/api";
 
@@ -44,6 +45,24 @@ describe("useWeights", () => {
     const { result } = renderHook(() => useWeights(), { wrapper: wrapper(fresh()) });
     await waitFor(() => expect(result.current.entries).toHaveLength(1));
     expect(result.current.entries[0]!.date).toBe("2026-08-15");
+  });
+
+  it("refreshes Insights after saving a weigh-in", async () => {
+    // By method and path, per CLAUDE.md: the list refetches after the save.
+    vi.spyOn(apiModule, "api").mockImplementation(async (_path: string, init?: RequestInit) =>
+      (init?.method === "POST" ? entry("2026-09-22", 78) : []) as never);
+    const client = fresh();
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+    const { result } = renderHook(() => useWeights(), { wrapper: wrapper(client) });
+    await waitFor(() => expect(result.current.entries).toEqual([]));
+
+    act(() => {
+      result.current.saveWeight.mutate({ date: "2026-09-22", weight_kg: 78 });
+    });
+    await waitFor(() => expect(result.current.saveWeight.isSuccess).toBe(true));
+    for (const prefix of INSIGHTS_READERS) {
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: [prefix] });
+    }
   });
 
   it("replaces rather than duplicates when saving an existing day", async () => {

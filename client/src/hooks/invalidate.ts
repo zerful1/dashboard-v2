@@ -1,6 +1,18 @@
 import type { QueryClient } from "@tanstack/react-query";
 
 /**
+ * Every Insights query. They read sessions, sets, food and weigh-ins, so the
+ * writers of all of those invalidate them (useWeights calls this directly).
+ */
+export const INSIGHTS_READERS = ["insightsReview", "insightsRecords", "insightsProjections"] as const;
+
+export function invalidateInsightsReaders(qc: QueryClient): void {
+  for (const prefix of INSIGHTS_READERS) {
+    void qc.invalidateQueries({ queryKey: [prefix] });
+  }
+}
+
+/**
  * Every query that reads workout_sessions or workout_sets.
  *
  * A mutation that writes either table must invalidate ALL of these, not just
@@ -26,6 +38,7 @@ export const SESSION_READERS = [
   "historyDayNames",
   "workoutStats",
   "historyExerciseNames",
+  ...INSIGHTS_READERS,
 ] as const;
 
 export function invalidateSessionReaders(qc: QueryClient): void {
@@ -39,7 +52,7 @@ export function invalidateSessionReaders(qc: QueryClient): void {
  * Recent list and the TDEE hint's intake, so it invalidates all of them - the
  * lesson of SESSION_READERS above, applied before rather than after.
  */
-export const NUTRITION_READERS = ["diary", "recents", "tdeeHint"] as const;
+export const NUTRITION_READERS = ["diary", "recents", "tdeeHint", ...INSIGHTS_READERS] as const;
 
 export function invalidateNutritionReaders(qc: QueryClient): void {
   for (const prefix of NUTRITION_READERS) {

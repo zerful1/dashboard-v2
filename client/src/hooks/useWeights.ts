@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/auth/AuthProvider";
 import { weightApi, type WeightInput } from "@/api/weight";
+import { invalidateInsightsReaders } from "./invalidate";
 import type { BodyWeightEntry } from "@dashboard/shared";
 
 /**
@@ -59,7 +60,10 @@ export function useWeights() {
     onError: (_e, _v, ctx) => {
       if (ctx?.previous) qc.setQueryData(key, ctx.previous);
     },
-    onSettled: () => void qc.invalidateQueries({ queryKey: key }),
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: key });
+      invalidateInsightsReaders(qc);
+    },
   });
 
   const deleteWeight = useMutation({
@@ -76,7 +80,10 @@ export function useWeights() {
     onError: (_e, _v, ctx) => {
       if (ctx?.previous) qc.setQueryData(key, ctx.previous);
     },
-    onSettled: () => void qc.invalidateQueries({ queryKey: key }),
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: key });
+      invalidateInsightsReaders(qc);
+    },
   });
 
   return {
