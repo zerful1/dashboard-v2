@@ -202,8 +202,11 @@ purged at all three identity transitions in `AuthProvider`. `qc.clear()` empties
 memory only — the persisted copy is a separate artifact, so `persister.removeClient()`
 has to accompany every one of them.
 
-**Writes are not queued offline.** Logging with no signal fails with a toast. A
-banner says so, because failing silently would look like success.
+**Nutrition writes are not queued offline.** Logging food with no signal fails
+with a toast. A banner says so, because failing silently would look like
+success. **Gym and the other older features still queue**: their writes use
+TanStack's default, which pauses offline and replays on reconnect. Whether they
+should fail instead is undecided — see `failOffline` below.
 
 ---
 
@@ -234,9 +237,15 @@ handlers never touch UI, so one failure produces one message. It lives on the
 **`MutationCache`** in `client/src/lib/queryClient.ts`, and must stay there:
 TanStack merges a hook's options over `defaultOptions.mutations` with a plain
 spread, so a handler there is replaced by every hook's own rollback `onError`,
-and failures go unreported. Writes also spread `failOffline`
+and failures go unreported. Nutrition writes also spread `failOffline`
 (`client/src/lib/failOffline.ts`), because TanStack's default pauses a write
-while offline and replays it later instead of failing it.
+while offline and replays it later instead of failing it. The older features'
+hooks do not spread it yet; adding it is one line per hook, pending a decision.
+
+**A query whose page renders its own failure opts out of the toast** with
+`meta: { errorToast: false }`, and shows its error card only when there is no
+data. A failed refetch keeps the last good data, so `isError` alone does not
+mean there is nothing to show.
 
 ---
 
