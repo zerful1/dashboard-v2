@@ -15,6 +15,8 @@ interface Props {
   onReorder: (orderedIds: string[]) => void;
   onRename: (name: string) => void;
   onAdd: (name: string) => void;
+  /** Every exercise name in the user's history, to suggest while adding. */
+  historyNames: string[];
 }
 
 export function ExerciseList({
@@ -27,8 +29,21 @@ export function ExerciseList({
   onReorder,
   onRename,
   onAdd,
+  historyNames,
 }: Props) {
   const [newName, setNewName] = useState("");
+
+  const q = newName.trim().toLowerCase();
+  const listed = new Set(exercises.map((e) => e.exercise_name.toLowerCase()));
+  // Names from history, so a day's list reuses them exactly: a near-miss like
+  // "Machine T Bar Row" for "T Bar Row" would split one exercise's history in two.
+  const suggestions = q
+    ? historyNames.filter((n) => n.toLowerCase().includes(q) && !listed.has(n.toLowerCase())).slice(0, 5)
+    : [];
+  const add = (name: string) => {
+    onAdd(name);
+    setNewName("");
+  };
 
   const byName = sets.reduce<Record<string, WorkoutSet[]>>((acc, s) => {
     (acc[s.exercise_name] ??= []).push(s);
@@ -80,29 +95,36 @@ export function ExerciseList({
       )}
 
       {editMode && (
-        <div className="flex gap-2 border-t border-raised px-4 py-3">
-          <Input
-            placeholder="Exercise name"
-            value={newName}
-            aria-label="New exercise name"
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && newName.trim()) {
-                onAdd(newName.trim());
-                setNewName("");
-              }
-            }}
-          />
-          <Button
-            disabled={!newName.trim()}
-            onClick={() => {
-              onAdd(newName.trim());
-              setNewName("");
-            }}
-            aria-label="Add exercise"
-          >
-            <Plus size={14} />
-          </Button>
+        <div className="border-t border-raised px-4 py-3">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Exercise name"
+              value={newName}
+              aria-label="New exercise name"
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newName.trim()) add(newName.trim());
+              }}
+            />
+            <Button disabled={!newName.trim()} onClick={() => add(newName.trim())} aria-label="Add exercise">
+              <Plus size={14} />
+            </Button>
+          </div>
+          {suggestions.length > 0 && (
+            <ul aria-label="Suggestions" className="mt-2 flex flex-wrap gap-1.5">
+              {suggestions.map((n) => (
+                <li key={n}>
+                  <button
+                    type="button"
+                    onClick={() => add(n)}
+                    className="rounded-full border border-raised px-3 py-1 text-xs text-muted hover:text-text"
+                  >
+                    {n}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </div>
