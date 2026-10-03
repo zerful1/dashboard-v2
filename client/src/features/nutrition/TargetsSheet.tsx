@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/Input";
 import { api } from "@/lib/api";
 import { profileQuery } from "@/lib/profileQuery";
 import { parseDecimal } from "@/lib/number";
-import { failOffline } from "@/lib/failOffline";
 import { useTdeeHint } from "@/hooks/useTdeeHint";
 import type { useTargets } from "@/hooks/useTargets";
 
@@ -164,7 +163,6 @@ function BodyDetails() {
   }, [profile.data]);
 
   const save = useMutation({
-    ...failOffline,
     mutationFn: (patch: Partial<Pick<Profile, "height_cm" | "birth_year" | "sex" | "activity_level">>) =>
       api<Profile>("/api/profile", { method: "PATCH", body: JSON.stringify(patch) }),
     onSuccess: (updated) => {

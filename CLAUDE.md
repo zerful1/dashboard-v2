@@ -202,11 +202,15 @@ purged at all three identity transitions in `AuthProvider`. `qc.clear()` empties
 memory only — the persisted copy is a separate artifact, so `persister.removeClient()`
 has to accompany every one of them.
 
-**Nutrition writes are not queued offline.** Logging food with no signal fails
-with a toast. A banner says so, because failing silently would look like
-success. **Gym and the other older features still queue**: their writes use
-TanStack's default, which pauses offline and replays on reconnect. Whether they
-should fail instead is undecided — see `failOffline` below.
+**Writes are not queued offline, in any feature.** Logging with no signal fails
+with a toast and is logged again once back online — the user's call, made for
+Gym on 2026-10-03. A banner says so, because failing silently would look like
+success. The rule is `networkMode: "always"` in `defaultOptions.mutations`
+(`client/src/lib/queryClient.ts`); TanStack's own default pauses a write
+offline and replays it on reconnect, so it looks saved and is lost if the app
+closes first. A hook inherits the rule unless it sets its own `networkMode`,
+and none should. Its tests use `createQueryClient()`, because a bare
+`new QueryClient()` in a test does not have it.
 
 ---
 
@@ -237,10 +241,8 @@ handlers never touch UI, so one failure produces one message. It lives on the
 **`MutationCache`** in `client/src/lib/queryClient.ts`, and must stay there:
 TanStack merges a hook's options over `defaultOptions.mutations` with a plain
 spread, so a handler there is replaced by every hook's own rollback `onError`,
-and failures go unreported. Nutrition writes also spread `failOffline`
-(`client/src/lib/failOffline.ts`), because TanStack's default pauses a write
-while offline and replays it later instead of failing it. The older features'
-hooks do not spread it yet; adding it is one line per hook, pending a decision.
+and failures go unreported. (A plain option such as `networkMode` *is* safe in
+`defaultOptions.mutations`: the spread only loses what a hook also sets.)
 
 **A query whose page renders its own failure opts out of the toast** with
 `meta: { errorToast: false }`, and shows its error card only when there is no

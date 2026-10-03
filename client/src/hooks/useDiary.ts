@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/auth/AuthProvider";
-import { failOffline } from "@/lib/failOffline";
 import { nutritionApi } from "@/api/nutrition";
 import { invalidateNutritionReaders } from "@/hooks/invalidate";
 import type { DiaryEntryInput, FoodLogEntry } from "@dashboard/shared";
@@ -26,7 +25,6 @@ export function useDiary(
   });
 
   const addEntry = useMutation({
-    ...failOffline,
     mutationFn: nutritionApi.addEntry,
     onMutate: async (input: DiaryEntryInput) => {
       // Keyed on the entry's own date, which is the page's date in practice.
@@ -62,7 +60,6 @@ export function useDiary(
   });
 
   const rescaleEntry = useMutation({
-    ...failOffline,
     mutationFn: ({ id, quantity }: { id: string; quantity: number }) => nutritionApi.rescaleEntry(id, quantity),
     onMutate: async ({ id, quantity }) => {
       await qc.cancelQueries({ queryKey: key });
@@ -90,7 +87,6 @@ export function useDiary(
   });
 
   const removeEntry = useMutation({
-    ...failOffline,
     mutationFn: nutritionApi.removeEntry,
     onMutate: async (id: string) => {
       await qc.cancelQueries({ queryKey: key });
@@ -107,7 +103,6 @@ export function useDiary(
   // Not optimistic: the copy's contents come from the server. The sheet keeps
   // its button disabled while this is pending, so a double tap cannot copy twice.
   const copyDay = useMutation({
-    ...failOffline,
     mutationFn: ({ from, to }: { from: string; to: string }) => nutritionApi.copyDay(from, to),
     onSettled: () => invalidateNutritionReaders(qc),
   });

@@ -6,11 +6,13 @@ import { useDiary, diaryKey } from "../src/hooks/useDiary";
 import { NUTRITION_READERS } from "../src/hooks/invalidate";
 import * as apiModule from "../src/lib/api";
 import { ApiError } from "../src/lib/api";
+import { createQueryClient } from "../src/lib/queryClient";
 import type { DiaryEntryInput, FoodLogEntry } from "@dashboard/shared";
 
 vi.mock("@/auth/AuthProvider", () => ({
   useAuth: () => ({ user: { id: "u1", email: "a@b.com" }, loading: false }),
 }));
+vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
 
 const saved: FoodLogEntry = {
   id: "e1", user_id: "u1", date: "2026-09-21", logged_at: "2026-09-21T08:00:00.000Z", food_item_id: null,
@@ -33,6 +35,12 @@ function mockApi(routes: [string, (init?: RequestInit) => unknown][]) {
 }
 
 const fresh = () => new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+/** The app's own client, for rules that live in its defaults, without retry delays. */
+const real = () => {
+  const client = createQueryClient();
+  client.setDefaultOptions({ queries: { retry: false }, mutations: { ...client.getDefaultOptions().mutations, retry: false } });
+  return client;
+};
 const wrapper = (client: QueryClient) => ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={client}>{children}</QueryClientProvider>
 );
@@ -81,7 +89,7 @@ describe("useDiary", () => {
       ["POST /api/nutrition/diary", () => Promise.reject(new TypeError("Failed to fetch"))],
       ["GET /api/nutrition/diary", () => [saved]],
     ]);
-    const { result } = renderHook(() => useDiary("2026-09-21"), { wrapper: wrapper(fresh()) });
+    const { result } = renderHook(() => useDiary("2026-09-21"), { wrapper: wrapper(real()) });
     await waitFor(() => expect(result.current.entries).toHaveLength(1));
 
     onlineManager.setOnline(false);

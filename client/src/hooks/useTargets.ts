@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/auth/AuthProvider";
-import { failOffline } from "@/lib/failOffline";
 import { nutritionApi } from "@/api/nutrition";
 import type { NutritionTarget, TargetInput } from "@dashboard/shared";
 
@@ -21,7 +20,6 @@ export function useTargets({ errorToast = true }: { errorToast?: boolean } = {})
   });
 
   const addTarget = useMutation({
-    ...failOffline,
     mutationFn: nutritionApi.addTarget,
     onMutate: async (input: TargetInput) => {
       await qc.cancelQueries({ queryKey: key });

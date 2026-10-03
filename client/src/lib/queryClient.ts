@@ -60,6 +60,16 @@ export function createQueryClient(): QueryClient {
         // silently comes back empty.
         gcTime: MAX_AGE,
       },
+      mutations: {
+        // Writes are not queued offline, in any feature (CLAUDE.md). TanStack's
+        // default, "online", pauses a write while offline and replays it on
+        // reconnect: the optimistic row looks saved, and closing the app before
+        // the signal returns loses it. "always" sends it anyway, the fetch
+        // fails, the hook rolls back and the MutationCache above toasts.
+        // A plain option, so the shallow merge that sank the old onError is
+        // harmless here: a hook inherits it unless it sets its own.
+        networkMode: "always",
+      },
     },
   });
 }

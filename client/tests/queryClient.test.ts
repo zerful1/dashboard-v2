@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { MutationObserver } from "@tanstack/react-query";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { MutationObserver, onlineManager } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { createQueryClient } from "../src/lib/queryClient";
 import { ApiError } from "../src/lib/api";
@@ -34,6 +34,26 @@ describe("mutation failures", () => {
   // hook-level onError at all.
   it("toasts once, not twice, when the mutation has no onError of its own", async () => {
     await failWith({});
+    expect(toast.error).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("writes made offline", () => {
+  afterEach(() => onlineManager.setOnline(true));
+
+  // CLAUDE.md: writes are not queued offline, in any feature. TanStack's default
+  // PAUSES a write while offline and replays it on reconnect, so it looks saved
+  // and is lost if the app closes first. A default here covers every hook,
+  // including ones not written yet - this mutation sets no networkMode itself.
+  it("fail with a toast instead of waiting for the signal", async () => {
+    onlineManager.setOnline(false);
+    const observer = new MutationObserver(createQueryClient(), {
+      mutationFn: () => Promise.reject(new TypeError("Failed to fetch")),
+      retry: false,
+    });
+    void observer.mutate(undefined).catch(() => {});
+    await vi.waitFor(() => expect(observer.getCurrentResult().isError).toBe(true));
+    expect(observer.getCurrentResult().isPaused).toBe(false);
     expect(toast.error).toHaveBeenCalledTimes(1);
   });
 });
