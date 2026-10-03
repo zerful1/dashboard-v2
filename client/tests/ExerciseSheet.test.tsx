@@ -138,4 +138,70 @@ describe("ExerciseSheet", () => {
     // make the next set silently duplicate this one on a stray tap.
     expect(screen.getByLabelText(/reps/i)).toHaveValue(null);
   });
+
+  const sidedSet = (over: Partial<WorkoutSet> = {}) => aSet(1, { reps: 7, reps_left: 7, reps_right: 8, ...over });
+  const toggle = () => screen.getByRole("button", { name: /left \/ right/i });
+
+  it("logs both sides when Left / right is on, and needs both", async () => {
+    mockCoaching(null);
+    const { onLogSet } = renderSheet();
+    await userEvent.click(toggle());
+    await userEvent.type(screen.getByLabelText(/weight/i), "20");
+    await userEvent.type(screen.getByLabelText("Left"), "7");
+    expect(screen.getByRole("button", { name: /add set 1/i })).toBeDisabled();
+    await userEvent.type(screen.getByLabelText("Right"), "8");
+    await userEvent.click(screen.getByRole("button", { name: /add set 1/i }));
+
+    expect(onLogSet).toHaveBeenCalledWith(20, { left: 7, right: 8 }, false, 1);
+    expect(screen.getByLabelText("Left")).toHaveValue(null);
+  });
+
+  it("switches itself on for an exercise named Unilateral", () => {
+    mockCoaching(null);
+    renderSheet({ exercise: { ...exercise, exercise_name: "Unilateral Machine Row" } });
+    expect(toggle()).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByLabelText("Left")).toBeInTheDocument();
+  });
+
+  it("switches itself on when last session was logged per side", () => {
+    mockCoaching(null);
+    renderSheet({ lastSets: [sidedSet()] });
+    expect(toggle()).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("stays off for a plain exercise with a plain last session", () => {
+    mockCoaching(null);
+    renderSheet({ lastSets: [aSet(1)] });
+    expect(toggle()).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByLabelText(/reps/i)).toBeInTheDocument();
+  });
+
+  // Review focus 1: the sheet can open before last session's sets arrive.
+  it("follows last session when it loads after the sheet opened, until the switch is touched", async () => {
+    mockCoaching(null);
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const ui = (lastSets: WorkoutSet[]) => (
+      <QueryClientProvider client={qc}>
+        <ExerciseSheet exercise={exercise} todaySets={[]} lastSets={lastSets}
+          onClose={vi.fn()} onLogSet={vi.fn()} onDeleteSet={vi.fn()} />
+      </QueryClientProvider>
+    );
+    const { rerender } = render(ui([]));
+    expect(toggle()).toHaveAttribute("aria-pressed", "false");
+
+    rerender(ui([sidedSet()]));
+    expect(toggle()).toHaveAttribute("aria-pressed", "true");
+
+    // The user turns it off. Data changing afterwards must not overrule them.
+    await userEvent.click(toggle());
+    rerender(ui([]));
+    rerender(ui([sidedSet()]));
+    expect(toggle()).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("shows both sides of a set logged that way", () => {
+    mockCoaching(null);
+    renderSheet({ todaySets: [sidedSet()] });
+    expect(screen.getByText("Set 1 · 100kg × L7 R8")).toBeInTheDocument();
+  });
 });

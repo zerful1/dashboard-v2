@@ -169,8 +169,8 @@ export function GymPage() {
             exercise_name: active.exercise_name,
             set_number: setNumber,
             weight_kg: weightKg,
-            reps,
             is_bodyweight: isBodyweight,
+            ...(typeof reps === "number" ? { reps } : { reps_left: reps.left, reps_right: reps.right }),
           });
         }}
         onDeleteSet={(id) => deleteSet.mutate(id)}

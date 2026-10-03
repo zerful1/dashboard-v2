@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { setLong } from "@dashboard/shared";
 import type { Exercise, WorkoutSet } from "@dashboard/shared";
@@ -15,7 +15,12 @@ interface Props {
   todaySets: WorkoutSet[];
   lastSets: WorkoutSet[];
   onClose: () => void;
-  onLogSet: (weightKg: number, reps: number, isBodyweight: boolean, setNumber: number) => void;
+  onLogSet: (
+    weightKg: number,
+    reps: number | { left: number; right: number },
+    isBodyweight: boolean,
+    setNumber: number,
+  ) => void;
   onDeleteSet: (id: string) => void;
 }
 
@@ -29,9 +34,19 @@ export function ExerciseSheet({
 }: Props) {
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
+  const [left, setLeft] = useState("");
+  const [right, setRight] = useState("");
   const [isBodyweight, setIsBodyweight] = useState(false);
+  const [sides, setSides] = useState(false);
+  // Once the user flips the switch, data arriving later does not overrule them.
+  const touched = useRef(false);
 
   const { data: coaching, isLoading } = useCoaching(exercise?.exercise_name ?? null);
+
+  // The user's rule (2026-10-03): on for a "Unilateral …" name, or when last
+  // session was logged per side; the switch overrides it either way.
+  const sidedByDefault =
+    !!exercise && (/unilateral/i.test(exercise.exercise_name) || lastSets.some((s) => s.reps_left !== null));
 
   // Reset on open, not on close — clearing during the exit animation makes the
   // fields visibly blank as the sheet slides away.
@@ -39,13 +54,29 @@ export function ExerciseSheet({
     if (exercise) {
       setWeight("");
       setReps("");
+      setLeft("");
+      setRight("");
       setIsBodyweight(false);
+      touched.current = false;
     }
   }, [exercise]);
 
-  const r = Number.parseInt(reps, 10);
+  // Separate from the reset: last session's sets can arrive after the sheet
+  // opens, and the default should follow them until the switch is touched.
+  useEffect(() => {
+    if (exercise && !touched.current) setSides(sidedByDefault);
+  }, [exercise, sidedByDefault]);
+
+  const whole = (v: string) => {
+    const n = Number.parseInt(v, 10);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  const r = whole(reps);
+  const l = whole(left);
+  const rt = whole(right);
   const w = Number.parseFloat(weight);
-  const valid = Number.isFinite(r) && r > 0 && (isBodyweight || (Number.isFinite(w) && w > 0));
+  const weightOk = isBodyweight || (Number.isFinite(w) && w > 0);
+  const valid = weightOk && (sides ? l !== null && rt !== null : r !== null);
 
   /**
    * Continue from the HIGHEST existing set number, not the count.
@@ -58,9 +89,11 @@ export function ExerciseSheet({
 
   const submit = () => {
     if (!valid || !exercise) return;
-    onLogSet(isBodyweight ? 0 : w, r, isBodyweight, nextSetNumber);
+    onLogSet(isBodyweight ? 0 : w, sides ? { left: l!, right: rt! } : r!, isBodyweight, nextSetNumber);
     setWeight("");
     setReps("");
+    setLeft("");
+    setRight("");
   };
 
   return (
@@ -107,18 +140,33 @@ export function ExerciseSheet({
           )}
         </div>
 
-        <button
-          onClick={() => setIsBodyweight((v) => !v)}
-          aria-pressed={isBodyweight}
-          className={cn(
-            "w-full rounded-lg border py-2 font-mono text-[10px] uppercase tracking-[0.12em]",
-            isBodyweight
-              ? "border-accent/40 bg-accent/10 text-accent"
-              : "border-raised bg-surface text-muted",
-          )}
-        >
-          {isBodyweight ? "Bodyweight ON" : "Mark as bodyweight"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setIsBodyweight((v) => !v)}
+            aria-pressed={isBodyweight}
+            className={cn(
+              "flex-1 rounded-lg border py-2 font-mono text-[10px] uppercase tracking-[0.12em]",
+              isBodyweight
+                ? "border-accent/40 bg-accent/10 text-accent"
+                : "border-raised bg-surface text-muted",
+            )}
+          >
+            {isBodyweight ? "Bodyweight ON" : "Mark as bodyweight"}
+          </button>
+          <button
+            onClick={() => {
+              touched.current = true;
+              setSides((v) => !v);
+            }}
+            aria-pressed={sides}
+            className={cn(
+              "flex-1 rounded-lg border py-2 font-mono text-[10px] uppercase tracking-[0.12em]",
+              sides ? "border-accent/40 bg-accent/10 text-accent" : "border-raised bg-surface text-muted",
+            )}
+          >
+            {sides ? "Left / right ON" : "Left / right"}
+          </button>
+        </div>
 
         <div className="flex gap-3">
           <div className="flex-1">
@@ -136,22 +184,56 @@ export function ExerciseSheet({
               />
             </Field>
           </div>
-          <div className="flex-1">
-            <Field label="Reps" htmlFor="set-reps">
-              <Input
-                id="set-reps"
-                type="number"
-                inputMode="numeric"
-                min="1"
-                placeholder="8"
-                value={reps}
-                onChange={(e) => setReps(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") submit();
-                }}
-              />
-            </Field>
-          </div>
+          {sides ? (
+            <>
+              <div className="flex-1">
+                <Field label="Left" htmlFor="set-left">
+                  <Input
+                    id="set-left"
+                    type="number"
+                    inputMode="numeric"
+                    min="1"
+                    placeholder="8"
+                    value={left}
+                    onChange={(e) => setLeft(e.target.value)}
+                  />
+                </Field>
+              </div>
+              <div className="flex-1">
+                <Field label="Right" htmlFor="set-right">
+                  <Input
+                    id="set-right"
+                    type="number"
+                    inputMode="numeric"
+                    min="1"
+                    placeholder="8"
+                    value={right}
+                    onChange={(e) => setRight(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") submit();
+                    }}
+                  />
+                </Field>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1">
+              <Field label="Reps" htmlFor="set-reps">
+                <Input
+                  id="set-reps"
+                  type="number"
+                  inputMode="numeric"
+                  min="1"
+                  placeholder="8"
+                  value={reps}
+                  onChange={(e) => setReps(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") submit();
+                  }}
+                />
+              </Field>
+            </div>
+          )}
         </div>
 
         {/* The one accent action in this sheet. */}
