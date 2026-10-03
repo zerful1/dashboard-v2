@@ -21,12 +21,13 @@ async function userId(who: typeof alice): Promise<string> {
   return (await findUserByEmail(who.email))!.id;
 }
 
-type Row = [exercise: string, set: number, kg: number, reps: number];
+type Row = [exercise: string, set: number, kg: number, reps: number, sides?: [left: number, right: number]];
 const workout = (date: string, day: string, sets: Row[], withCardio = false): SheetWorkout => ({
   date,
   day_name: day,
-  sets: sets.map(([exercise_name, set_number, weight_kg, reps]) => ({
+  sets: sets.map(([exercise_name, set_number, weight_kg, reps, sides]) => ({
     exercise_name, set_number, weight_kg, reps, is_bodyweight: weight_kg === 0,
+    reps_left: sides?.[0] ?? null, reps_right: sides?.[1] ?? null,
   })),
   cardio: withCardio
     ? [{ exercise: "Incline Treadmill", distance_miles: 0.17, duration_minutes: 5, speed: 3.5, incline: 15, calories_burned: 40 }]
@@ -117,6 +118,30 @@ describe("runImport", () => {
     ]);
     // Not even the session that had no conflict.
     expect((await rows(a)).sessions.map((s) => s.date)).toEqual(["2026-06-25"]);
+  });
+
+  it("imports both sides of a single-sided set, and matches them on a re-run", async () => {
+    const a = await userId(alice);
+    const sheet = [workout("2026-08-24", "Pull", [["Unilateral Machine Preacher Curl", 1, 17.5, 5, [6, 5]]])];
+    expect(await runImport(SCHEMA, a, sheet, { apply: true })).toMatchObject({ newSessions: 1, setsAdded: 1 });
+    expect(await runImport(SCHEMA, a, sheet, { apply: true })).toMatchObject({
+      unchangedSessions: 1, setsAdded: 0, setsAlreadyThere: 1,
+    });
+    const { rows } = await pool.query(`SELECT reps, reps_left, reps_right FROM ${T.workoutSets} WHERE user_id = $1`, [a]);
+    expect(rows).toEqual([{ reps: 5, reps_left: 6, reps_right: 5 }]);
+  });
+
+  // Exactly the 3 imported "a | b" sets until the rollout fills their sides in.
+  it("calls a set the dashboard holds without sides a conflict when the sheet has them", async () => {
+    const a = await userId(alice);
+    await logged(a, "2026-08-24", 2, [["Reverse Curl", 1, 12.5, 4]]);
+    const err = await runImport(
+      SCHEMA, a, [workout("2026-08-24", "Pull", [["Reverse Curl", 1, 12.5, 4, [4, 5]]])], { apply: true },
+    ).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ImportConflict);
+    expect((err as ImportConflict).conflicts).toEqual([
+      "2026-08-24 Reverse Curl set 1: the dashboard has 12.5 kg x 4, the sheet has 12.5 kg x L4 R5",
+    ]);
   });
 
   it("refuses a day the user's split does not have", async () => {

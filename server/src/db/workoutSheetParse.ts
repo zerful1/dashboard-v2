@@ -23,6 +23,9 @@ export interface SheetSet {
   set_number: number;
   weight_kg: number;
   reps: number;
+  /** Both or neither: "a | b" in the sheet is left | right. */
+  reps_left: number | null;
+  reps_right: number | null;
   is_bodyweight: boolean;
 }
 
@@ -91,17 +94,16 @@ const shown = (v: Cell) => (typeof v === "string" ? v.trim() : String(v));
 const name = (v: Cell) => (isEmpty(v) ? null : shown(v).replace(/\s+/g, " "));
 
 /**
- * Whole reps, or "a | b" read as the lower. The user confirmed (2026-10-03)
- * that "a | b" is left | right on a unilateral lift. The dashboard holds one
- * number per set, and the lower is what both sides managed.
+ * Whole reps, or "a | b": left | right on a single-sided lift (the user,
+ * 2026-10-03). Both sides are kept, and the reps that count are the lower.
  */
-function readReps(v: Cell): { reps: number; split: boolean } | null {
+function readReps(v: Cell): { reps: number; left: number | null; right: number | null } | null {
   const n = number(v);
-  if (n !== null) return Number.isInteger(n) && n > 0 ? { reps: n, split: false } : null;
+  if (n !== null) return Number.isInteger(n) && n > 0 ? { reps: n, left: null, right: null } : null;
   const pair = typeof v === "string" ? /^\s*(\d+)\s*\|\s*(\d+)\s*$/.exec(v) : null;
   if (!pair) return null;
-  const reps = Math.min(Number(pair[1]), Number(pair[2]));
-  return reps > 0 ? { reps, split: true } : null;
+  const [left, right] = [Number(pair[1]), Number(pair[2])];
+  return left > 0 && right > 0 ? { reps: Math.min(left, right), left, right } : null;
 }
 
 /** Corrections the user gave for single rows: date, then sheet row, then the right name. */
@@ -148,13 +150,14 @@ function parseTab(
       if (weight === null || weight < 0) return void notes.push(`${label} weight "${shown(w)}" is not a weight; left out`);
       const reps = readReps(r);
       if (!reps) return void notes.push(`${label} reps "${shown(r)}" are not a whole number; left out`);
-      if (reps.split) notes.push(`${label} reps "${shown(r)}"; logged ${reps.reps}`);
       const numbered = sets.filter((s) => s.exercise_name === exercise).length + 1;
       sets.push({
         exercise_name: exercise,
         set_number: numbered,
         weight_kg: weight,
         reps: reps.reps,
+        reps_left: reps.left,
+        reps_right: reps.right,
         // The dashboard's own convention: a bodyweight set is flagged and stored at 0.
         is_bodyweight: weight === 0,
       });
