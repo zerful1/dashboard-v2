@@ -70,6 +70,13 @@ describe('projectGoal: lift', () => {
     expect(projectGoal(liftGoal(80), points, TODAY).status).toBe('reached')
   })
 
+  // Part 2 review: reaching a lift goal is a fact (one set at the target), not
+  // a trend, so it needs no minimum number of sessions.
+  it('is reached on a lifted target even with fewer than 6 sessions', () => {
+    const points = [...line(4, 70, 1, 7).slice(0, 3), { date: TODAY, value: 75 }]
+    expect(projectGoal(liftGoal(75), points, TODAY).status).toBe('reached')
+  })
+
   it('calls under 0.1 kg a week flat, and a falling trend away', () => {
     expect(projectGoal(liftGoal(80), line(6, 70, 0.05, 7), TODAY)).toMatchObject({ status: 'flat' })
     expect(projectGoal(liftGoal(80), line(6, 70, -1, 7), TODAY)).toMatchObject({ status: 'away' })

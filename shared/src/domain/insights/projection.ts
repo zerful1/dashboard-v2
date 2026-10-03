@@ -34,6 +34,11 @@ export function projectGoal(
   const window = points
     .filter((p) => p.date > from && p.date <= today)
     .sort((a, b) => a.date.localeCompare(b.date))
+  // Reaching a lift goal is a fact - a set at the target - not a trend, so it
+  // needs no minimum number of sessions. `current` is that best set.
+  if (goal.kind === 'lift' && window.some((p) => p.value >= goal.target_kg)) {
+    return { goalId: goal.id, status: 'reached', current: Math.max(...window.map((p) => p.value)) }
+  }
   if (window.length < rule.minPoints) {
     return { goalId: goal.id, status: 'not-enough-data', have: window.length, need: rule.minPoints }
   }
@@ -44,12 +49,11 @@ export function projectGoal(
   const ratePerWeek = trend.slope * 7
   const target = goal.target_kg
 
-  // A lift goal is always up. A weight goal points from where it started to
-  // the target; with no starting weigh-in, from where the trend is now.
+  // A lift goal is always up (and was judged reached above). A weight goal
+  // points from where it started to the target; with no starting weigh-in yet,
+  // from where the trend is now (the first weigh-in after it fills the start).
   const direction = goal.kind === 'lift' ? 1 : Math.sign(target - (goal.start_kg ?? current))
-  const reached = goal.kind === 'lift'
-    ? Math.max(...window.map((p) => p.value)) >= target
-    : direction === 0 || (direction < 0 ? current <= target : current >= target)
+  const reached = goal.kind === 'weight' && (direction === 0 || (direction < 0 ? current <= target : current >= target))
   if (reached) return { goalId: goal.id, status: 'reached', current }
   if (Math.abs(ratePerWeek) < rule.flatPerWeek) return { goalId: goal.id, status: 'flat', ratePerWeek, current }
   if (Math.sign(ratePerWeek) !== direction) return { goalId: goal.id, status: 'away', ratePerWeek, current }

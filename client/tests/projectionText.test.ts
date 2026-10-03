@@ -19,6 +19,15 @@ describe("projectionText", () => {
       .toBe("Over a year away at this rate");
   });
 
+  // Part 2 review: dates round down to their Monday, so a projection later
+  // this week came out as a past date ("around 28 Sep" on Saturday 3 Oct).
+  it("says this week for a projection that falls in the current week", () => {
+    expect(projectionText({ goalId: "g", status: "projected", date: "2026-09-28", ratePerWeek: -0.5, current: 78.1 }, "weight", TODAY))
+      .toBe("this week · −0.5 kg a week");
+    expect(projectionText({ goalId: "g", status: "projected", date: "2026-10-05", ratePerWeek: -0.5, current: 78.4 }, "weight", TODAY))
+      .toBe("around 5 Oct · −0.5 kg a week");
+  });
+
   // Part 1 review: a date in another year says so.
   it("names the year of a projected date next year", () => {
     expect(projectionText({ goalId: "g", status: "projected", date: "2027-01-11", ratePerWeek: 0.5, current: 70 }, "lift", TODAY))

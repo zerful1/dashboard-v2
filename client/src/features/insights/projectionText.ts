@@ -5,7 +5,9 @@ import { dayMonth, signed } from "./format";
 export function projectionText(p: Projection, kind: Goal["kind"], today: string): string {
   switch (p.status) {
     case "projected":
-      return `around ${dayMonth(p.date, today)} · ${signed(p.ratePerWeek, 1)} kg a week`;
+      // Dates round down to their Monday, so one later this week would read as
+      // a date already past: say "this week" instead.
+      return `${p.date <= today ? "this week" : `around ${dayMonth(p.date, today)}`} · ${signed(p.ratePerWeek, 1)} kg a week`;
     case "reached":
       return "Reached";
     case "not-enough-data":
