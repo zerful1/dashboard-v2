@@ -47,7 +47,10 @@ export function LastSessionCard({ session }: { session: WorkoutSession }) {
           {highlights.map((h) => (
             <span key={h.name} className="truncate">
               <span className="text-text">{h.name}</span>{" "}
-              <span className="tnum">{setShort(h.best)}</span>
+              {/* A summary: the reps that count, not both sides (spec, 2026-10-03). */}
+              <span className="tnum">
+                {setShort({ weight_kg: h.best.weight_kg, reps: h.best.reps, is_bodyweight: h.best.is_bodyweight })}
+              </span>
             </span>
           ))}
         </div>

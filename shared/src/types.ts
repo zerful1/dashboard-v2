@@ -86,7 +86,11 @@ export interface WorkoutSet {
   exercise_name: string;
   set_number: number;
   weight_kg: number;
+  /** The reps that count: on a single-sided set, the lower side (004_unilateral_sets). */
   reps: number;
+  /** Both or neither, and only on a single-sided set. */
+  reps_left: number | null;
+  reps_right: number | null;
   is_bodyweight: boolean;
 }
 

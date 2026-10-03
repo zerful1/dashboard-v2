@@ -104,6 +104,37 @@ describe("useWorkoutDay", () => {
     expect(result.current.sets).toHaveLength(1);
   });
 
+  it("sends both sides of a single-sided set, and counts the weaker one straight away", async () => {
+    const spy = mockApi({ session, sets: [], logSet: pending });
+    const { result } = renderHook(() => useWorkoutDay(1, "2026-08-16"), { wrapper: wrapper(fresh()) });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => {
+      result.current.logSet.mutate({
+        exercise_name: "Unilateral Curl", set_number: 1, weight_kg: 12,
+        reps_left: 7, reps_right: 8, is_bodyweight: false,
+      });
+    });
+
+    await waitFor(() => expect(result.current.sets).toHaveLength(1));
+    expect(result.current.sets[0]).toMatchObject({ reps: 7, reps_left: 7, reps_right: 8 });
+    const post = spy.mock.calls.find(([p, o]) => p === "/api/workouts/sets" && o?.method === "POST");
+    const body = JSON.parse(String(post![1]!.body));
+    expect(body).toMatchObject({ reps_left: 7, reps_right: 8 });
+    expect(body).not.toHaveProperty("reps");
+  });
+
+  it("gives a plain set no sides on the optimistic row", async () => {
+    mockApi({ session, sets: [], logSet: pending });
+    const { result } = renderHook(() => useWorkoutDay(1, "2026-08-16"), { wrapper: wrapper(fresh()) });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    act(() => {
+      result.current.logSet.mutate({ exercise_name: "Squat", set_number: 1, weight_kg: 100, reps: 5, is_bodyweight: false });
+    });
+    await waitFor(() => expect(result.current.sets).toHaveLength(1));
+    expect(result.current.sets[0]).toMatchObject({ reps: 5, reps_left: null, reps_right: null });
+  });
+
   it("treats a missing session as empty, not an error", async () => {
     mockApi({ session: null });
     const { result } = renderHook(() => useWorkoutDay(1, "2026-08-16"), {

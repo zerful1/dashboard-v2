@@ -3,7 +3,7 @@ import { T } from "../config";
 import type { WorkoutSet } from "@dashboard/shared";
 
 const COLS = `id, user_id, session_id, exercise_name, set_number,
-              weight_kg::float8 AS weight_kg, reps, is_bodyweight`;
+              weight_kg::float8 AS weight_kg, reps, reps_left, reps_right, is_bodyweight`;
 
 export async function listSets(userId: string, sessionId: string): Promise<WorkoutSet[]> {
   const { rows } = await pool.query<WorkoutSet>(
@@ -21,6 +21,9 @@ export interface SetInput {
   setNumber: number;
   weightKg: number;
   reps: number;
+  /** Both or neither, on a single-sided set; `reps` must then be the lower. */
+  repsLeft?: number | null;
+  repsRight?: number | null;
   isBodyweight: boolean;
 }
 
@@ -38,11 +41,13 @@ export interface SetInput {
 export async function upsertSet(userId: string, input: SetInput): Promise<WorkoutSet> {
   const { rows } = await pool.query<WorkoutSet>(
     `INSERT INTO ${T.workoutSets}
-       (user_id, session_id, exercise_name, set_number, weight_kg, reps, is_bodyweight)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+       (user_id, session_id, exercise_name, set_number, weight_kg, reps, reps_left, reps_right, is_bodyweight)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      ON CONFLICT (session_id, exercise_name, set_number)
        DO UPDATE SET weight_kg = EXCLUDED.weight_kg,
                      reps = EXCLUDED.reps,
+                     reps_left = EXCLUDED.reps_left,
+                     reps_right = EXCLUDED.reps_right,
                      is_bodyweight = EXCLUDED.is_bodyweight
      RETURNING ${COLS}`,
     [
@@ -52,6 +57,8 @@ export async function upsertSet(userId: string, input: SetInput): Promise<Workou
       input.setNumber,
       input.isBodyweight ? 0 : input.weightKg,
       input.reps,
+      input.repsLeft ?? null,
+      input.repsRight ?? null,
       input.isBodyweight,
     ],
   );

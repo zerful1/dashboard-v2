@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { WorkoutSet } from "@dashboard/shared";
 import { useAuth } from "@/auth/AuthProvider";
-import { gymApi, type SetInput } from "@/api/gym";
+import { gymApi, type SetFields } from "@/api/gym";
 import { invalidateSessionReaders } from "./invalidate";
 
 export const workoutDayKey = (userId: string, dayType: number, date: string) =>
@@ -36,12 +36,12 @@ export function useWorkoutDay(dayType: number, date: string) {
   });
 
   const logSet = useMutation({
-    mutationFn: (input: Omit<SetInput, "date" | "day_type">) =>
-      gymApi.logSet({ ...input, date, day_type: dayType }),
+    mutationFn: (input: SetFields) => gymApi.logSet({ ...input, date, day_type: dayType }),
     onMutate: async (input) => {
       await qc.cancelQueries({ queryKey: key });
       const previous = qc.getQueryData<{ session: unknown; sets: WorkoutSet[] }>(key);
       const sets = previous?.sets ?? [];
+      const sided = "reps_left" in input;
 
       // The server upserts on (session_id, exercise_name, set_number), so a
       // repeat of the same set number REPLACES. Appending here would briefly
@@ -55,7 +55,10 @@ export function useWorkoutDay(dayType: number, date: string) {
         set_number: input.set_number,
         // Mirrors the server, which forces 0 at write time for bodyweight sets.
         weight_kg: input.is_bodyweight ? 0 : input.weight_kg,
-        reps: input.reps,
+        // Mirrors the server: a single-sided set counts its lower side.
+        reps: sided ? Math.min(input.reps_left, input.reps_right) : input.reps,
+        reps_left: sided ? input.reps_left : null,
+        reps_right: sided ? input.reps_right : null,
         is_bodyweight: input.is_bodyweight,
       } as WorkoutSet;
 

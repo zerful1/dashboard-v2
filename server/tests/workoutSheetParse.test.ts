@@ -31,10 +31,10 @@ describe("parseWorkoutSheet", () => {
         date: "2026-06-19",
         day_name: "Upper",
         sets: [
-          { exercise_name: "T Bar Row", set_number: 1, weight_kg: 30, reps: 9, is_bodyweight: false },
-          { exercise_name: "T Bar Row", set_number: 2, weight_kg: 30, reps: 8, is_bodyweight: false },
-          { exercise_name: "T Bar Row", set_number: 3, weight_kg: 30, reps: 8, is_bodyweight: false },
-          { exercise_name: "Lat Pulldown", set_number: 1, weight_kg: 61.2, reps: 6, is_bodyweight: false },
+          { exercise_name: "T Bar Row", set_number: 1, weight_kg: 30, reps: 9, is_bodyweight: false, reps_left: null, reps_right: null },
+          { exercise_name: "T Bar Row", set_number: 2, weight_kg: 30, reps: 8, is_bodyweight: false, reps_left: null, reps_right: null },
+          { exercise_name: "T Bar Row", set_number: 3, weight_kg: 30, reps: 8, is_bodyweight: false, reps_left: null, reps_right: null },
+          { exercise_name: "Lat Pulldown", set_number: 1, weight_kg: 61.2, reps: 6, is_bodyweight: false, reps_left: null, reps_right: null },
         ],
         cardio: [
           {
@@ -89,14 +89,13 @@ describe("parseWorkoutSheet", () => {
     ]);
   });
 
-  // Written for a unilateral exercise as left | right. The dashboard holds one
-  // number per set, and the lower is what both sides managed.
-  it('reads "6 | 5" reps as the lower of the two, saying so', () => {
+  // Left | right on a single-sided lift (the user, 2026-10-03): both kept, the lower counts.
+  it('reads "6 | 5" reps as left 6, right 5, counting 5', () => {
     const { workouts, notes } = parseWorkoutSheet([
       session("24082026", { C6: "Pull", B10: "Unilateral Machine Preacher Curl", C10: 17.5, D10: "6 | 5" }),
     ]);
-    expect(workouts[0]!.sets[0]!.reps).toBe(5);
-    expect(notes).toEqual(['2026-08-24 Unilateral Machine Preacher Curl: set 1 reps "6 | 5"; logged 5']);
+    expect(workouts[0]!.sets[0]).toMatchObject({ reps: 5, reps_left: 6, reps_right: 5 });
+    expect(notes).toEqual([]);
   });
 
   it("refuses reps it cannot read rather than guess", () => {

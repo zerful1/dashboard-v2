@@ -21,7 +21,8 @@ export function App() {
         // cache from the previous deploy is handed to components expecting the
         // new shape, which fails far from the cause.
         // v2: Profile gained the body-detail fields (nutrition, phase 1).
-        buster: "v2",
+        // v3: WorkoutSet gained reps_left / reps_right (single-sided sets).
+        buster: "v3",
         dehydrateOptions: { shouldDehydrateQuery: shouldPersistQuery },
       }}
     >

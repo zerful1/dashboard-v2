@@ -70,15 +70,36 @@ workoutsRouter.get("/day-names", async (req, res, next) => {
   }
 });
 
-const setBody = z.object({
-  date: isoDate,
-  day_type: z.number().int().positive(),
-  exercise_name: z.string().trim().min(1).max(80),
-  set_number: z.number().int().min(1).max(20),
-  weight_kg: z.number().min(0).max(500),
-  reps: z.number().int().min(1).max(200),
-  is_bodyweight: z.boolean().default(false),
-});
+const repsCount = z.number().int().min(1).max(200);
+
+const setBody = z
+  .object({
+    date: isoDate,
+    day_type: z.number().int().positive(),
+    exercise_name: z.string().trim().min(1).max(80),
+    set_number: z.number().int().min(1).max(20),
+    weight_kg: z.number().min(0).max(500),
+    reps: repsCount.optional(),
+    // A single-sided set sends both sides and no `reps`: the counted number is
+    // derived below, as the lower side, so it can never disagree with them.
+    reps_left: repsCount.optional(),
+    reps_right: repsCount.optional(),
+    is_bodyweight: z.boolean().default(false),
+  })
+  .superRefine((b, ctx) => {
+    const sides = [b.reps_left, b.reps_right].filter((v) => v !== undefined).length;
+    if (sides === 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [b.reps_left === undefined ? "reps_left" : "reps_right"],
+        message: "Send both sides or neither",
+      });
+    } else if (sides === 2 && b.reps !== undefined) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["reps"], message: "Send reps or both sides, not both" });
+    } else if (sides === 0 && b.reps === undefined) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["reps"], message: "Required" });
+    }
+  });
 
 workoutsRouter.post("/sets", validate({ body: setBody }), async (req, res, next) => {
   try {
@@ -88,13 +109,18 @@ workoutsRouter.post("/sets", validate({ body: setBody }), async (req, res, next)
     const split = await getSplit(req.userId);
     const session = await getOrCreateSession(req.userId, b.date, b.day_type, split);
 
+    const sides =
+      b.reps_left !== undefined && b.reps_right !== undefined ? { left: b.reps_left, right: b.reps_right } : null;
     res.status(201).json(
       await upsertSet(req.userId, {
         sessionId: session.id,
         exerciseName: b.exercise_name,
         setNumber: b.set_number,
         weightKg: b.weight_kg,
-        reps: b.reps,
+        // Validated above: `reps` is present exactly when the sides are not.
+        reps: sides ? Math.min(sides.left, sides.right) : b.reps!,
+        repsLeft: sides?.left ?? null,
+        repsRight: sides?.right ?? null,
         isBodyweight: b.is_bodyweight,
       }),
     );

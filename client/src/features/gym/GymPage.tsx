@@ -9,6 +9,7 @@ import { useSplit } from "@/hooks/useSplit";
 import { useGymDay } from "@/hooks/useGymDay";
 import { useExercises } from "@/hooks/useExercises";
 import { useWorkoutDay } from "@/hooks/useWorkoutDay";
+import { useHistoryExerciseNames } from "@/hooks/useExerciseStats";
 import { DaySelector } from "./DaySelector";
 import { DateSelector } from "@/components/ui/DateSelector";
 import { ExerciseList } from "./ExerciseList";
@@ -49,6 +50,7 @@ export function GymPage() {
   const { exercises, addExercise, deleteExercise, reorder, renameExercise } =
     useExercises(dayType);
   const { session, sets, lastSets, logSet, deleteSet } = useWorkoutDay(dayType, date);
+  const historyNames = useHistoryExerciseNames();
 
   const [tab, setTab] = useState<SubTab>("log");
   const [editMode, setEditMode] = useState(false);
@@ -150,6 +152,7 @@ export function GymPage() {
             onReorder={(ids) => reorder.mutate(ids)}
             onRename={setRenaming}
             onAdd={(name) => addExercise.mutate(name)}
+            historyNames={historyNames.data ?? []}
           />
 
           {!editMode && (
@@ -169,8 +172,8 @@ export function GymPage() {
             exercise_name: active.exercise_name,
             set_number: setNumber,
             weight_kg: weightKg,
-            reps,
             is_bodyweight: isBodyweight,
+            ...(typeof reps === "number" ? { reps } : { reps_left: reps.left, reps_right: reps.right }),
           });
         }}
         onDeleteSet={(id) => deleteSet.mutate(id)}

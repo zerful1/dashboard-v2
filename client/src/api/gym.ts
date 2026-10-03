@@ -10,15 +10,18 @@ import type {
   CoachingResult,
 } from "@dashboard/shared";
 
-export interface SetInput {
-  date: string;
-  day_type: number;
+/** Plain reps, or both sides of a single-sided set: the server counts the lower. */
+export type SetReps = { reps: number } | { reps_left: number; reps_right: number };
+
+/** One set as the logging sheet describes it. */
+export type SetFields = {
   exercise_name: string;
   set_number: number;
   weight_kg: number;
-  reps: number;
   is_bodyweight: boolean;
-}
+} & SetReps;
+
+export type SetInput = { date: string; day_type: number } & SetFields;
 
 export interface StatsPayload {
   sets: StatSetRow[];

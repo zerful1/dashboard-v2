@@ -104,7 +104,8 @@ type Cardio = SheetWorkout["cardio"][number];
 const CARDIO_FIELDS = ["distance_miles", "duration_minutes", "speed", "incline", "calories_burned"] as const;
 const sameCardio = (a: Cardio, b: Cardio) =>
   a.exercise === b.exercise && CARDIO_FIELDS.every((f) => (a[f] === null ? b[f] === null : b[f] !== null && Math.abs(a[f] - b[f]!) < 1e-9));
-const kgReps = (kg: number, reps: number, bw: boolean) => (bw ? `bodyweight x ${reps}` : `${kg} kg x ${reps}`);
+const setText = (kg: number, reps: number, bw: boolean, left: number | null, right: number | null) =>
+  `${bw ? "bodyweight" : `${kg} kg`} x ${left !== null && right !== null ? `L${left} R${right}` : reps}`;
 
 interface Planned {
   workout: SheetWorkout;
@@ -157,8 +158,11 @@ async function plan(client: PoolClient, S: string, userId: string, workouts: She
       continue;
     }
     const haveSets = (
-      await client.query<{ exercise_name: string; set_number: number; kg: number; reps: number; is_bodyweight: boolean }>(
-        `SELECT exercise_name, set_number, weight_kg::float8 AS kg, reps, is_bodyweight
+      await client.query<{
+        exercise_name: string; set_number: number; kg: number; reps: number;
+        reps_left: number | null; reps_right: number | null; is_bodyweight: boolean;
+      }>(
+        `SELECT exercise_name, set_number, weight_kg::float8 AS kg, reps, reps_left, reps_right, is_bodyweight
            FROM ${S}.workout_sets WHERE user_id = $1 AND session_id = $2`,
         [userId, existing.id],
       )
@@ -175,12 +179,18 @@ async function plan(client: PoolClient, S: string, userId: string, workouts: She
     const sets = workout.sets.filter((s) => {
       const have = haveSets.find((h) => h.exercise_name === s.exercise_name && h.set_number === s.set_number);
       if (!have) return true;
-      const same = have.is_bodyweight === s.is_bodyweight && have.reps === s.reps && (s.is_bodyweight || Math.abs(have.kg - s.weight_kg) < 1e-9);
+      const same =
+        have.is_bodyweight === s.is_bodyweight &&
+        have.reps === s.reps &&
+        have.reps_left === s.reps_left &&
+        have.reps_right === s.reps_right &&
+        (s.is_bodyweight || Math.abs(have.kg - s.weight_kg) < 1e-9);
       if (same) report.setsAlreadyThere++;
       else {
         conflicts.push(
-          `${workout.date} ${s.exercise_name} set ${s.set_number}: the dashboard has ${kgReps(have.kg, have.reps, have.is_bodyweight)}, ` +
-            `the sheet has ${kgReps(s.weight_kg, s.reps, s.is_bodyweight)}`,
+          `${workout.date} ${s.exercise_name} set ${s.set_number}: the dashboard has ` +
+            `${setText(have.kg, have.reps, have.is_bodyweight, have.reps_left, have.reps_right)}, ` +
+            `the sheet has ${setText(s.weight_kg, s.reps, s.is_bodyweight, s.reps_left, s.reps_right)}`,
         );
       }
       return false;
@@ -221,10 +231,12 @@ async function write(client: PoolClient, S: string, userId: string, planned: Pla
       ).rows[0]!.id;
     for (const s of p.sets) {
       await client.query(
-        `INSERT INTO ${S}.workout_sets (user_id, session_id, exercise_name, set_number, weight_kg, reps, is_bodyweight)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        `INSERT INTO ${S}.workout_sets
+           (user_id, session_id, exercise_name, set_number, weight_kg, reps, reps_left, reps_right, is_bodyweight)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         // Bodyweight sets are stored at 0, as upsertSet does.
-        [userId, sessionId, s.exercise_name, s.set_number, s.is_bodyweight ? 0 : s.weight_kg, s.reps, s.is_bodyweight],
+        [userId, sessionId, s.exercise_name, s.set_number, s.is_bodyweight ? 0 : s.weight_kg, s.reps,
+         s.reps_left, s.reps_right, s.is_bodyweight],
       );
     }
     for (const c of p.cardio) {

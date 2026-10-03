@@ -109,6 +109,54 @@ describe("sets", () => {
   });
 });
 
+/** Both sides and no `reps`: the counted number is the server's to derive. */
+const sided = (left: number, right: number, over: Record<string, unknown> = {}) => {
+  const { reps: _counted, ...rest } = set(over);
+  return { ...rest, reps_left: left, reps_right: right };
+};
+
+describe("single-sided sets", () => {
+  it("stores both sides and counts the weaker one", async () => {
+    const agent = await signedIn(alice);
+    const res = await agent.post("/api/workouts/sets").send(sided(7, 8)).expect(201);
+    expect(res.body).toMatchObject({ reps: 7, reps_left: 7, reps_right: 8 });
+
+    const s = (await agent.get("/api/workouts/session?date=2026-08-16&day_type=1")).body;
+    const list = await agent.get(`/api/workouts/sets?session_id=${s.id}`).expect(200);
+    expect(list.body[0]).toMatchObject({ reps: 7, reps_left: 7, reps_right: 8 });
+  });
+
+  it("counts equal sides as that number", async () => {
+    const agent = await signedIn(alice);
+    const res = await agent.post("/api/workouts/sets").send(sided(8, 8)).expect(201);
+    expect(res.body).toMatchObject({ reps: 8, reps_left: 8, reps_right: 8 });
+  });
+
+  it("refuses one side alone, both sides with reps, and no reps at all", async () => {
+    const agent = await signedIn(alice);
+    const { reps: _r, ...noReps } = set();
+    await agent.post("/api/workouts/sets").send({ ...noReps, reps_left: 7 }).expect(400);
+    await agent.post("/api/workouts/sets").send({ ...set(), reps_left: 7, reps_right: 8 }).expect(400);
+    await agent.post("/api/workouts/sets").send(noReps).expect(400);
+    // Positive complement: a plain set still goes in.
+    await agent.post("/api/workouts/sets").send(set()).expect(201);
+  });
+
+  it("clears the sides when a set number is logged again as a plain set", async () => {
+    const agent = await signedIn(alice);
+    await agent.post("/api/workouts/sets").send(sided(7, 8)).expect(201);
+    const res = await agent.post("/api/workouts/sets").send(set({ reps: 6 })).expect(201);
+    expect(res.body).toMatchObject({ reps: 6, reps_left: null, reps_right: null });
+  });
+
+  it("returns the sides from last session", async () => {
+    const agent = await signedIn(alice);
+    await agent.post("/api/workouts/sets").send(sided(7, 8, { date: "2026-08-09" })).expect(201);
+    const res = await agent.get("/api/workouts/last-session?day_type=1&before=2026-08-16").expect(200);
+    expect(res.body.Squat[0]).toMatchObject({ reps: 7, reps_left: 7, reps_right: 8 });
+  });
+});
+
 describe("set ownership scoping", () => {
   it("never reads or deletes another user's sets", async () => {
     const aliceAgent = await signedIn(alice);
