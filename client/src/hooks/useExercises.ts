@@ -72,6 +72,8 @@ export function useExercises(dayType: number) {
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: ["exercises"] });
       void qc.invalidateQueries({ queryKey: ["exerciseNames"] });
+      // Lift goals move with the rename on the server.
+      void qc.invalidateQueries({ queryKey: ["goals"] });
       invalidateSessionReaders(qc);
     },
   });

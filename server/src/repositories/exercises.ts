@@ -126,6 +126,21 @@ export async function renameExercise(
         WHERE user_id = $1 AND exercise_name = $2`,
       [userId, oldName, trimmed],
     );
+    // Lift goals match their exercise by name too, so they move with it.
+    // Merging onto a name that already has a goal keeps that one: the unique
+    // index allows one goal per lift, and the old name's would collide.
+    await client.query(
+      `DELETE FROM ${T.goals}
+        WHERE user_id = $1 AND kind = 'lift' AND exercise_name = $2 AND $2 <> $3
+          AND EXISTS (SELECT 1 FROM ${T.goals}
+                       WHERE user_id = $1 AND kind = 'lift' AND exercise_name = $3)`,
+      [userId, oldName, trimmed],
+    );
+    await client.query(
+      `UPDATE ${T.goals} SET exercise_name = $3
+        WHERE user_id = $1 AND kind = 'lift' AND exercise_name = $2`,
+      [userId, oldName, trimmed],
+    );
     return {
       exercisesUpdated: ex.rowCount ?? 0,
       setsUpdated: sets.rowCount ?? 0,

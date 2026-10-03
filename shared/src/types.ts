@@ -79,6 +79,19 @@ export interface WorkoutSession {
   created_at: string;
 }
 
+/** A target the Insights page projects toward (006_goals). */
+export interface Goal {
+  id: string;
+  user_id: string;
+  kind: "weight" | "lift";
+  /** Null for the weight goal. */
+  exercise_name: string | null;
+  target_kg: number;
+  /** The latest weigh-in, or the lift's heaviest set, when the goal was set. */
+  start_kg: number | null;
+  created_at: string;
+}
+
 export interface WorkoutSet {
   id: string;
   user_id: string;

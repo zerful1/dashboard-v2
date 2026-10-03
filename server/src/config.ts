@@ -88,4 +88,5 @@ export const T = {
   media: `${S}.media`,
   mediaSeasons: `${S}.media_seasons`,
   cofidFoods: `${S}.cofid_foods`,
+  goals: `${S}.goals`,
 } as const;

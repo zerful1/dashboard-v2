@@ -40,6 +40,10 @@ function mockApi(r: Routes = {}) {
   const calls: string[] = [];
   vi.spyOn(apiModule, "api").mockImplementation(async (path: string) => {
     calls.push(path);
+    // The Goals section's reads (Part 2): empty, so these tests stay about the review and records.
+    if (path.startsWith("/api/insights/projections")) return [] as never;
+    if (path.startsWith("/api/goals")) return [] as never;
+    if (path.startsWith("/api/workouts/exercise-names")) return [] as never;
     if (path.startsWith("/api/insights/review")) {
       const week = new URL(path, "http://x").searchParams.get("week")!;
       return (r.review ? r.review(week) : review(week)) as never;

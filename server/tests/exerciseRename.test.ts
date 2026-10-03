@@ -154,6 +154,41 @@ describe("exercise rename cascade", () => {
   });
 });
 
+// Insights part 2 review: a lift goal matches its exercise by name, so a rename
+// that left it behind cut it off from its history ("0 of 6 sessions" for good).
+describe("rename carries lift goals", () => {
+  it("moves a lift goal to the new name", async () => {
+    const agent = await signedIn(alice);
+    await agent.post("/api/exercises").send({ day_type: 1, exercise_name: "Lat Pulldown" }).expect(201);
+    await logOneSet(agent, "Lat Pulldown");
+    await agent.post("/api/goals/lifts").send({ exercise_name: "Lat Pulldown", target_kg: 75 }).expect(201);
+
+    await agent.post("/api/exercises/rename")
+      .send({ old_name: "Lat Pulldown", day_type: 1, new_name: "Lat Pull Down" })
+      .expect(200);
+
+    const goals = (await agent.get("/api/goals").expect(200)).body;
+    expect(goals.map((g: { exercise_name: string }) => g.exercise_name)).toEqual(["Lat Pull Down"]);
+  });
+
+  it("keeps the goal already on the new name when two exercises merge", async () => {
+    const agent = await signedIn(alice);
+    await agent.post("/api/exercises").send({ day_type: 1, exercise_name: "Row" }).expect(201);
+    await agent.post("/api/exercises").send({ day_type: 2, exercise_name: "Seated Row" }).expect(201);
+    await agent.post("/api/goals/lifts").send({ exercise_name: "Row", target_kg: 60 }).expect(201);
+    await agent.post("/api/goals/lifts").send({ exercise_name: "Seated Row", target_kg: 70 }).expect(201);
+
+    await agent.post("/api/exercises/rename")
+      .send({ old_name: "Row", day_type: 1, new_name: "Seated Row" })
+      .expect(200);
+
+    const goals = (await agent.get("/api/goals").expect(200)).body;
+    expect(goals.map((g: { exercise_name: string; target_kg: number }) => [g.exercise_name, g.target_kg])).toEqual([
+      ["Seated Row", 70],
+    ]);
+  });
+});
+
 describe("rename ownership scoping", () => {
   it("never renames another user's exercises or sets", async () => {
     await signedIn(alice);

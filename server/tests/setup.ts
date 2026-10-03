@@ -34,7 +34,7 @@ export async function truncateAll(): Promise<void> {
               ${T.workoutSessions}, ${T.workoutSets}, ${T.cardioEntries},
               ${T.workoutSplit}, ${T.habits}, ${T.habitCompletions},
               ${T.nutritionTargets}, ${T.foodItems}, ${T.foodLogEntries},
-              ${T.media}, ${T.mediaSeasons}
+              ${T.media}, ${T.mediaSeasons}, ${T.goals}
      RESTART IDENTITY CASCADE`,
   );
 }
