@@ -1,6 +1,7 @@
 import { Workbook, type CellValue } from "exceljs";
 import { pool, withTransaction } from "./pool";
 import { parseCofid, type Cell, type CofidFood } from "./cofidParse";
+import { toCell } from "./xlsxCell";
 
 export interface ImportArgs {
   file: string;
@@ -24,15 +25,6 @@ export function parseArgs(argv: string[]): ImportArgs {
   if (!/^[a-z_][a-z0-9_]*$/.test(schema)) throw new Error(`Refusing unsafe schema name: ${schema}`);
   if (schema === "app_test" || schema === "public") throw new Error(`Refusing to write cofid_foods in ${schema}`);
   return { file, schema, apply: argv.includes("--apply") };
-}
-
-function toCell(v: CellValue): Cell {
-  if (v === null || v === undefined) return null;
-  if (typeof v === "number" || typeof v === "string") return v;
-  if (typeof v === "object" && "result" in v) return toCell(v.result as CellValue);
-  if (typeof v === "object" && "richText" in v) return v.richText.map((r) => r.text).join("");
-  if (typeof v === "object" && "text" in v) return String(v.text);
-  return null;
 }
 
 function readSheet(wb: Workbook, pattern: RegExp): Cell[][] {
