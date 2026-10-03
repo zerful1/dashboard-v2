@@ -41,7 +41,10 @@ export function ExerciseList({
     ? historyNames.filter((n) => n.toLowerCase().includes(q) && !listed.has(n.toLowerCase())).slice(0, 5)
     : [];
   const add = (name: string) => {
-    onAdd(name);
+    // A phone capitalises as it likes ("T bar row"), and stats match names
+    // exactly, so a name that differs from history only in case takes the
+    // history's spelling.
+    onAdd(historyNames.find((n) => n.toLowerCase() === name.toLowerCase()) ?? name);
     setNewName("");
   };
 

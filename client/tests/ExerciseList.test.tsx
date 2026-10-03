@@ -33,6 +33,20 @@ describe("ExerciseList suggestions", () => {
     expect(box()).toHaveValue("");
   });
 
+  // Review finding: a phone capitalises "T bar row" for you, and stats match
+  // names exactly, so a typed near-twin must become the history's spelling.
+  it("adds a typed name in the history's spelling when only the case differs", async () => {
+    const onAdd = renderList();
+    await userEvent.type(box(), "t bar row{Enter}");
+    expect(onAdd).toHaveBeenCalledWith("T Bar Row");
+  });
+
+  it("adds a new name as typed", async () => {
+    const onAdd = renderList();
+    await userEvent.type(box(), "Cable Curl{Enter}");
+    expect(onAdd).toHaveBeenCalledWith("Cable Curl");
+  });
+
   it("leaves out names already on the day", async () => {
     renderList();
     await userEvent.type(box(), "pulld");
