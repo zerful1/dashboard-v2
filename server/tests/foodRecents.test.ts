@@ -3,6 +3,7 @@ import request from "supertest";
 import { createApp } from "../src/app";
 import { addEntry, listRecents } from "../src/repositories/foodLog";
 import { findUserByEmail } from "../src/repositories/users";
+import { listFoodItemsByIds } from "../src/repositories/foodItems";
 
 const app = createApp();
 const alice = { email: "alice@example.com", password: "correct-horse-9" };
@@ -64,5 +65,32 @@ describe("recent foods ownership scoping", () => {
 
     expect((await bobAgent.get("/api/nutrition/recents").expect(200)).body).toEqual([]);
     expect(await listRecents(bobId)).toEqual([]);
+  });
+});
+
+// The food library's own ownership test. The recents test above never reaches
+// listFoodItemsByIds for Bob (he has no entries), so it could not catch a
+// missing user filter there.
+describe("food library ownership scoping", () => {
+  it("never returns another user's food by id", async () => {
+    const { id: aliceId } = await signedIn(alice);
+    const { id: bobId } = await signedIn(bob);
+    const mine = await addEntry(aliceId, entry("Oats", 80, { food: food("1", "Oats") }) as never);
+    const aliceItemId = mine!.food_item_id!;
+
+    expect(await listFoodItemsByIds(bobId, [aliceItemId])).toEqual([]);
+    // Positive complement: the owner gets it back.
+    expect((await listFoodItemsByIds(aliceId, [aliceItemId])).map((i) => i.id)).toEqual([aliceItemId]);
+  });
+
+  it("keeps two users' copies of the same product apart", async () => {
+    const { id: aliceId } = await signedIn(alice);
+    const { id: bobId } = await signedIn(bob);
+    const a = await addEntry(aliceId, entry("Oats", 80, { food: food("1", "Oats") }) as never);
+    const b = await addEntry(bobId, entry("Oats", 80, { food: { ...food("1", "Oats"), kcal_per_100g: 999 } }) as never);
+
+    expect(b!.food_item_id).not.toBe(a!.food_item_id);
+    const [aliceItem] = await listFoodItemsByIds(aliceId, [a!.food_item_id!]);
+    expect(aliceItem!.kcal_per_100g).toBe(100);
   });
 });
