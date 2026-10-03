@@ -169,6 +169,14 @@ describe("ExerciseSheet", () => {
     expect(toggle()).toHaveAttribute("aria-pressed", "true");
   });
 
+  // Review finding: the sheet closes between exercises and iOS drops the app
+  // during rest, so a choice made today must survive reopening the sheet.
+  it("switches itself on when this session already has a set logged per side", () => {
+    mockCoaching(null);
+    renderSheet({ todaySets: [sidedSet()] });
+    expect(toggle()).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("stays off for a plain exercise with a plain last session", () => {
     mockCoaching(null);
     renderSheet({ lastSets: [aSet(1)] });

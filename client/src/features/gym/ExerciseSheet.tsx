@@ -44,9 +44,13 @@ export function ExerciseSheet({
   const { data: coaching, isLoading } = useCoaching(exercise?.exercise_name ?? null);
 
   // The user's rule (2026-10-03): on for a "Unilateral …" name, or when last
-  // session was logged per side; the switch overrides it either way.
+  // session was logged per side; the switch overrides it either way. Today's
+  // sets count too, so reopening the sheet mid-workout keeps the choice made.
   const sidedByDefault =
-    !!exercise && (/unilateral/i.test(exercise.exercise_name) || lastSets.some((s) => s.reps_left !== null));
+    !!exercise &&
+    (/unilateral/i.test(exercise.exercise_name) ||
+      lastSets.some((s) => s.reps_left !== null) ||
+      todaySets.some((s) => s.reps_left !== null));
 
   // Reset on open, not on close — clearing during the exit animation makes the
   // fields visibly blank as the sheet slides away.
