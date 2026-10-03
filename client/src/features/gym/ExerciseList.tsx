@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import type { Exercise, WorkoutSet } from "@dashboard/shared";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { canonicalName, suggestNames } from "@/lib/exerciseNames";
 import { ExerciseRow } from "./ExerciseRow";
 
 interface Props {
@@ -33,18 +34,14 @@ export function ExerciseList({
 }: Props) {
   const [newName, setNewName] = useState("");
 
-  const q = newName.trim().toLowerCase();
-  const listed = new Set(exercises.map((e) => e.exercise_name.toLowerCase()));
   // Names from history, so a day's list reuses them exactly: a near-miss like
   // "Machine T Bar Row" for "T Bar Row" would split one exercise's history in two.
-  const suggestions = q
-    ? historyNames.filter((n) => n.toLowerCase().includes(q) && !listed.has(n.toLowerCase())).slice(0, 5)
-    : [];
+  const suggestions = suggestNames(historyNames, newName, exercises.map((e) => e.exercise_name));
   const add = (name: string) => {
     // A phone capitalises as it likes ("T bar row"), and stats match names
     // exactly, so a name that differs from history only in case takes the
     // history's spelling.
-    onAdd(historyNames.find((n) => n.toLowerCase() === name.toLowerCase()) ?? name);
+    onAdd(canonicalName(historyNames, name));
     setNewName("");
   };
 
