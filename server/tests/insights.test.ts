@@ -60,6 +60,23 @@ describe("weekly review endpoint", () => {
   });
 });
 
+// Review finding: TargetsSheet saves with effective_from = today, so two saves
+// in a day tie, and the tie-break compared created_at as a string while
+// node-pg handed it back as a Date. Production already holds such a pair.
+describe("weekly review with targets saved twice in a day", () => {
+  it("answers with the later target instead of failing", async () => {
+    const agent = await signedIn(alice);
+    const target = (calories: number, protein_g: number) =>
+      agent.post("/api/nutrition/targets")
+        .send({ effective_from: "2026-09-01", goal_mode: "cut", calories, protein_g, fat_g: 80, carbs_g: 200 })
+        .expect(201);
+    await target(2402, 180);
+    await target(2500, 185);
+    const res = await agent.get("/api/insights/review?week=2026-09-21").expect(200);
+    expect(res.body.foodTarget).toEqual({ calories: 2500, proteinG: 185 });
+  });
+});
+
 describe("records endpoint", () => {
   it("lists a session that beat the exercise's best", async () => {
     const agent = await signedIn(alice);
