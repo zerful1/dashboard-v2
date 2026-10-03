@@ -76,6 +76,15 @@ export function GoalsSection({ today, historyNames }: { today: string; historyNa
     <Card>
       <div className="lbl">Goals</div>
       <div className="mt-3 space-y-4">
+        {projections.isError && !projections.data && (
+          // The projections query opts out of the toast, so its failure is said here.
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm text-negative">Couldn't load projections</p>
+            <Button variant="ghost" onClick={() => void projections.refetch()}>
+              Retry
+            </Button>
+          </div>
+        )}
         <div className="space-y-2">
           {weightGoal && <GoalRow goal={weightGoal} projection={byGoal.get(weightGoal.id)} today={today} />}
           <div className="flex items-end gap-2">
@@ -90,8 +99,8 @@ export function GoalsSection({ today, historyNames }: { today: string; historyNa
                 />
               </Field>
             </div>
-            {/* This form's one filled action. */}
             <Button
+              variant="ghost"
               disabled={weightValue === null || weightValue <= 0}
               onClick={() => {
                 if (weightValue) g.setWeight.mutate(weightValue, { onSuccess: () => setWeight("") });
@@ -128,8 +137,8 @@ export function GoalsSection({ today, historyNames }: { today: string; historyNa
                     <Input id="goal-lift-kg" inputMode="decimal" value={liftKg} onChange={(e) => setLiftKg(e.target.value)} />
                   </Field>
                 </div>
-                {/* This form's one filled action. */}
                 <Button
+                  variant="ghost"
                   disabled={!lift.trim() || liftValue === null || liftValue <= 0}
                   onClick={() => {
                     if (!liftValue) return;

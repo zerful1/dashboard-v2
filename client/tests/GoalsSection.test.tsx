@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Goal, Projection } from "@dashboard/shared";
 import { GoalsSection } from "../src/features/insights/GoalsSection";
 import * as apiModule from "../src/lib/api";
+import { ApiError } from "../src/lib/api";
 
 vi.mock("@/auth/AuthProvider", () => ({
   useAuth: () => ({ user: { id: "u1", email: "a@b.com" }, loading: false }),
@@ -54,6 +55,26 @@ describe("GoalsSection", () => {
     expect(await screen.findByText("around 9 Nov · −0.4 kg a week")).toBeInTheDocument();
     expect(screen.getByText("Lat Pulldown → 75 kg")).toBeInTheDocument();
     expect(screen.getByText("Not enough data yet (4 of 6 sessions)")).toBeInTheDocument();
+  });
+
+  // Part 2 review: the projections query opts out of the toast, so the section
+  // must show its failure itself, or every goal reads "…" for good.
+  it("says when projections could not load, and retries", async () => {
+    let fail = true;
+    vi.spyOn(apiModule, "api").mockImplementation(async (path: string) => {
+      if (path.startsWith("/api/insights/projections")) {
+        if (fail) throw new ApiError(500, "Server error");
+        return [{ goalId: "g1", status: "reached", current: 75 }] as never;
+      }
+      if (path.startsWith("/api/goals")) return [goal({})] as never;
+      throw new Error(`unexpected ${path}`);
+    });
+    renderSection();
+    expect(await screen.findByText("Couldn't load projections")).toBeInTheDocument();
+    fail = false;
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByText("Reached")).toBeInTheDocument();
+    expect(screen.queryByText("Couldn't load projections")).toBeNull();
   });
 
   it("saves a target weight", async () => {
