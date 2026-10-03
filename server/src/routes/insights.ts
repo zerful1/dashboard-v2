@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { z } from "zod";
-import { isMonday, recordEvents, shiftISO, weeklyReview } from "@dashboard/shared";
+import { isMonday, isRealDate, PROJECTION_RULES, projectGoal, recordEvents, shiftISO, weeklyReview } from "@dashboard/shared";
 import { requireAuth } from "../middleware/requireAuth";
 import { validate } from "../middleware/validate";
 import { getSplit } from "../repositories/split";
 import { listTargets } from "../repositories/nutritionTargets";
 import { recordRows, reviewInputs } from "../repositories/insights";
+import { listGoals, liftPoints, weightPoints } from "../repositories/goals";
 
 export const insightsRouter = Router();
 // Router level, so a route added to this file is protected by default.
@@ -32,6 +33,29 @@ insightsRouter.get("/review", validate({ query: weekQuery }), async (req, res, n
 insightsRouter.get("/records", async (req, res, next) => {
   try {
     res.json(recordEvents(await recordRows(req.userId)));
+  } catch (err) {
+    next(err);
+  }
+});
+
+const todayQuery = z.object({ today: z.string().refine(isRealDate, "Expected a date as YYYY-MM-DD") });
+
+insightsRouter.get("/projections", validate({ query: todayQuery }), async (req, res, next) => {
+  try {
+    const { today } = req.query as unknown as { today: string };
+    const goals = await listGoals(req.userId);
+    res.json(
+      await Promise.all(
+        goals.map(async (goal) => {
+          const from = shiftISO(today, -PROJECTION_RULES[goal.kind].windowDays);
+          const points =
+            goal.kind === "weight"
+              ? await weightPoints(req.userId, from, today)
+              : await liftPoints(req.userId, goal.exercise_name!, from, today);
+          return projectGoal(goal, points, today);
+        }),
+      ),
+    );
   } catch (err) {
     next(err);
   }
