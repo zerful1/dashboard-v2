@@ -78,6 +78,14 @@ describe("Insights weekly review", () => {
     expect(screen.getByText("avg 78.6 kg (+0.8)")).toBeInTheDocument();
   });
 
+  // Found in the browser: "1 sets".
+  it("says one set and one day in the singular", async () => {
+    freeze();
+    mockApi({ review: (w) => review(w, { current: numbers({ training: { days: 1, sets: 1, volume: 300 } }) }) });
+    renderPage();
+    expect(await screen.findByText("1 of 5 days · 1 set · 300 kg (−97%)")).toBeInTheDocument();
+  });
+
   it("says no food was logged instead of showing zero", async () => {
     freeze();
     mockApi({ review: (w) => review(w, { current: numbers({ food: { daysLogged: 0, avgKcal: null, avgProteinG: null } }) }) });

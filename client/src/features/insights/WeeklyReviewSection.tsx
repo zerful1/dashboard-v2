@@ -13,7 +13,7 @@ const n0 = (n: number) => Math.round(n).toLocaleString("en-GB");
 function trainingLine(r: WeeklyReview): string {
   const { days, sets, volume } = r.current.training;
   const change = percentChange(volume, r.previous.training.volume);
-  return `${days} of ${r.trainingTarget} days · ${sets} sets · ${n0(volume)} kg${change ? ` (${change})` : ""}`;
+  return `${days} of ${r.trainingTarget} days · ${sets} ${sets === 1 ? "set" : "sets"} · ${n0(volume)} kg${change ? ` (${change})` : ""}`;
 }
 
 function foodLine(r: WeeklyReview): string {
