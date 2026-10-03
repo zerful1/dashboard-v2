@@ -25,6 +25,8 @@ const aSet = (n: number, over: Partial<WorkoutSet> = {}): WorkoutSet => ({
   set_number: n,
   weight_kg: 100,
   reps: 5,
+  reps_left: null,
+  reps_right: null,
   is_bodyweight: false,
   ...over,
 });

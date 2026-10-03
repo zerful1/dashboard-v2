@@ -1,11 +1,19 @@
 import type { WorkoutSet, CardioEntry } from '../types'
 
-export function setShort(s: Pick<WorkoutSet, 'weight_kg' | 'reps' | 'is_bodyweight'>) {
-  return s.is_bodyweight ? `BW×${s.reps}` : `${s.weight_kg}×${s.reps}`
+type ShownSet = Pick<WorkoutSet, 'weight_kg' | 'reps' | 'is_bodyweight'> &
+  Partial<Pick<WorkoutSet, 'reps_left' | 'reps_right'>>
+
+/** Both sides when the set has them; summaries pass the counted reps alone. */
+function repsText(s: ShownSet) {
+  return s.reps_left != null && s.reps_right != null ? `L${s.reps_left} R${s.reps_right}` : `${s.reps}`
 }
 
-export function setLong(s: Pick<WorkoutSet, 'weight_kg' | 'reps' | 'is_bodyweight'>) {
-  return s.is_bodyweight ? `BW × ${s.reps}` : `${s.weight_kg}kg × ${s.reps}`
+export function setShort(s: ShownSet) {
+  return s.is_bodyweight ? `BW×${repsText(s)}` : `${s.weight_kg}×${repsText(s)}`
+}
+
+export function setLong(s: ShownSet) {
+  return s.is_bodyweight ? `BW × ${repsText(s)}` : `${s.weight_kg}kg × ${repsText(s)}`
 }
 
 export function cardioLine(entry: CardioEntry): string {
