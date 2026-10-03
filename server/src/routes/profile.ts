@@ -34,6 +34,12 @@ const patchBody = z
     // A permissive check; the value is only ever passed to Intl, which throws on
     // a genuinely unknown zone at the point of use.
     timezone: z.string().min(1).max(60).optional(),
+    // Optional body details for the nutrition TDEE hint. The DB CHECKs repeat
+    // these bounds, so a request that slipped past here would still fail.
+    height_cm: z.number().min(100).max(250).optional(),
+    birth_year: z.number().int().min(1900).max(2100).optional(),
+    sex: z.enum(["male", "female"]).optional(),
+    activity_level: z.enum(["sedentary", "light", "moderate", "very", "extra"]).optional(),
   })
   .refine((v) => Object.keys(v).length > 0, { message: "No fields to update" });
 

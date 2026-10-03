@@ -16,6 +16,10 @@ const PROFILE: Profile = {
   units: "kg",
   timezone: "Europe/London",
   updated_at: "2026-08-15T00:00:00.000Z",
+  height_cm: null,
+  birth_year: null,
+  sex: null,
+  activity_level: null,
 };
 
 // DEFAULT_SPLIT.week is [3,2,1,'rest',5,4,'rest'] Monday-first, and its days are

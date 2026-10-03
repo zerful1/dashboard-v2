@@ -1,25 +1,9 @@
-import { useEffect, useState } from "react";
 import { WifiOff } from "lucide-react";
+import { useOnline } from "@/hooks/useOnline";
 
-/**
- * `navigator.onLine` is only ever trustworthy when false — true means "there is
- * a network interface", not "the internet is reachable". That asymmetry is
- * exactly right here: a false positive would hide the banner from someone who
- * really is offline, and false only ever means genuinely disconnected.
- */
+// Why navigator.onLine is trusted only when false: see useOnline.
 export function OfflineBanner() {
-  const [offline, setOffline] = useState(() => !navigator.onLine);
-
-  useEffect(() => {
-    const on = () => setOffline(false);
-    const off = () => setOffline(true);
-    window.addEventListener("online", on);
-    window.addEventListener("offline", off);
-    return () => {
-      window.removeEventListener("online", on);
-      window.removeEventListener("offline", off);
-    };
-  }, []);
+  const offline = !useOnline();
 
   if (!offline) return null;
 

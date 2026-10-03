@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useWorkoutDay } from "../src/hooks/useWorkoutDay";
+import { createQueryClient } from "../src/lib/queryClient";
 import { SESSION_READERS } from "../src/hooks/invalidate";
 import * as apiModule from "../src/lib/api";
 import { ApiError } from "../src/lib/api";
@@ -10,6 +11,7 @@ import { ApiError } from "../src/lib/api";
 vi.mock("@/auth/AuthProvider", () => ({
   useAuth: () => ({ user: { id: "u1", email: "a@b.com" }, loading: false }),
 }));
+vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
 
 const session = {
   id: "s1",
@@ -76,9 +78,32 @@ function mockApi(routes: {
 
 const pending = () => new Promise<never>(() => {});
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  onlineManager.setOnline(true);
+});
 
 describe("useWorkoutDay", () => {
+  // The user's call (2026-10-03): a set logged with no signal fails and is
+  // logged again once back online, rather than queueing and looking saved.
+  // The real client, because the rule is its default, not this hook's option.
+  it("fails a set logged offline instead of queueing it", async () => {
+    mockApi({ session, sets: [aSet(1, 100)], logSet: () => Promise.reject(new TypeError("Failed to fetch")) });
+    const client = createQueryClient();
+    client.setDefaultOptions({ queries: { retry: false }, mutations: { ...client.getDefaultOptions().mutations, retry: false } });
+    const { result } = renderHook(() => useWorkoutDay(1, "2026-08-16"), { wrapper: wrapper(client) });
+    await waitFor(() => expect(result.current.sets).toHaveLength(1));
+
+    onlineManager.setOnline(false);
+    act(() => {
+      result.current.logSet.mutate({ exercise_name: "Squat", set_number: 2, weight_kg: 100, reps: 5, is_bodyweight: false });
+    });
+    await waitFor(() => expect(result.current.logSet.isError).toBe(true));
+    expect(result.current.logSet.isPaused).toBe(false);
+    // Rolled back: no set that looks saved but is not.
+    expect(result.current.sets).toHaveLength(1);
+  });
+
   it("treats a missing session as empty, not an error", async () => {
     mockApi({ session: null });
     const { result } = renderHook(() => useWorkoutDay(1, "2026-08-16"), {

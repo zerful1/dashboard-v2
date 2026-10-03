@@ -36,17 +36,12 @@ function normalizeTimeZone(tz: string): string | null {
 
 /**
  * How this page reports failure, and the rule behind it (the whole rule is in
- * App.tsx): a form submission renders its own inline error; everything else
- * toasts. Nothing here is a submission — the two text fields autosave on blur,
- * after the user has already moved on, and there is no submit button to anchor
- * a message to — so none of the three mutations render error UI. Each rejection
- * is left to the app-wide toast in App.tsx.
- *
- * That only holds as long as no mutation below grows its own onError:
- * `defaultMutationOptions` merges `defaultOptions.mutations` and a hook's own
- * options with a plain object spread, so a hook-level onError — even a trivial
- * one — would replace the global default for that mutation instead of adding to
- * it, and silently stop it from toasting.
+ * lib/queryClient.ts): a form submission renders its own inline error;
+ * everything else toasts. Nothing here is a submission — the two text fields
+ * autosave on blur, after the user has already moved on, and there is no
+ * submit button to anchor a message to — so none of the three mutations render
+ * error UI. Each rejection is left to the app-wide toast, which sits on the
+ * MutationCache and so fires whether or not a mutation has its own onError.
  *
  * The profile query is the exception, because this page cannot render at all
  * without it: it renders its own error state below and opts out of the toast,

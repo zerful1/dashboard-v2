@@ -34,6 +34,10 @@ const PROFILE = {
   units: "kg",
   timezone: "Europe/London",
   updated_at: "",
+  height_cm: null,
+  birth_year: null,
+  sex: null,
+  activity_level: null,
 };
 
 /** Serves the page, and captures the DELETE it sends. Mocked by PATH. */

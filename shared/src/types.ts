@@ -15,6 +15,9 @@ export type WeightUnit = "kg" | "lb";
  * render time. Storing user-dependent units would put a conversion in the path of
  * every aggregate.
  */
+export type Sex = "male" | "female";
+export type ActivityLevel = "sedentary" | "light" | "moderate" | "very" | "extra";
+
 export interface Profile {
   user_id: string;
   display_name: string;
@@ -22,6 +25,12 @@ export interface Profile {
   units: WeightUnit;
   timezone: string;
   updated_at: string;
+  // Optional body details. Used only by the nutrition TDEE hint, and null
+  // until the user chooses to give them.
+  height_cm: number | null;
+  birth_year: number | null;
+  sex: Sex | null;
+  activity_level: ActivityLevel | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -142,6 +151,26 @@ export interface NutritionTarget {
  */
 export type FoodExternalSource = "off" | "cofid" | "manual";
 
+/**
+ * Fibre, sugar, saturated fat and salt, in grams, on the search wire format.
+ * Optional so existing literals stay valid; absent and null both mean UNKNOWN,
+ * never zero.
+ */
+export interface LabelValues {
+  fibre?: number | null;
+  sugar?: number | null;
+  satFat?: number | null;
+  salt?: number | null;
+}
+
+/** Label-nutrient grams snapshotted onto a diary entry. NULL = unknown, never zero. */
+export interface LabelTotals {
+  fibre_g: number | null;
+  sugar_g: number | null;
+  sat_fat_g: number | null;
+  salt_g: number | null;
+}
+
 export interface FoodItem {
   id: string;
   user_id: string;
@@ -157,6 +186,14 @@ export interface FoodItem {
   protein_per_100g: number | null;
   fat_per_100g: number | null;
   carbs_per_100g: number | null;
+  fibre_per_100g: number | null;
+  sugar_per_100g: number | null;
+  sat_fat_per_100g: number | null;
+  salt_per_100g: number | null;
+  fibre_per_serving: number | null;
+  sugar_per_serving: number | null;
+  sat_fat_per_serving: number | null;
+  salt_per_serving: number | null;
   is_favourite: boolean;
   external_source: FoodExternalSource;
   external_id: string | null;
@@ -170,7 +207,7 @@ export type FoodLogUnit = "serving" | "g";
  * Name and macros are snapshotted at write time — the diary never joins back
  * through food_items, so renaming or deleting a food never rewrites history.
  */
-export interface FoodLogEntry {
+export interface FoodLogEntry extends LabelTotals {
   id: string;
   user_id: string;
   date: string; // 'YYYY-MM-DD'
@@ -196,7 +233,7 @@ export interface FoodLogEntry {
  * already returns; kept verbatim so neither the function nor `resolveMacros` has to
  * change during the port.
  */
-export interface FoodHitServing {
+export interface FoodHitServing extends LabelValues {
   label: string;
   grams: number;
   kcal: number;
@@ -212,12 +249,66 @@ export interface FoodHit {
   name: string;
   brand?: string;
   servings: FoodHitServing[];
-  per100g: { kcal: number; p: number; f: number; c: number } | null;
+  per100g: ({ kcal: number; p: number; f: number; c: number } & LabelValues) | null;
 }
 
 export interface FoodSearchResult {
   hits: FoodHit[];
   warnings?: string[];
+}
+
+/** The nutrition a food carries, per serving and per 100 g. */
+export type FoodNutrition = Pick<
+  FoodItem,
+  | "serving_description" | "serving_grams"
+  | "kcal_per_serving" | "protein_per_serving" | "fat_per_serving" | "carbs_per_serving"
+  | "kcal_per_100g" | "protein_per_100g" | "fat_per_100g" | "carbs_per_100g"
+  | "fibre_per_100g" | "sugar_per_100g" | "sat_fat_per_100g" | "salt_per_100g"
+  | "fibre_per_serving" | "sugar_per_serving" | "sat_fat_per_serving" | "salt_per_serving"
+>;
+
+/** A food to store in the user's library as an entry is logged. */
+export interface FoodInput extends FoodNutrition {
+  source: FoodExternalSource;
+  /** The search source's own id. Null exactly when source is 'manual'. */
+  external_id: string | null;
+  name: string;
+  brand: string | null;
+}
+
+/** POST /api/nutrition/diary. Send at most one of food_item_id and food. */
+export interface DiaryEntryInput extends LabelTotals {
+  date: string; // 'YYYY-MM-DD', the day chosen on the client
+  name: string;
+  quantity: number;
+  unit: FoodLogUnit;
+  calories: number;
+  protein_g: number;
+  fat_g: number;
+  carbs_g: number;
+  /** Link to a food already in the caller's library... */
+  food_item_id?: string;
+  /** ...or store this one there first. */
+  food?: FoodInput;
+}
+
+export type TargetInput = Pick<
+  NutritionTarget,
+  "effective_from" | "goal_mode" | "calories" | "protein_g" | "fat_g" | "carbs_g"
+>;
+
+export interface RecentFood {
+  /** The most recent entry for this food; its amount is the default next time. */
+  entry: FoodLogEntry;
+  /** The library item, when the entry was linked to one. */
+  item: FoodItem | null;
+}
+
+export interface TdeeHint {
+  formula: { kcal: number; weight_kg: number; age: number } | null;
+  adaptive: { kcal: number; days_logged: number; weigh_ins: number } | null;
+  /** Days with any food in the 28-day window, for "N of 14" while adaptive is null. */
+  days_logged: number;
 }
 
 // ---------------------------------------------------------------------------

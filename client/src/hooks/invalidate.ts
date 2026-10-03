@@ -33,3 +33,16 @@ export function invalidateSessionReaders(qc: QueryClient): void {
     void qc.invalidateQueries({ queryKey: [prefix] });
   }
 }
+
+/**
+ * Every query that reads food_log_entries. A diary write can change a day, the
+ * Recent list and the TDEE hint's intake, so it invalidates all of them - the
+ * lesson of SESSION_READERS above, applied before rather than after.
+ */
+export const NUTRITION_READERS = ["diary", "recents", "tdeeHint"] as const;
+
+export function invalidateNutritionReaders(qc: QueryClient): void {
+  for (const prefix of NUTRITION_READERS) {
+    void qc.invalidateQueries({ queryKey: [prefix] });
+  }
+}

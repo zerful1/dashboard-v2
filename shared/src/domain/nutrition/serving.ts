@@ -9,7 +9,7 @@ export interface ResolvedMacros {
 }
 
 export function resolveMacros(
-  hit: FoodHit,
+  hit: Pick<FoodHit, 'per100g'>,
   picked: FoodHitServing,
   quantity: number,
   unit: FoodLogUnit,

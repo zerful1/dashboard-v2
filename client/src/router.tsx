@@ -36,6 +36,9 @@ const SettingsPage = lazy(() =>
 const GymPage = lazy(() =>
   import("@/features/gym/GymPage").then((m) => ({ default: m.GymPage })),
 );
+const NutritionPage = lazy(() =>
+  import("@/features/nutrition/NutritionPage").then((m) => ({ default: m.NutritionPage })),
+);
 const ComingSoonPage = lazy(() =>
   import("@/pages/ComingSoonPage").then((m) => ({ default: m.ComingSoonPage })),
 );
@@ -62,6 +65,7 @@ export const router = createBrowserRouter([
           { path: "/", element: <HomePage /> },
           { path: "/weight", element: <WeightPage /> },
           { path: "/gym", element: <GymPage /> },
+          { path: "/nutrition", element: <NutritionPage /> },
           { path: "/settings", element: <SettingsPage /> },
           // Inside the protected children, not beside them, so an address that
           // matches nothing still renders with the nav and sign-out around it.

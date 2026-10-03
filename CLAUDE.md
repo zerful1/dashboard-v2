@@ -202,8 +202,15 @@ purged at all three identity transitions in `AuthProvider`. `qc.clear()` empties
 memory only — the persisted copy is a separate artifact, so `persister.removeClient()`
 has to accompany every one of them.
 
-**Writes are not queued offline.** Logging with no signal fails with a toast. A
-banner says so, because failing silently would look like success.
+**Writes are not queued offline, in any feature.** Logging with no signal fails
+with a toast and is logged again once back online — the user's call, made for
+Gym on 2026-10-03. A banner says so, because failing silently would look like
+success. The rule is `networkMode: "always"` in `defaultOptions.mutations`
+(`client/src/lib/queryClient.ts`); TanStack's own default pauses a write
+offline and replays it on reconnect, so it looks saved and is lost if the app
+closes first. A hook inherits the rule unless it sets its own `networkMode`,
+and none should. Its tests use `createQueryClient()`, because a bare
+`new QueryClient()` in a test does not have it.
 
 ---
 
@@ -229,8 +236,18 @@ band of viewport widths with no navigation at all, and jsdom never evaluates
 media queries so no test will catch it.
 
 **Optimistic mutations**: `onMutate` snapshots and writes, `onError` rolls back
-*only*, `onSettled` invalidates. The global handler in `App.tsx` owns the
-message — per-hook handlers never touch UI, so one failure produces one message.
+*only*, `onSettled` invalidates. The global handler owns the message — per-hook
+handlers never touch UI, so one failure produces one message. It lives on the
+**`MutationCache`** in `client/src/lib/queryClient.ts`, and must stay there:
+TanStack merges a hook's options over `defaultOptions.mutations` with a plain
+spread, so a handler there is replaced by every hook's own rollback `onError`,
+and failures go unreported. (A plain option such as `networkMode` *is* safe in
+`defaultOptions.mutations`: the spread only loses what a hook also sets.)
+
+**A query whose page renders its own failure opts out of the toast** with
+`meta: { errorToast: false }`, and shows its error card only when there is no
+data. A failed refetch keeps the last good data, so `isError` alone does not
+mean there is nothing to show.
 
 ---
 

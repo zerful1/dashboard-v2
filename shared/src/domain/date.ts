@@ -40,6 +40,18 @@ export function shiftISO(iso: string, days: number): string {
   return dt.toISOString().slice(0, 10)
 }
 
+/**
+ * Whole days from `from` to `to`, negative when `to` is earlier. The same UTC
+ * calendar cursor as shiftISO, so a clock change is not a special case.
+ */
+export function daysBetweenISO(from: string, to: string): number {
+  const utc = (iso: string) => {
+    const [y, m, d] = iso.split('-').map(Number)
+    return Date.UTC(y!, m! - 1, d!)
+  }
+  return Math.round((utc(to) - utc(from)) / 86_400_000)
+}
+
 /** Day of the calendar year, 1-based (Jan 1 = 1). */
 export function getDayOfYear(d: Date = new Date()): number {
   const year = d.getFullYear()

@@ -4,15 +4,7 @@ import type { WorkoutSession } from "@dashboard/shared";
 import { setShort } from "@dashboard/shared";
 import { useAuth } from "@/auth/AuthProvider";
 import { gymApi } from "@/api/gym";
-
-function pretty(date: string): string {
-  const [y, m, d] = date.split("-").map(Number);
-  return new Date(y!, m! - 1, d!).toLocaleDateString(undefined, {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
-}
+import { prettyDate } from "@/lib/dates";
 
 export function LastSessionCard({ session }: { session: WorkoutSession }) {
   const { user } = useAuth();
@@ -45,7 +37,7 @@ export function LastSessionCard({ session }: { session: WorkoutSession }) {
         {/* The SNAPSHOTTED name, rendered directly. Resolving it through
             getDayName would relabel history whenever the split is edited,
             which is exactly what snapshotting exists to prevent. */}
-        {pretty(session.date)} · {session.day_name}
+        {prettyDate(session.date)} · {session.day_name}
         {sets.length > 0 && (
           <span className="font-normal text-muted"> · {sets.length} sets</span>
         )}
