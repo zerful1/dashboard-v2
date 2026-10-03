@@ -2,7 +2,7 @@ import { Workbook } from "exceljs";
 import type { PoolClient } from "pg";
 import { DEFAULT_SPLIT, type SplitConfig } from "@dashboard/shared";
 import { pool } from "./pool";
-import { parseWorkoutSheet, type SheetTab, type SheetWorkout } from "./workoutSheetParse";
+import { parseWorkoutSheet, type RowFixes, type SheetTab, type SheetWorkout } from "./workoutSheetParse";
 import { toCell } from "./xlsxCell";
 
 /**
@@ -36,6 +36,16 @@ export const SHEET_RENAMES: Record<string, string> = {
   "Machine Adductor": "Machine Adduction",
   "Standing Calf Raise": "Standing Calf Raises",
   "Incline Bench Press": "Incline Bench",
+};
+
+/**
+ * Single rows the user corrected (2026-10-03). 24 Aug row 12 reads "Unilateral
+ * Machine Row" at 63 kg, beside the real unilateral sets at 36.3 kg: "the 63kg
+ * set isn't supposed to be unilateral". Machine Row is the history's name for
+ * the two-arm machine.
+ */
+export const SHEET_ROW_FIXES: RowFixes = {
+  "2026-08-24": { 12: "Machine Row" },
 };
 
 export interface ImportArgs {
@@ -262,7 +272,7 @@ async function readTabs(file: string): Promise<SheetTab[]> {
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
-  const { workouts, notes, ignoredTabs } = parseWorkoutSheet(await readTabs(args.file), SHEET_RENAMES);
+  const { workouts, notes, ignoredTabs } = parseWorkoutSheet(await readTabs(args.file), SHEET_RENAMES, SHEET_ROW_FIXES);
 
   console.log(args.file);
   console.log(`  ${workouts.length} sessions, ${workouts.reduce((n, w) => n + w.sets.length, 0)} sets ` +

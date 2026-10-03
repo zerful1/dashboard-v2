@@ -129,6 +129,28 @@ describe("parseWorkoutSheet", () => {
     expect(notes).toEqual(["2026-08-24 Unilateral Machine Row: on two rows; numbered as one exercise, sets 1-3"]);
   });
 
+  // The user, 2026-10-03: the 63 kg row on 24 Aug "isn't supposed to be
+  // unilateral". A fix for one row of one tab, not for the name everywhere.
+  it("corrects a single row's exercise name, and only that row", () => {
+    const { workouts, notes } = parseWorkoutSheet(
+      [
+        session("24082026", {
+          C6: "Pull",
+          B12: "Unilateral Machine Row", C12: 63, D12: 6,
+          B13: "Unilateral Machine Row", C13: 36.3, D13: 7, E13: 36.3, F13: 8,
+        }),
+        session("02092026", { C6: "Upper", B12: "Unilateral Machine Row", C12: 36.3, D12: 8 }),
+      ],
+      {},
+      { "2026-08-24": { 12: "Machine Row" } },
+    );
+    expect(workouts.map((w) => w.sets.map((s) => `${s.exercise_name} ${s.set_number} ${s.weight_kg}`))).toEqual([
+      ["Machine Row 1 63", "Unilateral Machine Row 1 36.3", "Unilateral Machine Row 2 36.3"],
+      ["Unilateral Machine Row 1 36.3"],
+    ]);
+    expect(notes).toEqual(['2026-08-24 row 12: "Unilateral Machine Row" corrected to "Machine Row"']);
+  });
+
   it("renames an exercise to the name the dashboard already uses", () => {
     const { workouts } = parseWorkoutSheet(
       [session("31072026", { C6: "Pull", B10: "Machine T Bar Row", C10: 40, D10: 7 })],

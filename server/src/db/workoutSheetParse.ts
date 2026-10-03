@@ -90,7 +90,11 @@ const isEmpty = (v: Cell) => v === null || (typeof v === "string" && v.trim() ==
 const shown = (v: Cell) => (typeof v === "string" ? v.trim() : String(v));
 const name = (v: Cell) => (isEmpty(v) ? null : shown(v).replace(/\s+/g, " "));
 
-/** Whole reps, or "a | b" (left | right on a unilateral lift) read as the lower. */
+/**
+ * Whole reps, or "a | b" read as the lower. The user confirmed (2026-10-03)
+ * that "a | b" is left | right on a unilateral lift. The dashboard holds one
+ * number per set, and the lower is what both sides managed.
+ */
 function readReps(v: Cell): { reps: number; split: boolean } | null {
   const n = number(v);
   if (n !== null) return Number.isInteger(n) && n > 0 ? { reps: n, split: false } : null;
@@ -100,7 +104,16 @@ function readReps(v: Cell): { reps: number; split: boolean } | null {
   return reps > 0 ? { reps, split: true } : null;
 }
 
-function parseTab(tab: SheetTab, date: string, renames: Record<string, string>, notes: string[]): SheetWorkout {
+/** Corrections the user gave for single rows: date, then sheet row, then the right name. */
+export type RowFixes = Record<string, Record<number, string>>;
+
+function parseTab(
+  tab: SheetTab,
+  date: string,
+  renames: Record<string, string>,
+  rowFixes: RowFixes,
+  notes: string[],
+): SheetWorkout {
   const dayName = name(tab.cell("C6"));
   if (!dayName) throw new Error(`Tab "${tab.name}" has no day name in C6 (Muscle Group)`);
 
@@ -112,7 +125,10 @@ function parseTab(tab: SheetTab, date: string, renames: Record<string, string>, 
   const sets: SheetSet[] = [];
   const rowsPerExercise = new Map<string, number>();
   for (const row of EXERCISE_ROWS) {
-    const raw = name(tab.cell(`B${row}`));
+    const written = name(tab.cell(`B${row}`));
+    const fix = rowFixes[date]?.[row];
+    if (fix && written) notes.push(`${date} row ${row}: "${written}" corrected to "${fix}"`);
+    const raw = fix && written ? fix : written;
     const pairs = SET_COLUMNS.map(([w, r]) => [tab.cell(`${w}${row}`), tab.cell(`${r}${row}`)] as const);
     if (!raw) {
       if (pairs.some(([w, r]) => !isEmpty(w) || !isEmpty(r))) {
@@ -175,7 +191,11 @@ function parseTab(tab: SheetTab, date: string, renames: Record<string, string>, 
   return { date, day_name: dayName, sets, cardio };
 }
 
-export function parseWorkoutSheet(tabs: SheetTab[], renames: Record<string, string> = {}): SheetParseResult {
+export function parseWorkoutSheet(
+  tabs: SheetTab[],
+  renames: Record<string, string> = {},
+  rowFixes: RowFixes = {},
+): SheetParseResult {
   const workouts: SheetWorkout[] = [];
   const notes: string[] = [];
   const ignoredTabs: string[] = [];
@@ -185,7 +205,7 @@ export function parseWorkoutSheet(tabs: SheetTab[], renames: Record<string, stri
       ignoredTabs.push(tab.name);
       continue;
     }
-    const workout = parseTab(tab, date, renames, notes);
+    const workout = parseTab(tab, date, renames, rowFixes, notes);
     // An empty session would read in the history as a workout that was skipped.
     if (workout.sets.length === 0 && workout.cardio.length === 0) {
       notes.push(`${date}: nothing logged; left out`);
