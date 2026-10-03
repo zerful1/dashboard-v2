@@ -55,7 +55,7 @@ export async function sessionDetail(
   const [sets, cardio] = await Promise.all([
     pool.query<WorkoutSet>(
       `SELECT id, user_id, session_id, exercise_name, set_number,
-              weight_kg::float8 AS weight_kg, reps, is_bodyweight
+              weight_kg::float8 AS weight_kg, reps, reps_left, reps_right, is_bodyweight
          FROM ${T.workoutSets}
         WHERE user_id = $1 AND session_id = $2
         ORDER BY exercise_name, set_number`,

@@ -44,6 +44,18 @@ describe("stats endpoint", () => {
     await request(app).get("/api/workouts/stats?exercise_name=X").expect(401);
   });
 
+  // The user's call: progress counts the weaker side.
+  it("counts the weaker side of a single-sided set", async () => {
+    const agent = await signedIn(alice);
+    await agent
+      .post("/api/workouts/sets")
+      .send({ date: "2026-08-16", day_type: 3, exercise_name: "Unilateral Curl", set_number: 1,
+              weight_kg: 12, reps_left: 9, reps_right: 6, is_bodyweight: false })
+      .expect(201);
+    const res = await agent.get("/api/workouts/stats?exercise_name=Unilateral%20Curl").expect(200);
+    expect(res.body.sets[0].reps).toBe(6);
+  });
+
   it("returns sets plus a session_id to date map", async () => {
     const agent = await signedIn(alice);
     await logSets(agent, "2026-08-09", [{ w: 80, r: 8 }]);
@@ -104,6 +116,18 @@ describe("stats endpoint", () => {
 });
 
 describe("session detail", () => {
+  it("returns both sides of a single-sided set", async () => {
+    const agent = await signedIn(alice);
+    await agent
+      .post("/api/workouts/sets")
+      .send({ date: "2026-08-16", day_type: 3, exercise_name: "Unilateral Curl", set_number: 1,
+              weight_kg: 12, reps_left: 7, reps_right: 8, is_bodyweight: false })
+      .expect(201);
+    const s = (await agent.get("/api/workouts/session?date=2026-08-16&day_type=3")).body;
+    const res = await agent.get(`/api/workouts/session-detail?session_id=${s.id}`).expect(200);
+    expect(res.body.sets[0]).toMatchObject({ reps: 7, reps_left: 7, reps_right: 8 });
+  });
+
   it("returns sets and cardio for one session", async () => {
     const agent = await signedIn(alice);
     await logSets(agent, "2026-08-16", [{ w: 80, r: 8 }]);
