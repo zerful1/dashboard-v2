@@ -4,6 +4,7 @@ export * from "./domain/date";
 export * from "./domain/trend";
 export * from "./domain/streak";
 export * from "./domain/format";
+export * from "./domain/insights/review";
 export * from "./domain/splitRotation";
 export * from "./domain/home";
 export * from "./domain/splitEditor";
