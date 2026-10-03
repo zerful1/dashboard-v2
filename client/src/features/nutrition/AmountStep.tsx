@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { buildEntryInput, resolveMacros, type FoodChoice } from "@dashboard/shared";
 import type { DiaryEntryInput, FoodLogUnit } from "@dashboard/shared";
 import { Button } from "@/components/ui/Button";
@@ -30,6 +30,10 @@ export function AmountStep({
   const [unit, setUnit] = useState<FoodLogUnit>(() => initial?.unit ?? (choice.per100g ? "g" : "serving"));
   const effectiveUnit: FoodLogUnit = unit === "g" && !canWeigh ? "serving" : unit;
   const [raw, setRaw] = useState(() => String(initial?.quantity ?? (effectiveUnit === "g" ? 100 : 1)));
+
+  // One add per step. The sheet closes on Add, but its exit animation keeps this
+  // mounted and clickable for a moment, so a double tap would log it twice.
+  const added = useRef(false);
 
   const parsed = parseDecimal(raw);
   const quantity = parsed !== null && parsed > 0 && parsed <= MAX_AMOUNT ? parsed : null;
@@ -89,7 +93,11 @@ export function AmountStep({
       <Button
         className="w-full"
         disabled={quantity === null}
-        onClick={() => quantity !== null && onAdd(buildEntryInput(choice, picked, quantity, effectiveUnit, date))}
+        onClick={() => {
+          if (quantity === null || added.current) return;
+          added.current = true;
+          onAdd(buildEntryInput(choice, picked, quantity, effectiveUnit, date));
+        }}
       >
         Add
       </Button>

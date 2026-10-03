@@ -59,4 +59,15 @@ describe("AmountStep", () => {
     );
     expect(screen.getByLabelText("Amount (g)")).toHaveValue("50");
   });
+
+  // The sheet closes on Add, but its exit animation keeps this step mounted and
+  // clickable for a moment: a double tap would log the food twice.
+  it("adds once, however many times Add is tapped", async () => {
+    const onAdd = vi.fn();
+    render(<AmountStep choice={hitToChoice(oats)} date="2026-09-20" onAdd={onAdd} onBack={() => {}} />);
+    const add = screen.getByRole("button", { name: "Add" });
+    await userEvent.click(add);
+    await userEvent.click(add);
+    expect(onAdd).toHaveBeenCalledTimes(1);
+  });
 });
