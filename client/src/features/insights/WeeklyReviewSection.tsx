@@ -37,7 +37,12 @@ function weightLine(r: WeeklyReview): string {
 
 export function WeeklyReviewSection({ today }: { today: string }) {
   const latest = lastFullWeek(today);
-  const [week, setWeek] = useState(latest);
+  // Only a week the user stepped back to is state. Until then the review
+  // follows the clock, so an app left open over Sunday night moves on (the
+  // Food page's rule).
+  const [picked, setPicked] = useState<string | null>(null);
+  const week = picked ?? latest;
+  const setWeek = (w: string) => setPicked(w >= latest ? null : w);
   const review = useWeeklyReview(week);
 
   return (
@@ -52,7 +57,7 @@ export function WeeklyReviewSection({ today }: { today: string }) {
           >
             <ChevronLeft size={16} />
           </button>
-          <span className="tnum text-xs text-muted">{weekLabel(week)}</span>
+          <span className="tnum text-xs text-muted">{weekLabel(week, today)}</span>
           <button
             aria-label="Next week"
             disabled={week >= latest}

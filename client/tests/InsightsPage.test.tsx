@@ -106,6 +106,36 @@ describe("Insights weekly review", () => {
     expect(screen.getByRole("button", { name: "Next week" })).toBeEnabled();
   });
 
+  // Review finding: left open over Sunday night, the review must move on to
+  // the new last full week (the Food page's rule: follow the clock until picked).
+  it("moves on to the new last full week when the app wakes on Monday", async () => {
+    freeze();
+    const calls = mockApi();
+    renderPage();
+    await screen.findByText("21–27 Sep");
+    vi.setSystemTime(new Date(2026, 9, 5, 7));
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    expect(await screen.findByText("28 Sep – 4 Oct")).toBeInTheDocument();
+    expect(calls).toContain("/api/insights/review?week=2026-09-28");
+  });
+
+  it("stays on an earlier week the user stepped back to", async () => {
+    freeze();
+    const calls = mockApi();
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "Previous week" }));
+    await screen.findByText("14–20 Sep");
+    vi.setSystemTime(new Date(2026, 9, 5, 7));
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.getByText("14–20 Sep")).toBeInTheDocument();
+    expect(calls).not.toContain("/api/insights/review?week=2026-09-28");
+  });
+
   it("shows an error card with Retry when the week cannot load", async () => {
     freeze();
     let fail = true;
@@ -164,6 +194,17 @@ describe("Insights records", () => {
     expect(await screen.findByText("Couldn't refresh — showing saved data.")).toBeInTheDocument();
     expect(screen.getByText("Lift 1")).toBeInTheDocument();
     expect(screen.queryByText("Could not load records")).toBeNull();
+  });
+
+  it("dates a record from another year with its year", async () => {
+    freeze();
+    mockApi({ records: () => [
+      { date: "2026-09-24", exercise_name: "Bench Press", heaviest: { weightKg: 62.5, reps: 5, previousKg: 60 } },
+      { date: "2025-09-30", exercise_name: "Squat", heaviest: { weightKg: 100, reps: 5, previousKg: 95 } },
+    ] });
+    renderPage();
+    expect(await screen.findByText("24 Sep")).toBeInTheDocument();
+    expect(screen.getByText("30 Sep 2025")).toBeInTheDocument();
   });
 
   it("explains an empty feed", async () => {

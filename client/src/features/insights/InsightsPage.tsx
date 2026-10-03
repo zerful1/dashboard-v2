@@ -11,7 +11,7 @@ export function InsightsPage() {
         <h1 className="mt-1.5 text-2xl font-extrabold tracking-tight">Your progress</h1>
       </div>
       <WeeklyReviewSection today={today} />
-      <RecordsSection />
+      <RecordsSection today={today} />
     </div>
   );
 }

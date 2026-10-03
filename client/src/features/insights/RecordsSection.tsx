@@ -16,7 +16,7 @@ function beat(e: RecordEvent): string {
   return parts.join(" · ");
 }
 
-export function RecordsSection() {
+export function RecordsSection({ today }: { today: string }) {
   const records = useRecords();
   const [shown, setShown] = useState(PAGE);
 
@@ -36,7 +36,7 @@ export function RecordsSection() {
               {records.data.slice(0, shown).map((e) => (
                 // One record per exercise per date, so this key is unique.
                 <li key={`${e.date}-${e.exercise_name}`} className="text-sm">
-                  <span className="tnum text-xs text-dim">{dayMonth(e.date)}</span>{" "}
+                  <span className="tnum text-xs text-dim">{dayMonth(e.date, today)}</span>{" "}
                   <span className="font-semibold">{e.exercise_name}</span>
                   <div className="tnum text-xs text-muted">{beat(e)}</div>
                 </li>
