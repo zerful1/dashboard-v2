@@ -24,7 +24,8 @@
     "drift": "tsx server/src/db/driftReport.ts",
     "delta-v1": "tsx server/src/db/deltaV1.ts",
     "check-v1": "tsx server/src/db/importV1.checks.ts",
-    "import-cofid": "tsx server/src/db/importCofid.ts"
+    "import-cofid": "tsx server/src/db/importCofid.ts",
+    "import-workouts": "tsx server/src/db/importWorkouts.ts"
   },
   "devDependencies": {
     "typescript": "^6.0.3"
