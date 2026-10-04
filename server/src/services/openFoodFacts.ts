@@ -124,3 +124,55 @@ export async function searchOpenFoodFacts(q: string, timeoutMs = OFF_TIMEOUT_MS)
     return uk;
   }
 }
+
+export const OFF_PRODUCT_URL = "https://world.openfoodfacts.org/api/v2/product";
+const PRODUCT_FIELDS = "code,product_name,brands,nutriments,serving_size,serving_quantity";
+/** The diary POST's serving_grams limit (routes/nutrition.ts foodBody). */
+const MAX_SERVING_GRAMS = 5000;
+
+export interface OffProductPage extends OffProduct {
+  serving_size?: string;
+  serving_quantity?: number | string;
+}
+
+/**
+ * A product page as a hit: the search mapping's rules (part 1), plus the label
+ * serving when the product gives a usable size. The serving's values are
+ * scaled from the per-100 g ones, so the two can never disagree.
+ */
+export function mapProduct(p: OffProductPage, code: string): FoodHit | null {
+  const hit = mapSearchHit({ ...p, code });
+  if (!hit || !hit.per100g) return null;
+  const grams = num(p.serving_quantity);
+  const servings = [...hit.servings];
+  if (grams !== null && grams > 0 && grams <= MAX_SERVING_GRAMS) {
+    const k = grams / 100;
+    const v = hit.per100g;
+    const scaled = (x: number | null | undefined) => (x === null || x === undefined ? null : x * k);
+    const size = p.serving_size?.trim() || `${grams} g`;
+    servings.push({
+      label: `1 serving (${size})`.slice(0, 100),
+      grams,
+      kcal: v.kcal * k, p: v.p * k, f: v.f * k, c: v.c * k,
+      fibre: scaled(v.fibre), sugar: scaled(v.sugar), satFat: scaled(v.satFat), salt: scaled(v.salt),
+    });
+  }
+  return { ...hit, barcode: code, servings };
+}
+
+/**
+ * One product by barcode. Null when Open Food Facts has no such product, or
+ * none that can be logged. Throws when it can't be reached, which the route
+ * answers as 502.
+ */
+export async function lookupBarcode(code: string, timeoutMs = OFF_TIMEOUT_MS): Promise<FoodHit | null> {
+  const res = await fetch(`${OFF_PRODUCT_URL}/${code}?fields=${PRODUCT_FIELDS}`, {
+    headers: { "User-Agent": USER_AGENT },
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Open Food Facts product ${res.status}`);
+  const body = (await res.json()) as { status?: number; product?: OffProductPage };
+  if (body.status !== 1 || !body.product) return null;
+  return mapProduct(body.product, code);
+}

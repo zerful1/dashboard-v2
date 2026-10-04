@@ -62,6 +62,15 @@ export async function upsertFoodItem(client: PoolClient, userId: string, food: F
   return rows[0]!.id;
 }
 
+/** The caller's own food with this barcode, newest first: a scanned or hand-added food, found again as saved. */
+export async function findFoodByBarcode(userId: string, barcode: string): Promise<FoodItem | null> {
+  const { rows } = await pool.query<FoodItem>(
+    `SELECT ${ITEM_COLS} FROM ${T.foodItems} WHERE user_id = $1 AND barcode = $2 ORDER BY created_at DESC LIMIT 1`,
+    [userId, barcode],
+  );
+  return rows[0] ?? null;
+}
+
 /** Whether `id` is one of `userId`'s foods. Linking to anyone else's would leak it through Recent. */
 export async function ownsFoodItem(client: PoolClient, userId: string, id: string): Promise<boolean> {
   const res = await client.query(`SELECT 1 FROM ${T.foodItems} WHERE user_id = $1 AND id = $2`, [userId, id]);
