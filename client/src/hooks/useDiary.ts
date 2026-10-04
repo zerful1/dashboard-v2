@@ -62,11 +62,13 @@ export function useDiary(
   const rescaleEntry = useMutation({
     mutationFn: ({ id, quantity }: { id: string; quantity: number }) => nutritionApi.rescaleEntry(id, quantity),
     onMutate: async ({ id, quantity }) => {
-      await qc.cancelQueries({ queryKey: key });
-      const previous = qc.getQueryData<FoodLogEntry[]>(key);
+      // The day this edit belongs to, for the rollback (#17 review 3).
+      const day = key;
+      await qc.cancelQueries({ queryKey: day });
+      const previous = qc.getQueryData<FoodLogEntry[]>(day);
       const scale = (v: number | null, k: number) => (v === null ? null : v * k);
       qc.setQueryData<FoodLogEntry[]>(
-        key,
+        day,
         (previous ?? []).map((e) => {
           if (e.id !== id) return e;
           const k = quantity / e.quantity;
@@ -78,10 +80,10 @@ export function useDiary(
           };
         }),
       );
-      return { previous };
+      return { day, previous };
     },
     onError: (_e, _v, ctx) => {
-      if (ctx?.previous) qc.setQueryData(key, ctx.previous);
+      if (ctx?.previous) qc.setQueryData(ctx.day, ctx.previous);
     },
     onSettled: () => invalidateNutritionReaders(qc),
   });
@@ -89,13 +91,15 @@ export function useDiary(
   const removeEntry = useMutation({
     mutationFn: nutritionApi.removeEntry,
     onMutate: async (id: string) => {
-      await qc.cancelQueries({ queryKey: key });
-      const previous = qc.getQueryData<FoodLogEntry[]>(key);
-      qc.setQueryData<FoodLogEntry[]>(key, (previous ?? []).filter((e) => e.id !== id));
-      return { previous };
+      // The day this delete belongs to, for the rollback (#17 review 3).
+      const day = key;
+      await qc.cancelQueries({ queryKey: day });
+      const previous = qc.getQueryData<FoodLogEntry[]>(day);
+      qc.setQueryData<FoodLogEntry[]>(day, (previous ?? []).filter((e) => e.id !== id));
+      return { day, previous };
     },
     onError: (_e, _v, ctx) => {
-      if (ctx?.previous) qc.setQueryData(key, ctx.previous);
+      if (ctx?.previous) qc.setQueryData(ctx.day, ctx.previous);
     },
     onSettled: () => invalidateNutritionReaders(qc),
   });

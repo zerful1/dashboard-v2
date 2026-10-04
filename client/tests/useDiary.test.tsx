@@ -114,4 +114,31 @@ describe("useDiary", () => {
       expect(spy).toHaveBeenCalledWith({ queryKey: [prefix] });
     }
   });
+
+  // #17 review (3): rescale and remove rolled back into whichever day was showing.
+  for (const op of ["rescale", "remove"] as const) {
+    it(`rolls a failed ${op} back into the day it came from, after the day changes`, async () => {
+      let fail!: () => void;
+      mockApi([
+        ["GET /api/nutrition/diary?date=2026-09-21", () => [saved]],
+        ["GET /api/nutrition/diary?date=2026-09-22", () => []],
+        [op === "rescale" ? "PATCH /api/nutrition/diary/" : "DELETE /api/nutrition/diary/",
+          () => new Promise((_, reject) => (fail = () => reject(new ApiError(500, "boom"))))],
+      ]);
+      const client = fresh();
+      const { result, rerender } = renderHook(({ date }) => useDiary(date), {
+        wrapper: wrapper(client), initialProps: { date: "2026-09-21" },
+      });
+      await waitFor(() => expect(result.current.entries).toHaveLength(1));
+      act(() => {
+        if (op === "rescale") result.current.rescaleEntry.mutate({ id: "e1", quantity: 160 });
+        else result.current.removeEntry.mutate("e1");
+      });
+      rerender({ date: "2026-09-22" });
+      await waitFor(() => expect(result.current.entries).toEqual([]));
+      await act(async () => fail());
+      await waitFor(() => expect(client.getQueryData(diaryKey("u1", "2026-09-21"))).toEqual([saved]));
+      expect(client.getQueryData(diaryKey("u1", "2026-09-22"))).toEqual([]);
+    });
+  }
 });

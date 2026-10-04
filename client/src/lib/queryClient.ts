@@ -1,4 +1,4 @@
-import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
+import { MutationCache, QueryCache, QueryClient, onlineManager } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api";
 import { MAX_AGE } from "@/lib/persister";
@@ -19,6 +19,17 @@ import { MAX_AGE } from "@/lib/persister";
  * A factory, in its own module, so the rule can be tested against the real
  * configuration rather than a copy of it.
  */
+/**
+ * A failed write's message. Offline, it says so: the banner beside it already
+ * says changes won't save, and "Something went wrong" read as a different,
+ * unexplained fault (#17 review 53).
+ */
+function writeFailureMessage(err: unknown): string {
+  if (err instanceof ApiError) return err.message;
+  if (!onlineManager.isOnline()) return "You're offline — not saved";
+  return "Something went wrong";
+}
+
 export function createQueryClient(): QueryClient {
   return new QueryClient({
     queryCache: new QueryCache({
@@ -47,8 +58,10 @@ export function createQueryClient(): QueryClient {
       // options over the defaults with a plain spread, so a hook's own onError -
       // and every rollback hook has one - replaced the default, and its failures
       // went unreported. The cache's onError runs as well as the hook's, always.
-      onError: (err) => {
-        toast.error(err instanceof ApiError ? err.message : "Something went wrong");
+      onError: (err, _variables, _result, mutation) => {
+        // A screen that shows its own failure opts out, as queries do.
+        if (mutation.options.meta?.errorToast === false) return;
+        toast.error(writeFailureMessage(err));
       },
     }),
     defaultOptions: {
