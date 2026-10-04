@@ -363,3 +363,21 @@ export interface MediaSeason {
   episodes_watched: number | null;
   rating: number | null; // 1.0–10.0 — per-season verdict; series rating is separate
 }
+
+// ---------------------------------------------------------------------------
+// Export
+// ---------------------------------------------------------------------------
+
+/**
+ * GET /api/export: everything a user owns, as Postgres serialised it. Rows are
+ * deliberately untyped. The file mirrors the database, whatever its columns
+ * are on the day, and `version` is what a later import reads to know the shape.
+ */
+export interface ExportFile {
+  format: "dashboard-export";
+  version: 1;
+  exported_at: string;
+  account: { id: string; email: string; created_at: string };
+  /** Keyed by database table name; every value is an array, even for one-row tables. */
+  tables: Record<string, Record<string, unknown>[]>;
+}

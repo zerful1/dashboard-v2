@@ -14,6 +14,7 @@ import { nutritionRouter } from "./routes/nutrition";
 import { foodRouter } from "./routes/food";
 import { insightsRouter } from "./routes/insights";
 import { goalsRouter } from "./routes/goals";
+import { exportRouter } from "./routes/export";
 import { pool } from "./db/pool";
 import { config } from "./config";
 import { parseSignupPolicy, type SignupPolicy } from "./signups";
@@ -94,6 +95,7 @@ export function createApp(options: { signups?: SignupPolicy } = {}): Express {
   app.use("/api/food", foodRouter);
   app.use("/api/insights", insightsRouter);
   app.use("/api/goals", goalsRouter);
+  app.use("/api/export", exportRouter);
 
   app.use(errorHandler);
   return app;

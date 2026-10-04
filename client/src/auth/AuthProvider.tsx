@@ -56,7 +56,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
  * There are two ways to stop one account's cached data being served to the
  * next: clear the whole cache whenever the identity changes, or carry the user
  * id in every query key (`["profile", user.id]`). This codebase clears, in
- * `endSession` below and on the way into `login`/`register`.
+ * `endSession` below and on the way into `login`, `register` and `enterDemo`.
  *
  * Why clearing: key scoping is opt-in per key, so the guarantee only holds
  * while every future key remembers the id — and a key that forgets fails
@@ -69,7 +69,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
  * The cost is a cold cache after each sign-in: one refetch per mounted query,
  * on a screen the user has only just arrived at.
  *
- * All three transitions clear, not just sign-out — a sign-out whose POST never
+ * Every transition clears, not just sign-out — a sign-out whose POST never
  * landed, or a tab left open on a session that ended elsewhere, both leave the
  * previous account's data in the cache, and sign-in is where it would be handed
  * to somebody new.
