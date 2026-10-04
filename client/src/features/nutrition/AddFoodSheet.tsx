@@ -35,13 +35,22 @@ export function AddFoodSheet({
   date: string;
   addEntry: ReturnType<typeof useDiary>["addEntry"];
 }) {
-  const [tab, setTab] = useState<Tab>("search");
+  const [tab, setTab] = useState<Tab | null>(null);
   const [chosen, setChosen] = useState<Chosen | null>(null);
+  // Lifted out of SearchTab, so stepping back from the amount step keeps it.
+  const [q, setQ] = useState("");
+  const recents = useRecents(open);
+  // Most adds are a repeat, so the sheet opens on Recent when there is anything
+  // to re-log (#17 review 6). Decided once the list is in, so it never flips
+  // while the user types; a tab the user picks always wins.
+  const shown: Tab | null =
+    tab ?? (recents.isPending ? null : recents.data && recents.data.length > 0 ? "recent" : "search");
 
   useEffect(() => {
     if (!open) {
       setChosen(null);
-      setTab("search");
+      setTab(null);
+      setQ("");
     }
   }, [open]);
 
@@ -66,16 +75,17 @@ export function AddFoodSheet({
                 <Button
                   key={t.id}
                   role="tab"
-                  aria-selected={tab === t.id}
-                  variant={tab === t.id ? "selected" : "ghost"}
+                  aria-selected={shown === t.id}
+                  variant={shown === t.id ? "selected" : "ghost"}
                   onClick={() => setTab(t.id)}
                 >
                   {t.label}
                 </Button>
               ))}
             </div>
-            {tab === "search" && <SearchTab onPick={(hit) => setChosen({ choice: hitToChoice(hit) })} />}
-            {tab === "recent" && (
+            {shown === null && <Spinner label="Loading" />}
+            {shown === "search" && <SearchTab q={q} setQ={setQ} onPick={(hit) => setChosen({ choice: hitToChoice(hit) })} />}
+            {shown === "recent" && (
               <RecentTab
                 onPick={(r) =>
                   setChosen({
@@ -85,7 +95,7 @@ export function AddFoodSheet({
                 }
               />
             )}
-            {tab === "custom" && <CustomFoodForm onNext={(food) => setChosen({ choice: customToChoice(food) })} />}
+            {shown === "custom" && <CustomFoodForm onNext={(food) => setChosen({ choice: customToChoice(food) })} />}
           </>
         )}
         {/* Required by the data licences (spec §10). */}
@@ -97,8 +107,7 @@ export function AddFoodSheet({
   );
 }
 
-function SearchTab({ onPick }: { onPick: (hit: FoodHit) => void }) {
-  const [q, setQ] = useState("");
+function SearchTab({ q, setQ, onPick }: { q: string; setQ: (q: string) => void; onPick: (hit: FoodHit) => void }) {
   const debounced = useDebouncedValue(q, 300);
   const online = useOnline();
   const search = useFoodSearch(online ? debounced : "");

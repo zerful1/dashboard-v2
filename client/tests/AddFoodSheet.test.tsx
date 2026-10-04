@@ -29,12 +29,12 @@ const RECENT: RecentFood[] = [
   },
 ];
 
-function mockApi() {
+function mockApi(recent: () => Promise<RecentFood[]> = async () => RECENT) {
   const calls: string[] = [];
   vi.spyOn(apiModule, "api").mockImplementation(async (path: string) => {
     calls.push(path);
     if (path.startsWith("/api/food/search")) return SEARCH as never;
-    if (path.startsWith("/api/nutrition/recents")) return RECENT as never;
+    if (path.startsWith("/api/nutrition/recents")) return (await recent()) as never;
     throw new Error(`unexpected ${path}`);
   });
   return calls;
@@ -58,6 +58,7 @@ describe("AddFoodSheet", () => {
   it("searches, shows branded then generic hits with any warning, and logs the pick", async () => {
     mockApi();
     const addEntry = renderSheet();
+    await userEvent.click(await screen.findByRole("tab", { name: "Search" }));
     await userEvent.type(screen.getByLabelText("Search foods"), "oats");
     await waitFor(() => expect(screen.getByText("Oats, rolled")).toBeInTheDocument());
     expect(screen.getByText("Branded foods are unavailable right now")).toBeInTheDocument();
@@ -73,6 +74,7 @@ describe("AddFoodSheet", () => {
     Object.defineProperty(navigator, "onLine", { value: false, configurable: true });
     const calls = mockApi();
     renderSheet();
+    await userEvent.click(await screen.findByRole("tab", { name: "Search" }));
     await userEvent.type(screen.getByLabelText("Search foods"), "oats");
     expect(screen.getByText("Search needs a connection.")).toBeInTheDocument();
     await new Promise((r) => setTimeout(r, 400));
@@ -110,5 +112,43 @@ describe("AddFoodSheet", () => {
     renderSheet();
     expect(screen.getByText(/Open Food Facts \(ODbL\)/)).toBeInTheDocument();
     expect(screen.getByText(/Open Government Licence v3\.0/)).toBeInTheDocument();
+  });
+
+  // #17 review (6): most adds are a repeat, but the sheet always opened on Search.
+  it("opens on Recent when there is something to re-log", async () => {
+    mockApi();
+    renderSheet();
+    await waitFor(() => expect(screen.getByRole("tab", { name: "Recent" })).toHaveAttribute("aria-selected", "true"));
+    expect(screen.getByText("Oats, rolled")).toBeInTheDocument();
+  });
+
+  it("opens on Search when nothing has been logged yet", async () => {
+    mockApi(async () => []);
+    renderSheet();
+    await waitFor(() => expect(screen.getByRole("tab", { name: "Search" })).toHaveAttribute("aria-selected", "true"));
+    expect(screen.getByLabelText("Search foods")).toBeInTheDocument();
+  });
+
+  // Review focus 3: the opening tab is decided once; a tab the user picks wins.
+  it("keeps a tab picked before the recent foods arrive", async () => {
+    let arrive!: () => void;
+    mockApi(() => new Promise((resolve) => (arrive = () => resolve(RECENT))));
+    renderSheet();
+    await userEvent.click(screen.getByRole("tab", { name: "Search" }));
+    await userEvent.type(screen.getByLabelText("Search foods"), "oa");
+    arrive();
+    await waitFor(() => expect(screen.getByRole("tab", { name: "Search" })).toHaveAttribute("aria-selected", "true"));
+    expect(screen.getByLabelText("Search foods")).toHaveValue("oa");
+  });
+
+  // #17 review (6): the search text was lost on Back from the amount step.
+  it("keeps the search text when stepping back from the amount step", async () => {
+    mockApi();
+    renderSheet();
+    await userEvent.click(await screen.findByRole("tab", { name: "Search" }));
+    await userEvent.type(screen.getByLabelText("Search foods"), "oats");
+    await userEvent.click(await screen.findByText("Oat bar"));
+    await userEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.getByLabelText("Search foods")).toHaveValue("oats");
   });
 });
