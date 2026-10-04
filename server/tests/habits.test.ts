@@ -34,6 +34,14 @@ describe("habits", () => {
     await agent.post("/api/habits").send({ name: "   " }).expect(400);
   });
 
+  // Browser pass: the app sends emoji: null for "no emoji", and the add
+  // schema took only a string or nothing.
+  it("adds a habit sent with emoji null, as the app sends it", async () => {
+    const agent = await signedIn(alice);
+    const res = await agent.post("/api/habits").send({ name: "Put on retainer", emoji: null }).expect(201);
+    expect(res.body.emoji).toBeNull();
+  });
+
   it("stops at 12 habits", async () => {
     const agent = await signedIn(alice);
     for (let i = 1; i <= 12; i++) await add(agent, `Habit ${i}`);

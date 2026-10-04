@@ -16,7 +16,8 @@ const dayParams = z.object({ id: z.string().uuid(), date: isoDate });
 const name = z.string().trim().min(1, "Give the habit a name").max(40, "Keep the name to 40 characters");
 // Blank becomes null, so an emptied field clears the emoji.
 const emoji = z.string().trim().max(16, "Keep the emoji to 16 characters").transform((s) => s || null);
-const addBody = z.object({ name, emoji: emoji.optional() });
+// Nullable as well as optional: the app sends `emoji: null` for "no emoji".
+const addBody = z.object({ name, emoji: emoji.nullable().optional() });
 const patchBody = z
   .object({ name: name.optional(), emoji: emoji.nullable().optional() })
   .refine((b) => b.name !== undefined || b.emoji !== undefined, "Nothing to change");
