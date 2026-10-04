@@ -16,7 +16,7 @@ import { Unauthorized, BadRequest, Conflict, Forbidden } from "../errors";
 import { config } from "../config";
 import { signupAllowed, type SignupPolicy } from "../signups";
 import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH, todayISO } from "@dashboard/shared";
-import { findOrCreateDemoUser, isDemoEmail } from "../demo/account";
+import { DEMO_SESSION_MS, findOrCreateDemoUser, isDemoEmail } from "../demo/account";
 import { refreshDemoIfStale, DEMO_TIMEZONE } from "../demo/refresh";
 
 export const authRouter = Router();
@@ -141,6 +141,7 @@ authRouter.post("/demo", async (req, res, next) => {
     await regenerate(req);
     req.session.userId = user.id;
     req.session.demo = true;
+    req.session.cookie.maxAge = DEMO_SESSION_MS;
     res.json({ id: user.id, email: user.email, demo: true });
   } catch (err) {
     next(err);
