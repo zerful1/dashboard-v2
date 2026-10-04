@@ -6,6 +6,7 @@ import { TodayCard } from "@/features/home/TodayCard";
 import { WeekTile } from "@/features/home/WeekTile";
 import { WeightTile } from "@/features/home/WeightTile";
 import { LastSessionCard } from "@/features/home/LastSessionCard";
+import { TodayHabitsCard } from "@/features/habits/TodayHabitsCard";
 import { Card } from "@/components/ui/Card";
 import { Spinner } from "@/components/ui/Spinner";
 
@@ -33,6 +34,7 @@ export function HomePage() {
       ) : (
         <>
           <TodayCard today={today} />
+          <TodayHabitsCard />
 
           {/* Two up from the smallest screen: these tiles are short enough that
               stacking them wastes the fold on a phone. */}
