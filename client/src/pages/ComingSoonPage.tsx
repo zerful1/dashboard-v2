@@ -29,7 +29,7 @@ export function ComingSoonPage() {
         <div className="lbl">{item ? "Coming soon" : pathname}</div>
         <p className="mt-2 text-sm leading-relaxed text-muted">
           {item
-            ? "Gym, nutrition, habits and media arrive in the next phases. The tab is here already so the shape of the app is honest about what is coming."
+            ? "Media arrives in a later phase. The tab is here already so the shape of the app is honest about what is coming."
             : "That address does not match anything in this app. It may be a mistyped link, or a page that has since moved."}{" "}
           <Link to="/" className="text-text underline underline-offset-4">
             Back to the overview
