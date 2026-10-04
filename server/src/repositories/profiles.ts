@@ -6,10 +6,11 @@ export interface ProfilePatch {
   display_name?: string;
   units?: WeightUnit;
   timezone?: string;
-  height_cm?: number;
-  birth_year?: number;
-  sex?: Sex;
-  activity_level?: ActivityLevel;
+  /** null clears it; absent leaves it as it was. */
+  height_cm?: number | null;
+  birth_year?: number | null;
+  sex?: Sex | null;
+  activity_level?: ActivityLevel | null;
 }
 
 // birth_year is smallint, which node-pg returns as a number; height_cm is
@@ -39,23 +40,24 @@ export async function updateProfile(
   userId: string,
   patch: ProfilePatch,
 ): Promise<Profile | null> {
-  // COALESCE keeps an unmentioned field as it was. The consequence is that a
-  // body detail can be changed but not cleared, which the hint never needs.
+  // COALESCE keeps an unmentioned field as it was. The body details instead
+  // take a "mentioned" flag, so null can clear one (#17 review 11).
   const { rows } = await pool.query<Profile>(
     `UPDATE ${T.profiles}
         SET display_name   = COALESCE($2, display_name),
             units          = COALESCE($3, units),
             timezone       = COALESCE($4, timezone),
-            height_cm      = COALESCE($5, height_cm),
-            birth_year     = COALESCE($6, birth_year),
-            sex            = COALESCE($7, sex),
-            activity_level = COALESCE($8, activity_level),
+            height_cm      = CASE WHEN $9::boolean  THEN $5 ELSE height_cm END,
+            birth_year     = CASE WHEN $10::boolean THEN $6 ELSE birth_year END,
+            sex            = CASE WHEN $11::boolean THEN $7 ELSE sex END,
+            activity_level = CASE WHEN $12::boolean THEN $8 ELSE activity_level END,
             updated_at     = now()
       WHERE user_id = $1
       RETURNING ${PROFILE_COLS}`,
     [
       userId, patch.display_name ?? null, patch.units ?? null, patch.timezone ?? null,
       patch.height_cm ?? null, patch.birth_year ?? null, patch.sex ?? null, patch.activity_level ?? null,
+      patch.height_cm !== undefined, patch.birth_year !== undefined, patch.sex !== undefined, patch.activity_level !== undefined,
     ],
   );
   return rows[0] ?? null;

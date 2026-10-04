@@ -22,7 +22,7 @@ nutritionRouter.use(requireAuth);
 
 // The client resolves its own calendar day and sends it. The server never
 // infers one: a deployed host is UTC for everyone.
-export const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
 
 const targetBody = z.object({
   effective_from: isoDate,

@@ -32,4 +32,13 @@ describe("profile body details", () => {
     await agent.patch("/api/profile").send({ sex: "other" }).expect(400);
     await agent.patch("/api/profile").send({ activity_level: "athlete" }).expect(400);
   });
+
+  // #17 review (11): a body detail could be changed but never cleared.
+  it("clears a body detail sent as null, and leaves the ones not mentioned", async () => {
+    const agent = request.agent(app);
+    await agent.post("/api/auth/register").send({ email: "clear@example.com", password: "correct-horse-9" }).expect(201);
+    await agent.patch("/api/profile").send({ height_cm: 180, birth_year: 1996, sex: "male", activity_level: "moderate" }).expect(200);
+    const res = await agent.patch("/api/profile").send({ height_cm: null, sex: null }).expect(200);
+    expect(res.body).toMatchObject({ height_cm: null, sex: null, birth_year: 1996, activity_level: "moderate" });
+  });
 });

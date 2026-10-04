@@ -123,6 +123,17 @@ describe("food diary", () => {
     expect(rows).toEqual([{ serving_description: "1 bar (45 g)", serving_grams: 45, kcal_per_serving: 230, kcal_per_100g: 510 }]);
   });
 
+  // #17 review (14): copying across a clock change moved every entry by an hour.
+  it("keeps the local time when copying across a clock change", async () => {
+    const { agent, id } = await signedIn(alice); // profiles.timezone defaults to Europe/London
+    const e = await addEntry(id, entry({ date: "2026-10-24", name: "Oats" }) as never);
+    // 08:00 in London on Saturday 24 October is 07:00Z (BST). The clocks go back on the 25th.
+    await pool.query(`UPDATE ${T.foodLogEntries} SET logged_at = $2 WHERE id = $1`, [e!.id, "2026-10-24T07:00:00Z"]);
+    const res = await agent.post("/api/nutrition/diary/copy").send({ from: "2026-10-24", to: "2026-10-26" }).expect(201);
+    // 08:00 in London on Monday 26 October is 08:00Z (GMT).
+    expect(new Date(res.body[0].logged_at).toISOString()).toBe("2026-10-26T08:00:00.000Z");
+  });
+
   it("refuses to copy a day onto itself, and copies nothing from an empty day", async () => {
     const { agent } = await signedIn(alice);
     await agent.post("/api/nutrition/diary/copy").send({ from: "2026-09-21", to: "2026-09-21" }).expect(400);
