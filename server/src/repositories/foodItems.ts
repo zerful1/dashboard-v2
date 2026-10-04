@@ -21,6 +21,14 @@ export const ITEM_COLS = [
 ].join(", ");
 
 /**
+ * Serving data arrives only with a product lookup: a text-search hit has none,
+ * so logging one must not wipe what an earlier save stored (#17 review 9).
+ */
+const SERVING_COLUMNS = new Set<string>(
+  NUTRITION_COLUMNS.filter((c) => c === "serving_description" || c === "serving_grams" || c.endsWith("_per_serving")),
+);
+
+/**
  * Store `food` in the user's library and return its id, inside the caller's
  * transaction. Search foods upsert on (user_id, external_source, external_id),
  * refreshing their values, so logging one product twice keeps one row. Manual
@@ -33,10 +41,10 @@ export async function upsertFoodItem(client: PoolClient, userId: string, food: F
     food.source === "manual"
       ? ""
       : `ON CONFLICT (user_id, external_source, external_id) DO UPDATE SET ${["name", "brand", ...NUTRITION_COLUMNS]
-          .map((c) => `${c} = EXCLUDED.${c}`)
+          .map((c) => (SERVING_COLUMNS.has(c) ? `${c} = COALESCE(EXCLUDED.${c}, fi.${c})` : `${c} = EXCLUDED.${c}`))
           .join(", ")}`;
   const { rows } = await client.query<{ id: string }>(
-    `INSERT INTO ${T.foodItems} (${columns.join(", ")})
+    `INSERT INTO ${T.foodItems} AS fi (${columns.join(", ")})
      VALUES (${values.map((_, i) => `$${i + 1}`).join(", ")})
      ${onConflict}
      RETURNING id`,
