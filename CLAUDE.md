@@ -80,7 +80,9 @@ Client-side, query keys are scoped by user id for the same reason.
 `server/src/repositories/export.ts`). The export is the user's only backup, so
 `tests/export.test.ts` reads every table with a `user_id` column from the database
 and fails until the new one is listed. Secrets are excluded by name there, the way
-`password_reset_tokens` is.
+`password_reset_tokens` is. Add the new table to `truncateAll` in
+`server/tests/setup.ts` too. Nothing fails if you forget, but its rows then leak
+from one test into the next.
 
 ---
 
@@ -89,12 +91,14 @@ and fails until the new one is listed. Secrets are excluded by name there, the w
 "Try the demo" signs anyone in as `demo@demo.invalid`, with no password. One
 middleware, `demoReadOnly`, keeps it read-only. It runs at the front of the API
 and gives a demo session a 403 for everything except `GET`, `HEAD` and
-`OPTIONS`, plus the few auth endpoints that act for a caller who isn't signed
-in.
+`OPTIONS`, plus a short list in `ALLOWED`: leaving the demo, entering it again,
+and the auth endpoints that act for a caller who isn't signed in (login,
+register, forgot and reset password).
 
 So **no GET handler may write, anywhere, ever.** A GET that writes is open to
-every visitor of a public demo. All 27 were audited by hand for PR #23, and no
-test re-checks this. Writes the server makes on its own account count too, such
+every visitor of a public demo. The 27 that existed were audited by hand for
+PR #23. `/api/export` came later and reads inside a `READ ONLY` transaction, so
+the database itself refuses a write there. No test re-checks the others. Writes the server makes on its own account count too, such
 as a cache or a row created on first read.
 
 **A new auth endpoint that looks a user up by email must treat the demo address

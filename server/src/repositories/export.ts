@@ -31,31 +31,48 @@ const TABLES: { name: string; ref: string; orderBy: string }[] = [
 ];
 
 /**
- * Everything the user owns, for their backup. Postgres serialises each row
- * (to_jsonb), so dates stay YYYY-MM-DD text and numerics stay exact, and
- * node-pg's local-midnight Date parsing never touches the file (CLAUDE.md).
+ * Everything the user owns, for their backup, written as JSON text one table
+ * at a time so the route can stream it. Vercel caps a response sent in one
+ * piece at 4.5 MB, and the owner's file grows by about 2 MB a year.
+ *
+ * Postgres serialises each row (`to_json(t)::text`), so dates stay YYYY-MM-DD
+ * text, numerics stay exact, and node-pg's local-midnight Date parsing never
+ * touches the file (CLAUDE.md). `json`, not `jsonb`: it keeps column order,
+ * which matters in a file a person reads.
+ *
+ * Throws NotFound before writing anything when the user row is gone.
  */
-export async function exportUserData(userId: string): Promise<ExportFile> {
-  return withTransaction(async (client) => {
+export async function writeUserExport(userId: string, write: (chunk: string) => void): Promise<void> {
+  await withTransaction(async (client) => {
     // One snapshot for every read, so a write landing mid-export cannot leave
     // a set in the file without its session. It must be the first statement.
     await client.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY");
-    const { rows } = await client.query<{ account: ExportFile["account"] }>(
-      `SELECT jsonb_build_object('id', id, 'email', email, 'created_at', created_at) AS account
+    const { rows } = await client.query<{ account: string }>(
+      `SELECT json_build_object('id', id, 'email', email, 'created_at', created_at)::text AS account
          FROM ${T.users} WHERE id = $1`,
       [userId],
     );
     const account = rows[0]?.account;
     if (!account) throw new NotFound("Account not found");
 
-    const tables: ExportFile["tables"] = {};
-    for (const t of TABLES) {
-      const res = await client.query<{ row: Record<string, unknown> }>(
-        `SELECT to_jsonb(t) AS row FROM ${t.ref} t WHERE t.user_id = $1 ORDER BY ${t.orderBy}`,
+    const exportedAt = JSON.stringify(new Date().toISOString());
+    write(`{"format":"dashboard-export","version":1,"exported_at":${exportedAt},"account":${account},"tables":{`);
+    for (const [i, t] of TABLES.entries()) {
+      const res = await client.query<{ row: string }>(
+        `SELECT to_json(t)::text AS row FROM ${t.ref} t WHERE t.user_id = $1 ORDER BY ${t.orderBy}`,
         [userId],
       );
-      tables[t.name] = res.rows.map((r) => r.row);
+      write(`${i > 0 ? "," : ""}${JSON.stringify(t.name)}:[${res.rows.map((r) => r.row).join(",")}]`);
     }
-    return { format: "dashboard-export", version: 1, exported_at: new Date().toISOString(), account, tables };
+    write("}}");
   });
+}
+
+/** The whole export as one object, for anything that wants it in memory. */
+export async function exportUserData(userId: string): Promise<ExportFile> {
+  let text = "";
+  await writeUserExport(userId, (chunk) => {
+    text += chunk;
+  });
+  return JSON.parse(text) as ExportFile;
 }
