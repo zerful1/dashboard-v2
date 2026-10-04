@@ -289,6 +289,15 @@ as the only import sites, and allow no third. A new chart is a new export from
 `WeightChart.tsx`. Moving `ProgressionChart` behind it would make the rule true
 again.
 
+**The barcode scanner's decoder is served by this app.** On a phone without a
+native `BarcodeDetector` (every iPhone), `barcodeDetector.ts` loads the
+`barcode-detector` ponyfill, and its `locateFile` points at
+`/static/wasm/zxing_reader-<version>.wasm`. `rsbuild.config.ts` copies that
+file into the build (`output.copy`) under the same name, from zxing-wasm's own
+version, so upgrading the package needs no edit here. Remove the copy and the
+ponyfill falls back to fetching from jsDelivr: a third-party request at scan
+time. A future Content Security Policy must allow `'wasm-unsafe-eval'`.
+
 **Breakpoint conditions must be exact complements.** `xl:hidden` against
 `xl:flex`, same threshold. A mismatched pair does not fail loudly; it opens a
 band of viewport widths with no navigation at all, and jsdom never evaluates
