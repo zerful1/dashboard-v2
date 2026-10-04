@@ -2,10 +2,12 @@ import { weekdayInitial, type HabitSummary } from "@dashboard/shared";
 import { cn } from "@/lib/cn";
 
 /** A habit with its streak and the 7-day strip; each day toggles. */
-export function HabitRow({ habit, days, today, onToggle }: {
+export function HabitRow({ habit, days, today, locked, onToggle }: {
   habit: HabitSummary;
   days: string[];
   today: string;
+  /** Not saved yet: no server id to mark days against. */
+  locked: boolean;
   onToggle: (date: string, done: boolean) => void;
 }) {
   return (
@@ -26,9 +28,10 @@ export function HabitRow({ habit, days, today, onToggle }: {
               type="button"
               aria-label={`${habit.name} on ${d}`}
               aria-pressed={done}
+              disabled={locked}
               onClick={() => onToggle(d, !done)}
               className={cn(
-                "h-9 rounded-lg border font-mono text-[10px]",
+                "h-9 rounded-lg border font-mono text-[10px] disabled:opacity-40",
                 done ? "border-transparent bg-accent/10 text-accent" : "border-raised text-muted",
                 d === today && "ring-1 ring-raised",
               )}

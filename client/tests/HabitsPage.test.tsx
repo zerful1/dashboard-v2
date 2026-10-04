@@ -19,13 +19,14 @@ const habit = (over: Partial<HabitSummary>): HabitSummary => ({
 });
 
 /** By method and path; every write answers at once. */
-function mockApi(list: () => Promise<HabitSummary[]>) {
+function mockApi(list: () => Promise<HabitSummary[]>, add?: () => Promise<unknown>) {
   const calls: { key: string; body?: unknown }[] = [];
   vi.spyOn(apiModule, "api").mockImplementation(async (path: string, init?: RequestInit) => {
     const key = `${init?.method ?? "GET"} ${path}`;
     calls.push({ key, body: init?.body ? JSON.parse(String(init.body)) : undefined });
     if (key.startsWith("GET /api/habits")) return (await list()) as never;
-    if (key.startsWith("POST /api/habits")) return habit({ id: "new" }) as never;
+    if (key === "POST /api/habits") return (add ? await add() : habit({ id: "new" })) as never;
+    if (key.startsWith("POST /api/habits/reorder")) return undefined as never;
     if (/^(PUT|DELETE|PATCH) \/api\/habits\//.test(key)) return undefined as never;
     throw new Error(`unexpected ${key}`);
   });
@@ -90,17 +91,50 @@ describe("HabitsPage", () => {
     );
   });
 
-  it("renames from edit mode", async () => {
+  // Final review: Done unmounted the rows and dropped an unsaved rename.
+  it("keeps a rename when Done is tapped", async () => {
     const calls = mockApi(async () => [habit({})]);
     renderPage();
     await userEvent.click(await screen.findByRole("button", { name: "Edit" }));
     const field = screen.getByRole("textbox", { name: "Name for Skincare" });
     await userEvent.clear(field);
     await userEvent.type(field, "Skin care");
-    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    await userEvent.click(screen.getByRole("button", { name: "Done" }));
     await waitFor(() =>
       expect(calls.find((c) => c.key === "PATCH /api/habits/h1")?.body).toEqual({ name: "Skin care", emoji: "🫧" }),
     );
+  });
+
+  it("saves a rename on Enter", async () => {
+    const calls = mockApi(async () => [habit({})]);
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "Edit" }));
+    const field = screen.getByRole("textbox", { name: "Name for Skincare" });
+    await userEvent.clear(field);
+    await userEvent.type(field, "Skin care{Enter}");
+    await waitFor(() =>
+      expect(calls.find((c) => c.key === "PATCH /api/habits/h1")?.body).toEqual({ name: "Skin care", emoji: "🫧" }),
+    );
+  });
+
+  // Final review: a just-added habit has no server id yet, and every action on
+  // it - or a reorder carrying its temporary id - failed with "Validation failed".
+  it("holds a just-added habit's controls until the server has saved it", async () => {
+    mockApi(async () => [], () => new Promise(() => {}));
+    renderPage();
+    await userEvent.type(await screen.findByRole("textbox", { name: "Habit name" }), "Read");
+    await userEvent.click(screen.getByRole("button", { name: "Add habit" }));
+    expect(await screen.findByRole("button", { name: `Read on ${today}` })).toBeDisabled();
+  });
+
+  it("doesn't reorder while a new habit is still saving", async () => {
+    mockApi(async () => [habit({})], () => new Promise(() => {}));
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "Edit" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Habit name" }), "Read");
+    await userEvent.click(screen.getByRole("button", { name: "Add habit" }));
+    expect(await screen.findByRole("button", { name: "Delete Read" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Move Skincare down" })).toBeDisabled();
   });
 
   it("stops offering the add form at 12", async () => {

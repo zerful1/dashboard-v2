@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { lastSevenDays, MAX_HABITS } from "@dashboard/shared";
-import { useHabits } from "@/hooks/useHabits";
+import { isUnsaved, useHabits } from "@/hooks/useHabits";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
@@ -54,6 +54,8 @@ export function HabitsPage() {
                       habit={h}
                       first={i === 0}
                       last={i === habits.length - 1}
+                      locked={isUnsaved(h)}
+                      canMove={!add.isPending}
                       onSave={(name, emoji) => rename.mutate({ id: h.id, name, emoji })}
                       onMove={(by) => move(i, by)}
                       onDelete={() => {
@@ -66,6 +68,7 @@ export function HabitsPage() {
                       habit={h}
                       days={days}
                       today={today}
+                      locked={isUnsaved(h)}
                       onToggle={(date, done) => setDone.mutate({ id: h.id, date, done })}
                     />
                   ),

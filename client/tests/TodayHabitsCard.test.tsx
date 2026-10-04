@@ -19,14 +19,14 @@ const habit = (over: Partial<HabitSummary>): HabitSummary => ({
 });
 
 /** By method and path. `lists` answers the GETs in turn; the last one repeats. */
-function mockApi(lists: (() => Promise<HabitSummary[]>)[], write: () => Promise<unknown> = async () => undefined) {
+function mockApi(lists: (() => Promise<HabitSummary[]>)[], write: (key: string) => Promise<unknown> = async () => undefined) {
   const calls: string[] = [];
   let n = 0;
   vi.spyOn(apiModule, "api").mockImplementation(async (path: string, init?: RequestInit) => {
     const key = `${init?.method ?? "GET"} ${path}`;
     calls.push(key);
     if (key.startsWith("GET /api/habits")) return (await lists[Math.min(n++, lists.length - 1)]!()) as never;
-    if (key.startsWith("PUT /api/habits/") || key.startsWith("DELETE /api/habits/")) return (await write()) as never;
+    if (key.startsWith("PUT /api/habits/") || key.startsWith("DELETE /api/habits/")) return (await write(key)) as never;
     throw new Error(`unexpected ${key}`);
   });
   return calls;
@@ -82,6 +82,33 @@ describe("TodayHabitsCard", () => {
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Mark Skincare done" })).toHaveAttribute("aria-pressed", "false"),
     );
+  });
+
+  // Final review: each rollback put back its own whole snapshot, so the second
+  // failure brought back the first tick, which never saved.
+  it("keeps a failed tick off when a second tick fails after it", async () => {
+    const fail: Record<string, () => void> = {};
+    mockApi(
+      [async () => [habit({}), habit({ id: "h2", name: "Put on retainer", sort_order: 2 })], () => new Promise(() => {})],
+      (key) =>
+        new Promise((_, reject) => {
+          fail[key.includes("/h1/") ? "a" : "b"] = () => reject(new ApiError(500, "boom"));
+        }),
+    );
+    const { qc } = renderCard();
+    await userEvent.click(await screen.findByRole("button", { name: "Mark Skincare done" }));
+    await userEvent.click(screen.getByRole("button", { name: "Mark Put on retainer done" }));
+    await waitFor(() => expect(fail.a && fail.b).toBeTruthy());
+    fail.a!();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Mark Skincare done" })).toHaveAttribute("aria-pressed", "false"),
+    );
+    // The first rollback leaves the second tick, still in flight, alone.
+    expect(screen.getByRole("button", { name: "Mark Put on retainer not done" })).toHaveAttribute("aria-pressed", "true");
+    fail.b!();
+    await waitFor(() => expect(qc.isMutating()).toBe(0));
+    expect(screen.getByRole("button", { name: "Mark Skincare done" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Mark Put on retainer done" })).toHaveAttribute("aria-pressed", "false");
   });
 
   it("isn't shown to someone with no habits", async () => {

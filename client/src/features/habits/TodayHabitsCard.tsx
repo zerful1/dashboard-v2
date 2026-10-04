@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import { useHabits } from "@/hooks/useHabits";
+import { isUnsaved, useHabits } from "@/hooks/useHabits";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/cn";
 
@@ -42,9 +42,10 @@ export function TodayHabitsCard() {
                 type="button"
                 aria-label={done ? `Mark ${h.name} not done` : `Mark ${h.name} done`}
                 aria-pressed={done}
+                disabled={isUnsaved(h)}
                 onClick={() => setDone.mutate({ id: h.id, date: today, done: !done })}
                 className={cn(
-                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border",
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border disabled:opacity-40",
                   done ? "border-transparent bg-accent/10 text-accent" : "border-raised text-dim",
                 )}
               >
