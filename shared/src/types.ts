@@ -143,6 +143,14 @@ export interface HabitCompletion {
   completed_date: string;
 }
 
+/** GET /api/habits: a habit with what the screens show of it. */
+export interface HabitSummary extends Habit {
+  /** Consecutive days ending today or yesterday (calculateStreak). */
+  streak: number;
+  /** Days done within the 7 days ending today, ascending. */
+  recent: string[];
+}
+
 // ---------------------------------------------------------------------------
 // Nutrition
 // ---------------------------------------------------------------------------

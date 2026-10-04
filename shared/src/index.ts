@@ -3,6 +3,7 @@ export * from "./policy";
 export * from "./domain/date";
 export * from "./domain/trend";
 export * from "./domain/streak";
+export * from "./domain/habits";
 export * from "./domain/format";
 export * from "./domain/insights/review";
 export * from "./domain/insights/records";
