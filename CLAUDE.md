@@ -111,6 +111,11 @@ What the demo code won't tell you:
   is older than yesterday. Windows that start on the same weekday draw the same
   random numbers, so there are exactly seven demo datasets, one per weekday. A
   test that checks only one "today" sees one of the seven.
+- **New demo data gets its own random stream.** The habits use their own seed
+  for this reason. A draw from the shared `rand` reshuffles every value after it,
+  and `demoGenerate.test.ts` pins one day's figures (sessions, sets, weigh-ins,
+  food, goals) to catch exactly that. A block that draws last shifts nothing yet,
+  so that test only catches it once something is drawn after it.
 - **Short sessions.** A demo session lasts 6 hours idle instead of 30 days,
   because only entering the demo refreshes its data.
 - **A shared lock.** The refresh's advisory lock key is one constant across
