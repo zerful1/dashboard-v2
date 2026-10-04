@@ -21,8 +21,10 @@ export const ITEM_COLS = [
 ].join(", ");
 
 /**
- * Serving data arrives only with a product lookup: a text-search hit has none,
- * so logging one must not wipe what an earlier save stored (#17 review 9).
+ * Serving data is replaced whole or kept whole. A text-search hit brings none,
+ * so the stored serving stays (#17 review 9); a barcode lookup brings a whole
+ * serving, which replaces the old one entirely, so its unknown label values
+ * never keep the previous serving's (part 1 final review, M3).
  */
 const SERVING_COLUMNS = new Set<string>(
   NUTRITION_COLUMNS.filter((c) => c === "serving_description" || c === "serving_grams" || c.endsWith("_per_serving")),
@@ -35,14 +37,21 @@ const SERVING_COLUMNS = new Set<string>(
  * foods always insert: they have no external id, and NULLs never conflict.
  */
 export async function upsertFoodItem(client: PoolClient, userId: string, food: FoodInput): Promise<string> {
-  const columns = ["user_id", "external_source", "external_id", "name", "brand", ...NUTRITION_COLUMNS];
-  const values = [userId, food.source, food.external_id, food.name, food.brand, ...NUTRITION_COLUMNS.map((c) => food[c])];
+  const columns = ["user_id", "external_source", "external_id", "name", "brand", "barcode", ...NUTRITION_COLUMNS];
+  const values = [
+    userId, food.source, food.external_id, food.name, food.brand, food.barcode ?? null, ...NUTRITION_COLUMNS.map((c) => food[c]),
+  ];
+  const servingKept = "(EXCLUDED.serving_grams IS NULL AND EXCLUDED.kcal_per_serving IS NULL)";
   const onConflict =
     food.source === "manual"
       ? ""
-      : `ON CONFLICT (user_id, external_source, external_id) DO UPDATE SET ${["name", "brand", ...NUTRITION_COLUMNS]
-          .map((c) => (SERVING_COLUMNS.has(c) ? `${c} = COALESCE(EXCLUDED.${c}, fi.${c})` : `${c} = EXCLUDED.${c}`))
-          .join(", ")}`;
+      : `ON CONFLICT (user_id, external_source, external_id) DO UPDATE SET ${[
+          ...["name", "brand", ...NUTRITION_COLUMNS].map((c) =>
+            SERVING_COLUMNS.has(c) ? `${c} = CASE WHEN ${servingKept} THEN fi.${c} ELSE EXCLUDED.${c} END` : `${c} = EXCLUDED.${c}`,
+          ),
+          // A barcode, once stored, is never cleared by a log that lacks one.
+          "barcode = COALESCE(EXCLUDED.barcode, fi.barcode)",
+        ].join(", ")}`;
   const { rows } = await client.query<{ id: string }>(
     `INSERT INTO ${T.foodItems} AS fi (${columns.join(", ")})
      VALUES (${values.map((_, i) => `$${i + 1}`).join(", ")})

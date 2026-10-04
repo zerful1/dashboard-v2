@@ -265,6 +265,8 @@ export interface FoodHit {
   externalId: string;
   name: string;
   brand?: string;
+  /** Set when the hit came from a barcode lookup. */
+  barcode?: string;
   servings: FoodHitServing[];
   per100g: ({ kcal: number; p: number; f: number; c: number } & LabelValues) | null;
 }
@@ -273,6 +275,12 @@ export interface FoodSearchResult {
   hits: FoodHit[];
   warnings?: string[];
 }
+
+/**
+ * GET /api/food/barcode/:code. A food already in the library comes back as
+ * the item itself, so logging it links to the row rather than storing a copy.
+ */
+export type BarcodeResult = { source: "library"; item: FoodItem } | { source: "off"; hit: FoodHit };
 
 /** The nutrition a food carries, per serving and per 100 g. */
 export type FoodNutrition = Pick<
@@ -291,6 +299,8 @@ export interface FoodInput extends FoodNutrition {
   external_id: string | null;
   name: string;
   brand: string | null;
+  /** The packet's barcode, when it was scanned or typed; never cleared once stored. */
+  barcode?: string | null;
 }
 
 /** POST /api/nutrition/diary. Send at most one of food_item_id and food. */

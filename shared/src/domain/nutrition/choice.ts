@@ -31,6 +31,7 @@ export function hitToChoice(hit: FoodHit): FoodChoice {
     external_id: hit.externalId,
     name: hit.name,
     brand: hit.brand ?? null,
+    barcode: hit.barcode ?? null,
     serving_description: serving?.label ?? null,
     serving_grams: serving?.grams ?? null,
     kcal_per_serving: serving?.kcal ?? null,
