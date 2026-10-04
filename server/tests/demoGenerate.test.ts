@@ -70,4 +70,29 @@ describe("generateDemo", () => {
     const later = generateDemo("2026-10-11");
     expect(later.weights.at(-1)!.date).toBe("2026-10-10");
   });
+
+  // Review focus 4. These are the generator's figures for TODAY before habits
+  // existed. Habits draw from their own random stream; drawing one from the
+  // shared stream would move every value after it, and with them these.
+  it("leaves the rest of the demo exactly as it was", () => {
+    expect({
+      sessions: d.sessions.length, sets: d.sets.length, weights: d.weights.length, food: d.food.length,
+      cardio: d.cardio.length, firstKg: d.weights[0]!.weight_kg, lastKg: d.weights.at(-1)!.weight_kg,
+      goals: d.goals.map((g) => g.target_kg),
+    }).toEqual({ sessions: 76, sets: 1140, weights: 96, food: 200, cardio: 12, firstKg: 83.8, lastKg: 79.8, goals: [78, 87.5, 80] });
+  });
+
+  it("keeps two daily habits, mostly done, always done yesterday, never today", () => {
+    for (const today of WEEK) {
+      const g = generateDemo(today);
+      expect(g.habits.map((h) => h.name)).toEqual(["Stretch 10 min", "Read 20 pages"]);
+      for (const habit of [0, 1]) {
+        const days = g.habitDays.filter((x) => x.habit === habit).map((x) => x.date);
+        expect(days).toContain(shiftISO(today, -1));
+        expect(days.every((x) => x >= shiftISO(today, -21) && x < today)).toBe(true);
+        expect(days.length).toBeGreaterThanOrEqual(12);
+        expect(days.length).toBeLessThanOrEqual(20);
+      }
+    }
+  });
 });
