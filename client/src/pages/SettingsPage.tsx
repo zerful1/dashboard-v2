@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Field } from "@/components/ui/Field";
 import { Spinner } from "@/components/ui/Spinner";
+import { YourDataCard } from "@/features/settings/YourDataCard";
 
 /**
  * Resolves `tz` to its canonical IANA name (folds case, resolves an alias
@@ -269,6 +270,8 @@ export function SettingsPage() {
           Change password
         </Button>
       </Card>
+
+      <YourDataCard />
 
       <Card className="space-y-3">
         <div className="lbl">Account</div>

@@ -115,3 +115,13 @@ describe("SettingsPage", () => {
     );
   });
 });
+
+describe("SettingsPage data export", () => {
+  it("offers the download above the account controls", async () => {
+    mockWithDelete();
+    renderPage();
+    const download = await screen.findByRole("button", { name: "Download my data" });
+    const signOut = screen.getByRole("button", { name: "Sign out" });
+    expect(download.compareDocumentPosition(signOut) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+});
