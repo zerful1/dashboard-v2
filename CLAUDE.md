@@ -25,8 +25,8 @@ C:\Users\zerful\Desktop\daboards\dashboard-v1    branch: docs/dashboard-v2-desig
 
 That path is this machine’s; the repo is private but cloneable, so on any other
 machine it is wherever you put it. That branch is **currently local-only** — on
-no remote as of 2026-08-31. Searching only inside `dashboard-v2` finds no spec
-and makes nine phases of work look unplanned. Read
+no remote as of 2026-10-04. Searching only inside `dashboard-v2` finds no spec
+and makes every phase of work look unplanned. Read
 the plan from there before starting anything, and tell any subagent where it is
 and that looking in this repo will not find it.
 
@@ -78,6 +78,40 @@ Client-side, query keys are scoped by user id for the same reason.
 
 ---
 
+## The demo is read-only because no GET writes
+
+"Try the demo" signs anyone in as `demo@demo.invalid`, with no password. One
+middleware, `demoReadOnly`, keeps it read-only. It runs at the front of the API
+and gives a demo session a 403 for everything except `GET`, `HEAD` and
+`OPTIONS`, plus the few auth endpoints that act for a caller who isn't signed
+in.
+
+So **no GET handler may write, anywhere, ever.** A GET that writes is open to
+every visitor of a public demo. All 27 were audited by hand for PR #23, and no
+test re-checks this. Writes the server makes on its own account count too, such
+as a cache or a row created on first read.
+
+**A new auth endpoint that looks a user up by email must treat the demo address
+as unknown**: `isDemoEmail(email) ? null : …`, as login and forgot-password do.
+The demo has a random password nobody knows, and a reset or a magic link would
+hand it a real one.
+
+What the demo code won't tell you:
+- **Seven datasets.** Its data is regenerated on entry once the newest weigh-in
+  is older than yesterday. Windows that start on the same weekday draw the same
+  random numbers, so there are exactly seven demo datasets, one per weekday. A
+  test that checks only one "today" sees one of the seven.
+- **Short sessions.** A demo session lasts 6 hours idle instead of 30 days,
+  because only entering the demo refreshes its data.
+- **A shared lock.** The refresh's advisory lock key is one constant across
+  `app`, `app_dev` and `app_test`, which share a database. A test run can delay
+  a production entry by about a second.
+- **Two accounts in production.** Anything that counts or compares rows without
+  a user filter now includes the demo. `driftReport` does this; see below.
+- **Deleting it is harmless.** The next click recreates the account.
+
+---
+
 ## Two connection paths, three schemas
 
 | | port | used by | why |
@@ -125,6 +159,14 @@ longer matches what actually ran, and **nothing would fail to tell you.** It is
 a landmine triggered by good instinct, which is the only reason it is written
 down here.
 
+**`driftReport` scopes the v1 side to the owner but counts every v2 row.** That
+was right while production had one account. Since the demo, the demo's
+weigh-ins and sessions appear as CONFLICTING on any date v1 also has, and
+"unaccounted" can go negative. It is misleading, not damage: the delta is
+`ON CONFLICT DO NOTHING`. The overlap ends around 2026-12-06, when the demo's
+16-week window moves past v1's last dates. Excluding the demo user's rows is the
+fix if drift is needed before then.
+
 ---
 
 ## `day_name` is snapshotted, and `day_type` is reused
@@ -138,10 +180,10 @@ So **every historical view reads `day_name` directly** and never resolves
 split is edited, and does so plausibly enough that nobody notices.
 
 `workout_sets` has **no foreign key to `exercises`** by design: exercises get
-pruned from the template, and the sets outlive them. The template holds 28 rows
-spanning 20 distinct names; the history spans 66. Anything listing exercises for
-*stats* must read `DISTINCT exercise_name` from `workout_sets`, not the
-template.
+pruned from the template, and the sets outlive them. On 2026-10-04 production's
+template was empty (cleared on 2026-10-03 for the user to refill), while the
+history spanned 84 distinct names. Anything listing exercises for *stats* must
+read `DISTINCT exercise_name` from `workout_sets`, not the template.
 
 ---
 
@@ -198,9 +240,10 @@ authenticated JSON into a store that outlives sign-out and is readable by the
 next person to open the browser.
 
 Offline reads come from the persisted query cache instead, which is per-user and
-purged at all three identity transitions in `AuthProvider`. `qc.clear()` empties
-memory only — the persisted copy is a separate artifact, so `persister.removeClient()`
-has to accompany every one of them.
+purged at every identity transition in `AuthProvider`: sign-in, registration,
+entering the demo and sign-out. `qc.clear()` empties memory only — the persisted
+copy is a separate artifact, so `persister.removeClient()` has to accompany
+every one of them.
 
 **Writes are not queued offline, in any feature.** Logging with no signal fails
 with a toast and is logged again once back online — the user's call, made for
@@ -225,10 +268,14 @@ be terracotta is one of those three or it is not terracotta.
 
 **`raised` is borders and gridlines only.** Never data.
 
-**`client/src/features/weight/WeightChart.tsx` is the only file allowed to
-import a charting library.** It says so at the top. A second import site retires
-the rule silently — if a chart is needed elsewhere, it is a new export from that
-file, not a new import.
+**Only `client/src/features/weight/WeightChart.tsx` was meant to import a
+charting library.** Its component comment calls it "THE swappable boundary".
+The rule broke silently, exactly as it warns: `client/src/features/gym/ProgressionChart.tsx`
+imports Recharts too. It was added on 2026-08-17, before the rule was written
+down on 2026-08-31, and nobody noticed until 2026-10-04. Treat those two files
+as the only import sites, and allow no third. A new chart is a new export from
+`WeightChart.tsx`. Moving `ProgressionChart` behind it would make the rule true
+again.
 
 **Breakpoint conditions must be exact complements.** `xl:hidden` against
 `xl:flex`, same threshold. A mismatched pair does not fail loudly; it opens a
@@ -287,7 +334,11 @@ however correct the server is.
 nobody new can register, and production relies on that: holding other people's
 health data brings legal duties this app is not set up for. To register locally,
 set `SIGNUP_ALLOWLIST=*` in `.env`, or put it in front of `npm run dev:api` for
-one run. The test suite sets `*` in `server/vitest.config.mts`.
+one run. The test suite sets `*` in `server/vitest.config.mts`, so **a test
+never proves something works with sign-ups closed** unless it builds the app with
+`createApp({ signups: parseSignupPolicy(undefined) })`. The demo entry has a test
+like that, because it must ignore the allowlist. Registering the demo address is
+always refused.
 
 `npm run dev:web:lan` adds `--host` for testing on a real device. It binds to
 `0.0.0.0`, and because `/api` is proxied through that same process, **it puts
@@ -297,7 +348,9 @@ shared wifi. It is a separate script rather than the default for that reason.
 `npm run seed-dev -w @dashboard/server -- --email <address> --reset` populates
 an account in `app_dev`, which otherwise renders every gym screen blank. It
 never creates users: register an account in the local app first, then seed it
-by that address.
+by that address. For a populated account with no setup at all, "Try the demo"
+works locally too: it needs no allowlist and fills `app_dev`'s demo account by
+itself. It can't save anything, though.
 
 ---
 
