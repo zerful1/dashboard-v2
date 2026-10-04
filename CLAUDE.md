@@ -76,6 +76,12 @@ for the database-level guarantee that was given up.
 
 Client-side, query keys are scoped by user id for the same reason.
 
+**A new user-owned table also goes in the export** (`TABLES` in
+`server/src/repositories/export.ts`). The export is the user's only backup, so
+`tests/export.test.ts` reads every table with a `user_id` column from the database
+and fails until the new one is listed. Secrets are excluded by name there, the way
+`password_reset_tokens` is.
+
 ---
 
 ## The demo is read-only because no GET writes
