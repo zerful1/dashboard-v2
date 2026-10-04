@@ -95,3 +95,26 @@ describe("exportUserData", () => {
     await expect(exportUserData(randomUUID())).rejects.toBeInstanceOf(NotFound);
   });
 });
+
+describe("GET /api/export", () => {
+  it("is for signed-in users only", async () => {
+    await request(app).get("/api/export").expect(401);
+  });
+
+  it("answers the file, and tells browsers not to keep a copy", async () => {
+    const a = await aliceWithData();
+    const res = await a.agent.get("/api/export").expect(200);
+    expect(res.headers["cache-control"]).toBe("no-store");
+    expect(res.body).toMatchObject({ format: "dashboard-export", version: 1, account: { email: alice.email } });
+    expect(res.body.tables.body_weight[0].date).toBe("2026-10-01");
+  });
+
+  // Spec §4: a read, so the demo's read-only rule lets it through.
+  it("works in the demo, with the demo's made-up data", async () => {
+    const agent = request.agent(app);
+    await agent.post("/api/auth/demo").expect(200);
+    const res = await agent.get("/api/export").expect(200);
+    expect(res.body.account.email).toBe("demo@demo.invalid");
+    expect(res.body.tables.body_weight.length).toBeGreaterThan(50);
+  });
+});
