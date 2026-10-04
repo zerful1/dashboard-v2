@@ -1,6 +1,7 @@
 import express, { type Express } from "express";
 import helmet from "helmet";
 import { sessionMiddleware } from "./middleware/session";
+import { demoReadOnly } from "./middleware/demoReadOnly";
 import { errorHandler } from "./middleware/errorHandler";
 import { authRouter } from "./routes/auth";
 import { profileRouter } from "./routes/profile";
@@ -60,6 +61,7 @@ export function createApp(options: { signups?: SignupPolicy } = {}): Express {
   });
 
   app.use(sessionMiddleware);
+  app.use(demoReadOnly);
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true });

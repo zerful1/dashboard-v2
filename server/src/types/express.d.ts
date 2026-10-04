@@ -4,6 +4,8 @@ declare module "express-session" {
   interface SessionData {
     /** The only place a user identity is ever stored. Set on register and login. */
     userId?: string;
+    /** Set only by POST /api/auth/demo: this session may read but never write. */
+    demo?: boolean;
   }
 }
 

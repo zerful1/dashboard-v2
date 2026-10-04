@@ -15,7 +15,9 @@ import { sendPasswordResetEmail } from "../services/email";
 import { Unauthorized, BadRequest, Conflict, Forbidden } from "../errors";
 import { config } from "../config";
 import { signupAllowed, type SignupPolicy } from "../signups";
-import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from "@dashboard/shared";
+import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH, todayISO } from "@dashboard/shared";
+import { DEMO_SESSION_MS, findOrCreateDemoUser, isDemoEmail } from "../demo/account";
+import { refreshDemoIfStale, DEMO_TIMEZONE } from "../demo/refresh";
 
 export const authRouter = Router();
 
@@ -67,6 +69,10 @@ authRouter.post("/register", validate({ body: credentials }), async (req, res, n
       next(new Forbidden("Sign-ups are closed"));
       return;
     }
+    if (isDemoEmail(email)) {
+      next(new Conflict("An account with that email already exists"));
+      return;
+    }
 
     const passwordHash = await hashPassword(password);
     const user = await createUserWithProfile(email, passwordHash);
@@ -92,7 +98,9 @@ authRouter.post("/register", validate({ body: credentials }), async (req, res, n
 authRouter.post("/login", validate({ body: credentials }), async (req, res, next) => {
   try {
     const { email, password } = req.body as z.infer<typeof credentials>;
-    const user = await findUserByEmail(email);
+    // The demo account is reachable only through /demo, which marks the session
+    // read-only: here it is an unknown address, dummy hash and all.
+    const user = isDemoEmail(email) ? null : await findUserByEmail(email);
 
     // Always hash, even when the email is unknown — otherwise response time
     // reveals whether the account exists. DUMMY_HASH never matches, so the
@@ -123,6 +131,23 @@ authRouter.post("/logout", (req, res, next) => {
   });
 });
 
+// The read-only demo: no password, regardless of the sign-up policy. Server
+// time in the demo's own timezone decides staleness (CLAUDE.md: server work
+// takes a timezone, never the client's clock).
+authRouter.post("/demo", async (req, res, next) => {
+  try {
+    const user = await findOrCreateDemoUser();
+    await refreshDemoIfStale(user.id, todayISO(DEMO_TIMEZONE));
+    await regenerate(req);
+    req.session.userId = user.id;
+    req.session.demo = true;
+    req.session.cookie.maxAge = DEMO_SESSION_MS;
+    res.json({ id: user.id, email: user.email, demo: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 authRouter.get("/me", requireAuth, async (req, res, next) => {
   try {
     const user = await findUserById(req.userId);
@@ -133,7 +158,7 @@ authRouter.get("/me", requireAuth, async (req, res, next) => {
       next(new Unauthorized());
       return;
     }
-    res.json({ id: user.id, email: user.email });
+    res.json({ id: user.id, email: user.email, demo: req.session.demo === true });
   } catch (err) {
     next(err);
   }
@@ -186,7 +211,8 @@ authRouter.post(
   async (req, res, next) => {
     try {
       const { email } = req.body as { email: string };
-      const user = await findUserByEmail(email);
+      // No reset for the demo: it would hand it a usable password.
+      const user = isDemoEmail(email) ? null : await findUserByEmail(email);
 
       if (user) {
         const raw = await createResetToken(user.id);
