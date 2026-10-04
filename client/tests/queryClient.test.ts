@@ -75,6 +75,23 @@ describe("writes made offline", () => {
     expect(toast.error).toHaveBeenCalledWith("You're offline — not saved");
   });
 
+  // Final review: TanStack's onlineManager starts online and changes only on an
+  // online/offline event, so an app opened with no signal (no event ever fires)
+  // still showed "Something went wrong" beside the offline banner.
+  it("say the device is offline when the app was opened with no signal", async () => {
+    const onLine = vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+    try {
+      const observer = new MutationObserver(createQueryClient(), {
+        mutationFn: () => Promise.reject(new TypeError("Failed to fetch")),
+        retry: false,
+      });
+      await observer.mutate(undefined).catch(() => {});
+      expect(toast.error).toHaveBeenCalledWith("You're offline — not saved");
+    } finally {
+      onLine.mockRestore();
+    }
+  });
+
   it("keep the general message for a network failure while online", async () => {
     const observer = new MutationObserver(createQueryClient(), {
       mutationFn: () => Promise.reject(new TypeError("Failed to fetch")),

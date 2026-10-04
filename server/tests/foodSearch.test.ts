@@ -189,6 +189,22 @@ describe("Open Food Facts mapping limits", () => {
   });
 });
 
+describe("Open Food Facts impossible values", () => {
+  // Final review: real products list values that cannot be true - 59,000 kcal
+  // per 100 g, or 112 g of carbohydrate in 100 g - and the diary POST refuses
+  // some of them outright. Impossible core values leave the hit out; impossible
+  // label values become unknown.
+  it("leaves out a hit with impossible energy or macros", () => {
+    expect(mapSearchHit({ code: "187006", product_name: "Creamy Pork Bolognese", nutriments: { "energy-kcal_100g": 59000 } })).toBeNull();
+    expect(mapSearchHit({ code: "4", product_name: "Bar", nutriments: { "energy-kcal_100g": 400, carbohydrates_100g: 112 } })).toBeNull();
+  });
+
+  it("treats an impossible label value as unknown", () => {
+    const hit = mapSearchHit({ code: "5", product_name: "Bar", nutriments: { "energy-kcal_100g": 400, proteins_100g: 10, sugars_100g: 1500, salt_100g: 120 } });
+    expect(hit?.per100g).toMatchObject({ kcal: 400, p: 10, sugar: null, salt: null });
+  });
+});
+
 describe("Open Food Facts query text", () => {
   // #17 review (15): "(light" or "brand:x" was Lucene syntax, and the error
   // read as "Branded foods are unavailable".

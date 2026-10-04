@@ -26,7 +26,10 @@ import { MAX_AGE } from "@/lib/persister";
  */
 function writeFailureMessage(err: unknown): string {
   if (err instanceof ApiError) return err.message;
-  if (!onlineManager.isOnline()) return "You're offline — not saved";
+  // onlineManager starts online and changes only on an online/offline event, so
+  // an app opened with no signal still reads as online. navigator.onLine false
+  // is trustworthy, as useOnline treats it.
+  if (!onlineManager.isOnline() || navigator.onLine === false) return "You're offline — not saved";
   return "Something went wrong";
 }
 

@@ -123,9 +123,16 @@ export function TargetsSheet({
   );
 }
 
+/** Past 14 logged days with no adaptive figure, the band hid it (or weigh-ins are too few). */
+const NOT_BELIEVABLE =
+  "Your logged days don't give a believable estimate yet: log whole days, and weigh in at least once a week.";
+
 function HintCard({ hint }: { hint: TdeeHint | undefined }) {
   let headline: string | null = null;
   let detail: string;
+  // Promising "after 14 logged days" to someone already past 14 read as a bug
+  // once implausible estimates were hidden (final review): say why instead.
+  const pastFourteen = hint !== undefined && hint.days_logged >= 14;
   if (!hint) {
     detail = "Estimating…";
   } else if (hint.adaptive) {
@@ -135,9 +142,13 @@ function HintCard({ hint }: { hint: TdeeHint | undefined }) {
     headline = `≈ ${hint.formula.kcal.toLocaleString()} kcal maintenance`;
     detail =
       `Estimated from your height, age (${hint.formula.age}), sex and activity at ${hint.formula.weight_kg.toFixed(1)} kg. ` +
-      `After 14 logged days this uses your own numbers instead (${hint.days_logged} so far).`;
+      (pastFourteen
+        ? NOT_BELIEVABLE
+        : `After 14 logged days this uses your own numbers instead (${hint.days_logged} so far).`);
   } else {
-    detail = `Add your body details below for an estimate, or log food for 14 days (${hint.days_logged} so far).`;
+    detail = pastFourteen
+      ? `${NOT_BELIEVABLE} Or add your body details below.`
+      : `Add your body details below for an estimate, or log food for 14 days (${hint.days_logged} so far).`;
   }
   return (
     <div className="rounded-lg border border-raised p-3">
@@ -229,7 +240,9 @@ function BodyDetails() {
         </Field>
         <Button
           variant="ghost"
-          disabled={!!heightError || !!yearError}
+          // Not before the profile has loaded: the save sends all four details,
+          // and blanks would clear the ones not yet shown (final review).
+          disabled={!profile.data || !!heightError || !!yearError}
           loading={save.isPending}
           onClick={() => save.mutate(patch)}
         >
