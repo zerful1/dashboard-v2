@@ -7,6 +7,8 @@ import { api, ApiError } from "@/lib/api";
 export interface AuthUser {
   id: string;
   email: string;
+  /** True only in the read-only demo (server-set). */
+  demo: boolean;
 }
 
 interface AuthContextValue {
@@ -28,6 +30,8 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   /** Rejects if the account can't be created, or if no session was established. */
   register: (email: string, password: string) => Promise<void>;
+  /** Signs in to the read-only demo. Rejects like `login`. */
+  enterDemo: () => Promise<void>;
   /**
    * Never rejects: a failed sign-out still ends the session on this device and
    * reports itself with a toast, so callers do not need a rejection handler.
@@ -153,6 +157,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [qc, refreshAuth],
   );
 
+  const enterDemo = useCallback(async () => {
+    await api("/api/auth/demo", { method: "POST" });
+    qc.clear();
+    // Same reason as login: a new identity, so neither copy of the cache may survive.
+    void persister.removeClient();
+    const me = await refreshAuth();
+    if (!me) throw new Error("Opened the demo, but the session did not stick on this device.");
+  }, [qc, refreshAuth]);
+
   const logout = useCallback(async () => {
     try {
       await api("/api/auth/logout", { method: "POST" });
@@ -172,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, sessionError, login, register, logout, refreshAuth }}
+      value={{ user, loading, sessionError, login, register, enterDemo, logout, refreshAuth }}
     >
       {children}
     </AuthContext.Provider>

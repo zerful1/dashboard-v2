@@ -59,4 +59,23 @@ describe("LoginPage", () => {
       expect(screen.getByRole("button", { name: /sign in/i })).toBeDisabled(),
     );
   });
+
+  it("opens the demo from its button", async () => {
+    let signedIn = false;
+    const spy = vi.spyOn(apiModule, "api").mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === "/api/auth/demo" && init?.method === "POST") {
+        signedIn = true;
+        return { id: "d", email: "demo@demo.invalid", demo: true } as never;
+      }
+      if (path === "/api/auth/me") {
+        if (!signedIn) throw new ApiError(401, "Not authenticated");
+        return { id: "d", email: "demo@demo.invalid", demo: true } as never;
+      }
+      throw new Error(`unexpected ${path}`);
+    });
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "Try the demo" }));
+    await waitFor(() => expect(spy).toHaveBeenCalledWith("/api/auth/demo", expect.objectContaining({ method: "POST" })));
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
 });

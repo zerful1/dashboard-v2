@@ -9,12 +9,13 @@ import { Field } from "@/components/ui/Field";
 import { FormError } from "@/components/ui/FormError";
 
 export function LoginPage() {
-  const { user, loading, login } = useAuth();
+  const { user, loading, login, enterDemo } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [demoBusy, setDemoBusy] = useState(false);
 
   if (!loading && user) return <Navigate to="/" replace />;
 
@@ -31,6 +32,19 @@ export function LoginPage() {
       setError(err instanceof ApiError ? err.message : "Could not sign in");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function onDemo() {
+    setError(null);
+    setDemoBusy(true);
+    try {
+      await enterDemo();
+      navigate("/", { replace: true });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not open the demo");
+    } finally {
+      setDemoBusy(false);
     }
   }
 
@@ -79,6 +93,13 @@ export function LoginPage() {
           </Link>
         </div>
       </form>
+
+      <div className="mt-6 border-t border-raised pt-4">
+        <Button type="button" variant="ghost" loading={demoBusy} className="w-full" onClick={onDemo}>
+          Try the demo
+        </Button>
+        <p className="mt-2 text-center text-xs text-muted">Browse with made-up data. Nothing can be changed.</p>
+      </div>
     </AuthShell>
   );
 }

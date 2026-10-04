@@ -6,6 +6,7 @@ import { BottomTabs } from "./BottomTabs";
 import { useAuth } from "@/auth/AuthProvider";
 import { Spinner } from "@/components/ui/Spinner";
 import { OfflineBanner } from "@/components/ui/OfflineBanner";
+import { DemoBanner } from "@/components/ui/DemoBanner";
 
 export function AppLayout() {
   const [moreOpen, setMoreOpen] = useState(false);
@@ -48,6 +49,7 @@ export function AppLayout() {
               "these numbers may be stale" is worth nothing if it is only true
               at the top of the page. */}
           <div className="sticky top-0 z-10">
+            <DemoBanner />
             <OfflineBanner />
           </div>
           {/* Single column below 1280px; two-pane layouts are introduced
