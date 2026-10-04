@@ -9,7 +9,7 @@ import {
 } from "../repositories/foodLog";
 import type { DiaryEntryInput } from "@dashboard/shared";
 import {
-  distinctLoggedDates, mifflinStJeor, shiftISO, tdeeFromLog, TDEE_WINDOW_DAYS,
+  distinctLoggedDates, mifflinStJeor, plausibleAdaptive, shiftISO, tdeeFromLog, TDEE_WINDOW_DAYS,
 } from "@dashboard/shared";
 import type { BodyWeightEntry, Profile, TdeeHint } from "@dashboard/shared";
 import { getProfile } from "../repositories/profiles";
@@ -203,9 +203,13 @@ nutritionRouter.get("/tdee", validate({ query: z.object({ today: isoDate }) }), 
     ]);
     const latest = weightsNewestFirst.find((w) => w.date <= today) ?? null;
     const adaptive = tdeeFromLog({ entries, weights: [...weightsNewestFirst].reverse(), windowStart, windowEnd });
+    const formula = formulaHint(profile, latest, today);
     const body: TdeeHint = {
-      formula: formulaHint(profile, latest, today),
-      adaptive: adaptive && { kcal: adaptive.kcal, days_logged: adaptive.daysLogged, weigh_ins: adaptive.weighIns },
+      formula,
+      adaptive:
+        adaptive && plausibleAdaptive(adaptive.kcal, formula?.kcal ?? null)
+          ? { kcal: adaptive.kcal, days_logged: adaptive.daysLogged, weigh_ins: adaptive.weighIns }
+          : null,
       days_logged: distinctLoggedDates(entries).length,
     };
     res.json(body);

@@ -23,9 +23,9 @@ async function signedIn(who: typeof alice) {
   return { agent, id: (await findUserByEmail(who.email))!.id };
 }
 
-async function seedFlatMonth(userId: string) {
+async function seedFlatMonth(userId: string, kcal = 2000) {
   for (let n = 0; n < 28; n++) await upsertWeight(userId, { date: shiftISO(START, n), weight_kg: 80 });
-  for (let k = 0; k < 14; k++) await addEntry(userId, meal(shiftISO(START, k * 2), 2000) as never);
+  for (let k = 0; k < 14; k++) await addEntry(userId, meal(shiftISO(START, k * 2), kcal) as never);
 }
 
 describe("TDEE hint", () => {
@@ -55,6 +55,27 @@ describe("TDEE hint", () => {
     const res = await agent.get(`/api/nutrition/tdee?today=${TODAY}`).expect(200);
     expect(res.body.adaptive).toEqual({ kcal: 2000, days_logged: 14, weigh_ins: 28 });
     expect(res.body.days_logged).toBe(14);
+  });
+  // #17 review (10): partial logging and noisy weigh-ins could show an absurd figure.
+  it("hides an adaptive figure outside the human range", async () => {
+    const { agent, id } = await signedIn(alice);
+    await seedFlatMonth(id, 800);
+    expect((await agent.get(`/api/nutrition/tdee?today=${TODAY}`).expect(200)).body).toMatchObject({ adaptive: null, days_logged: 14 });
+  });
+
+  it("hides an adaptive figure far from the formula, and keeps one near it", async () => {
+    const details = { height_cm: 180, birth_year: 1996, sex: "male", activity_level: "moderate" };
+    const a = await signedIn(alice);
+    await a.agent.patch("/api/profile").send(details);
+    await seedFlatMonth(a.id, 1500); // 46% under the formula's 2759
+    expect((await a.agent.get(`/api/nutrition/tdee?today=${TODAY}`).expect(200)).body).toMatchObject({
+      adaptive: null, formula: { kcal: 2759 },
+    });
+    const b = await signedIn(bob);
+    await b.agent.patch("/api/profile").send(details);
+    await seedFlatMonth(b.id, 2400); // 13% under
+    expect((await b.agent.get(`/api/nutrition/tdee?today=${TODAY}`).expect(200)).body.adaptive)
+      .toEqual({ kcal: 2400, days_logged: 14, weigh_ins: 28 });
   });
 });
 
