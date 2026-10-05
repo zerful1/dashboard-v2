@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/auth/AuthProvider";
 import { useHomeOverview } from "@/hooks/useHomeOverview";
+import { useWeightGoalKg } from "@/hooks/useGoals";
 import { profileQuery } from "@/lib/profileQuery";
 import { TodayCard } from "@/features/home/TodayCard";
 import { WeekTile } from "@/features/home/WeekTile";
@@ -14,6 +15,7 @@ export function HomePage() {
   const { user } = useAuth();
   const { data: profile } = useQuery(profileQuery);
   const { today, week, lastSession, weight, isLoading } = useHomeOverview();
+  const goalKg = useWeightGoalKg();
 
   // Three cases, one answer. `display_name` is `NOT NULL DEFAULT ''`, so a
   // freshly registered user has an empty one; the query may still be in flight
@@ -39,7 +41,7 @@ export function HomePage() {
           {/* Two up from the smallest screen: these tiles are short enough that
               stacking them wastes the fold on a phone. */}
           <div className="grid grid-cols-2 gap-4">
-            <WeightTile summary={weight} />
+            <WeightTile summary={weight} goalKg={goalKg} />
             <WeekTile week={week} />
           </div>
 

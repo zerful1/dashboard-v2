@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { toLocalISO } from "@dashboard/shared";
 import type { BodyWeightEntry } from "@dashboard/shared";
 import { useWeights } from "@/hooks/useWeights";
+import { useWeightGoalKg } from "@/hooks/useGoals";
 import { deriveWeightSummary } from "./deriveWeight";
 import { WeightChart } from "./WeightChart";
 import { WeightStats } from "./WeightStats";
@@ -17,6 +18,7 @@ export function WeightPage() {
   // entries yet" over a history that simply had not arrived. Same defect as
   // the one fixed in useHomeOverview, in the smaller of the two places.
   const { entries, isPending, isError, saveWeight, deleteWeight } = useWeights();
+  const goalKg = useWeightGoalKg();
   const [editing, setEditing] = useState<BodyWeightEntry | null>(null);
 
   const today = toLocalISO();
@@ -46,8 +48,8 @@ export function WeightPage() {
       </div>
 
       <LogWeightCard save={saveWeight} entries={entries} />
-      <WeightStats summary={summary} />
-      <WeightChart points={summary.points} trend={summary.trend} />
+      <WeightStats summary={summary} goalKg={goalKg} />
+      <WeightChart points={summary.points} trend={summary.trend} goalKg={goalKg} />
       <WeightList entries={entries} onSelect={setEditing} />
 
       <EditWeightSheet
