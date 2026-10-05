@@ -36,6 +36,8 @@ describe("demo refresh", () => {
     expect(await count(T.workoutSets, demo.id)).toBeGreaterThan(500);
     expect(await count(T.foodLogEntries, demo.id)).toBeGreaterThan(100);
     expect(await count(T.goals, demo.id)).toBe(3);
+    expect(await count(T.habits, demo.id)).toBe(2);
+    expect(await count(T.habitCompletions, demo.id)).toBeGreaterThan(20);
     const before = (await pool.query(`SELECT id FROM ${T.bodyWeight} WHERE user_id = $1 ORDER BY date`, [demo.id])).rows;
 
     expect(await refreshDemoIfStale(demo.id, "2026-10-04")).toBe(false);
@@ -51,6 +53,7 @@ describe("demo refresh", () => {
     const newest = (await pool.query(`SELECT max(date)::text AS d FROM ${T.bodyWeight} WHERE user_id = $1`, [demo.id])).rows[0].d;
     expect(newest).toBe("2026-10-08");
     expect(await count(T.goals, demo.id)).toBe(goals);
+    expect(await count(T.habits, demo.id)).toBe(2);
   });
 
   it("never touches another account's rows", async () => {

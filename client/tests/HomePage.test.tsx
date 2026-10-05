@@ -70,6 +70,7 @@ interface Overrides {
   sessions?: WorkoutSession[];
   sets?: unknown[];
   weights?: unknown[];
+  habits?: unknown[];
 }
 
 /**
@@ -88,6 +89,7 @@ function mockApi(o: Overrides = {}) {
     ["/api/workouts/session-detail", () => ({ sets: o.sets ?? [], cardio: [] })],
     ["/api/workouts/sessions", () => o.sessions ?? []],
     ["/api/weight", () => o.weights ?? []],
+    ["/api/habits", () => o.habits ?? []],
   ];
   vi.spyOn(apiModule, "api").mockImplementation(async (path: string) => {
     const hit = routes.find(([p]) => path.startsWith(p));
@@ -245,5 +247,15 @@ describe("HomePage overview", () => {
     mockApi({ sessions: [] });
     renderPage();
     expect(await screen.findByText(/no sessions yet/i)).toBeInTheDocument();
+  });
+});
+
+describe("HomePage habits", () => {
+  it("shows today's habits under the Today card", async () => {
+    mockApi({
+      habits: [{ id: "h1", user_id: "1", name: "Skincare", emoji: "🫧", sort_order: 1, created_at: "", streak: 0, recent: [] }],
+    });
+    renderPage();
+    expect(await screen.findByRole("button", { name: "Mark Skincare done" })).toBeInTheDocument();
   });
 });

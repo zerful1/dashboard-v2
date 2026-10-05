@@ -28,3 +28,6 @@ export const PASSWORD_MAX_LENGTH = 200;
  * "Request a new link".
  */
 export const RESET_TTL_MINUTES = 30;
+
+/** Daily habits per user: enough for a routine, few enough to tick from Home. */
+export const MAX_HABITS = 12;

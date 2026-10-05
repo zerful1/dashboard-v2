@@ -36,7 +36,8 @@ export async function refreshDemoIfStale(userId: string, today: string): Promise
     if (newest !== null && newest >= shiftISO(today, -1)) return false;
 
     // Sets and cardio go with their sessions (ON DELETE CASCADE).
-    for (const table of [T.workoutSessions, T.exercises, T.bodyWeight, T.foodLogEntries, T.nutritionTargets, T.workoutSplit, T.goals]) {
+    // Completions go with their habits (ON DELETE CASCADE).
+    for (const table of [T.workoutSessions, T.exercises, T.bodyWeight, T.foodLogEntries, T.nutritionTargets, T.workoutSplit, T.goals, T.habits]) {
       await client.query(`DELETE FROM ${table} WHERE user_id = $1`, [userId]);
     }
 
@@ -73,6 +74,17 @@ export async function refreshDemoIfStale(userId: string, today: string): Promise
     );
     await insertMany(client, T.goals, ["user_id", "kind", "exercise_name", "target_kg", "start_kg"],
       d.goals.map((g) => [userId, g.kind, g.exercise_name, g.target_kg, g.start_kg]));
+    if (d.habits.length) {
+      const values = d.habits.map((_, i) => `($1, $${i * 3 + 2}, $${i * 3 + 3}, $${i * 3 + 4})`).join(", ");
+      const inserted = await client.query<{ id: string; sort_order: number }>(
+        `INSERT INTO ${T.habits} (user_id, name, emoji, sort_order) VALUES ${values} RETURNING id, sort_order`,
+        [userId, ...d.habits.flatMap((h) => [h.name, h.emoji, h.sort_order])],
+      );
+      // Matched by sort_order, unique within the demo's habits, not by RETURNING order.
+      const bySort = new Map(inserted.rows.map((r) => [r.sort_order, r.id]));
+      await insertMany(client, T.habitCompletions, ["user_id", "habit_id", "completed_date"],
+        d.habitDays.map((x) => [userId, bySort.get(d.habits[x.habit]!.sort_order), x.date]));
+    }
     return true;
   });
 }

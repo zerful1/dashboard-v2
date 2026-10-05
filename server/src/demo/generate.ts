@@ -32,6 +32,9 @@ export interface DemoData {
   food: DemoFood[];
   target: { effective_from: string; goal_mode: "cut"; calories: number; protein_g: number; fat_g: number; carbs_g: number };
   goals: { kind: "weight" | "lift"; exercise_name: string | null; target_kg: number; start_kg: number }[];
+  habits: { name: string; emoji: string; sort_order: number }[];
+  /** Each a day one habit was done, by its index in `habits`. */
+  habitDays: { habit: number; date: string }[];
 }
 
 interface Lift {
@@ -198,6 +201,24 @@ export function generateDemo(today: string): DemoData {
     }
   }
 
+  // Their own stream: drawing from `rand` would shift every value after it and
+  // change the rest of the demo, along with the figures its tests pin.
+  const habitRand = seeded(20261013);
+  const habits = [
+    { name: "Stretch 10 min", emoji: "🧘", sort_order: 1 },
+    { name: "Read 20 pages", emoji: "📖", sort_order: 2 },
+  ];
+  const habitDays: DemoData["habitDays"] = [];
+  for (let back = 21; back >= 1; back--) {
+    const date = shiftISO(today, -back);
+    habits.forEach((_, habit) => {
+      // Drawn every day, so yesterday's guarantee doesn't move the stream.
+      const hit = habitRand() < 0.8;
+      // Yesterday always done, so the demo's Home shows real streaks. Today is never done.
+      if (hit || back === 1) habitDays.push({ habit, date });
+    });
+  }
+
   const best = (name: string, since: string) => Math.max(...sets
     .filter((s) => s.exercise_name === name && sessions[s.session]!.date > since).map((s) => s.weight_kg));
   const ever = (name: string) => Math.max(...sets.filter((s) => s.exercise_name === name).map((s) => s.weight_kg));
@@ -210,6 +231,8 @@ export function generateDemo(today: string): DemoData {
     cardio,
     weights,
     food: foodRows,
+    habits,
+    habitDays,
     target: { effective_from: start, goal_mode: "cut", calories: 2300, protein_g: 170, fat_g: 70, carbs_g: 230 },
     goals: [
       { kind: "weight", exercise_name: null, target_kg: 78, start_kg: weights[0]!.weight_kg },
