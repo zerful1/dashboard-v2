@@ -8,7 +8,7 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
         ref={ref}
         {...rest}
         className={cn(
-          "w-full rounded-lg bg-surface border border-raised px-3 py-2.5",
+          "w-full rounded-xl bg-surface border border-edge px-3 py-2.5",
           "text-sm text-text placeholder:text-dim",
           // The hidden-outline utility, not the none variant — same reason it
           // is used on Button, spelled out there: only one of the two keeps a

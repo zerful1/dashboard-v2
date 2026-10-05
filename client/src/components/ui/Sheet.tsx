@@ -52,10 +52,10 @@ export function Sheet({ open, onClose, title, children }: Props) {
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl border-t border-raised bg-surface
+            className="fixed inset-x-0 bottom-0 z-50 rounded-t-[22px] border-t border-edge bg-surface
                        p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]
                        sm:inset-x-auto sm:left-1/2 sm:bottom-auto sm:top-1/2 sm:w-[26rem]
-                       sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:border"
+                       sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[22px] sm:border sm:border-edge"
             initial={{ y: safe ? "100%" : 0, opacity: safe ? 1 : 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: safe ? "100%" : 0, opacity: safe ? 1 : 0 }}
@@ -72,8 +72,8 @@ export function Sheet({ open, onClose, title, children }: Props) {
               if (info.offset.y > 120 || info.velocity.y > 500) onClose();
             }}
           >
-            <div className="mx-auto mb-3 h-1 w-9 rounded-full bg-raised sm:hidden" />
-            <div className="lbl mb-3">{title}</div>
+            <div className="mx-auto mb-3.5 h-1 w-9 rounded-full bg-edge sm:hidden" />
+            <div className="mb-3 text-[17px] font-semibold tracking-tight">{title}</div>
             {children}
           </motion.div>
         </>

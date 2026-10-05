@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { customToChoice, entryToChoice, hitToChoice, itemToChoice, type FoodChoice } from "@dashboard/shared";
 import type { FoodHit, FoodLogUnit, RecentFood } from "@dashboard/shared";
 import { Sheet } from "@/components/ui/Sheet";
-import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Tabs } from "@/components/ui/Tabs";
 import { Spinner } from "@/components/ui/Spinner";
 import { useFoodSearch, useRecents } from "@/hooks/useFoods";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -79,19 +79,7 @@ export function AddFoodSheet({
           />
         ) : (
           <>
-            <div role="tablist" className="mb-3 flex gap-2">
-              {TABS.map((t) => (
-                <Button
-                  key={t.id}
-                  role="tab"
-                  aria-selected={shown === t.id}
-                  variant={shown === t.id ? "selected" : "ghost"}
-                  onClick={() => setTab(t.id)}
-                >
-                  {t.label}
-                </Button>
-              ))}
-            </div>
+            <Tabs tabs={TABS} value={shown} onChange={setTab} className="mb-3" />
             {shown === null && <Spinner label="Loading" />}
             {shown === "search" && <SearchTab q={q} setQ={setQ} onPick={(hit) => setChosen({ choice: hitToChoice(hit) })} />}
             {shown === "recent" && (

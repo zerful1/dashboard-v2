@@ -72,7 +72,7 @@ export function AmountStep({
           aria-label="Serving size"
           value={servingIdx}
           onChange={(e) => setServingIdx(Number(e.target.value))}
-          className="w-full rounded-lg border border-raised bg-surface px-3 py-2.5 text-sm text-text"
+          className="w-full rounded-xl border border-edge bg-surface px-3 py-2.5 text-sm text-text"
         >
           {choice.servings.map((s, i) => (
             <option key={`${s.label}-${i}`} value={i}>
