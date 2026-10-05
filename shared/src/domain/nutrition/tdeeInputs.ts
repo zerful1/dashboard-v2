@@ -83,3 +83,20 @@ export function tdeeFromLog(i: {
   })
   return kcal === null ? null : { kcal, daysLogged, weighIns: weights.length }
 }
+
+/** The range an adaptive estimate must fall in to be shown (#17 review 10). */
+export const ADAPTIVE_TDEE_MIN = 1200
+export const ADAPTIVE_TDEE_MAX = 5000
+/** How far from the formula estimate it may stray, when there is one. */
+export const ADAPTIVE_TDEE_MAX_DRIFT = 0.3
+
+/**
+ * Whether an adaptive estimate is believable. Partial logging plus noisy
+ * weigh-ins can produce an absurd maintenance figure; outside the human range,
+ * or far from the formula when there is one, the hint shows the formula (or
+ * the progress line) instead.
+ */
+export function plausibleAdaptive(kcal: number, formulaKcal: number | null): boolean {
+  if (kcal < ADAPTIVE_TDEE_MIN || kcal > ADAPTIVE_TDEE_MAX) return false
+  return formulaKcal === null || Math.abs(kcal - formulaKcal) <= formulaKcal * ADAPTIVE_TDEE_MAX_DRIFT
+}

@@ -63,6 +63,8 @@ export function useWeights() {
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: key });
       invalidateInsightsReaders(qc);
+      // A weigh-in moves the adaptive TDEE estimate (#17 review 16).
+      void qc.invalidateQueries({ queryKey: ["tdeeHint"] });
     },
   });
 
@@ -83,6 +85,8 @@ export function useWeights() {
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: key });
       invalidateInsightsReaders(qc);
+      // A weigh-in moves the adaptive TDEE estimate (#17 review 16).
+      void qc.invalidateQueries({ queryKey: ["tdeeHint"] });
     },
   });
 

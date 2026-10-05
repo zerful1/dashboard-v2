@@ -32,7 +32,7 @@ interface Row {
  * "coated", which v1's substring ILIKE did (measured against the real table).
  * Names starting with the first word rank first, then shorter names.
  */
-export async function searchCofid(q: string, limit = 15): Promise<FoodHit[]> {
+export async function searchCofid(q: string, limit = 20): Promise<FoodHit[]> {
   const terms = q.trim().split(/\s+/).filter(Boolean).slice(0, MAX_TERMS).map(escapeRegex);
   if (terms.length === 0) return [];
 

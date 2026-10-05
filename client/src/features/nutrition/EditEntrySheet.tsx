@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FoodLogEntry } from "@dashboard/shared";
 import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
@@ -19,8 +19,15 @@ export function EditEntrySheet({
   remove: ReturnType<typeof useDiary>["removeEntry"];
 }) {
   const [raw, setRaw] = useState("");
+  // One action per opening. The sheet closes on Save or Delete, but its exit
+  // animation keeps it mounted and clickable for a moment, so a second tap sent
+  // a second request (#17 review 8): the same guard as AmountStep's.
+  const acted = useRef(false);
   useEffect(() => {
-    if (entry) setRaw(String(entry.quantity));
+    if (entry) {
+      setRaw(String(entry.quantity));
+      acted.current = false;
+    }
   }, [entry]);
 
   const parsed = parseDecimal(raw);
@@ -44,7 +51,8 @@ export function EditEntrySheet({
             className="flex-1"
             disabled={quantity === null}
             onClick={() => {
-              if (!entry || quantity === null) return;
+              if (!entry || quantity === null || acted.current) return;
+              acted.current = true;
               rescale.mutate({ id: entry.id, quantity });
               onClose();
             }}
@@ -54,7 +62,8 @@ export function EditEntrySheet({
           <Button
             variant="danger"
             onClick={() => {
-              if (!entry) return;
+              if (!entry || acted.current) return;
+              acted.current = true;
               remove.mutate(entry.id);
               onClose();
             }}

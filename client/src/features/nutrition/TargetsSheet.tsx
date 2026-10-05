@@ -6,7 +6,8 @@ import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
-import { api } from "@/lib/api";
+import { FormError } from "@/components/ui/FormError";
+import { api, ApiError } from "@/lib/api";
 import { profileQuery } from "@/lib/profileQuery";
 import { parseDecimal } from "@/lib/number";
 import { useTdeeHint } from "@/hooks/useTdeeHint";
@@ -50,6 +51,10 @@ export function TargetsSheet({
   const [fat, setFat] = useState("");
   const [carbs, setCarbs] = useState("");
 
+  // Keyed on the latest target's identity, not the array: with no targets yet
+  // the list is a fresh [] on every render, and depending on it wiped whatever
+  // had been typed (#17 review 12).
+  const latestId = latestActiveTarget(targets, today)?.id ?? null;
   useEffect(() => {
     if (!open) return;
     const t = latestActiveTarget(targets, today);
@@ -58,7 +63,7 @@ export function TargetsSheet({
     setProtein(t ? String(t.protein_g) : "");
     setFat(t ? String(t.fat_g) : "");
     setCarbs(t ? String(t.carbs_g) : "");
-  }, [open, targets, today]);
+  }, [open, latestId, today]);
 
   const values = { calories: int(kcal), protein_g: int(protein), fat_g: int(fat), carbs_g: int(carbs) };
   const valid =
@@ -118,9 +123,16 @@ export function TargetsSheet({
   );
 }
 
+/** Past 14 logged days with no adaptive figure, the band hid it (or weigh-ins are too few). */
+const NOT_BELIEVABLE =
+  "Your logged days don't give a believable estimate yet: log whole days, and weigh in at least once a week.";
+
 function HintCard({ hint }: { hint: TdeeHint | undefined }) {
   let headline: string | null = null;
   let detail: string;
+  // Promising "after 14 logged days" to someone already past 14 read as a bug
+  // once implausible estimates were hidden (final review): say why instead.
+  const pastFourteen = hint !== undefined && hint.days_logged >= 14;
   if (!hint) {
     detail = "Estimating…";
   } else if (hint.adaptive) {
@@ -130,9 +142,13 @@ function HintCard({ hint }: { hint: TdeeHint | undefined }) {
     headline = `≈ ${hint.formula.kcal.toLocaleString()} kcal maintenance`;
     detail =
       `Estimated from your height, age (${hint.formula.age}), sex and activity at ${hint.formula.weight_kg.toFixed(1)} kg. ` +
-      `After 14 logged days this uses your own numbers instead (${hint.days_logged} so far).`;
+      (pastFourteen
+        ? NOT_BELIEVABLE
+        : `After 14 logged days this uses your own numbers instead (${hint.days_logged} so far).`);
   } else {
-    detail = `Add your body details below for an estimate, or log food for 14 days (${hint.days_logged} so far).`;
+    detail = pastFourteen
+      ? `${NOT_BELIEVABLE} Or add your body details below.`
+      : `Add your body details below for an estimate, or log food for 14 days (${hint.days_logged} so far).`;
   }
   return (
     <div className="rounded-lg border border-raised p-3">
@@ -165,6 +181,8 @@ function BodyDetails() {
   const save = useMutation({
     mutationFn: (patch: Partial<Pick<Profile, "height_cm" | "birth_year" | "sex" | "activity_level">>) =>
       api<Profile>("/api/profile", { method: "PATCH", body: JSON.stringify(patch) }),
+    // The form shows its own failure, beside the fields.
+    meta: { errorToast: false },
     onSuccess: (updated) => {
       qc.setQueryData(["profile"], updated);
       void qc.invalidateQueries({ queryKey: ["tdeeHint"] });
@@ -173,11 +191,17 @@ function BodyDetails() {
 
   const h = parseDecimal(height);
   const y = int(birthYear);
+  // A typed value that can't be saved says so, rather than being dropped while
+  // the rest saves; a blank field clears its detail (#17 review 11).
+  const heightError =
+    height.trim() !== "" && (h === null || h < 100 || h > 250) ? "Enter a height between 100 and 250 cm" : undefined;
+  const yearError =
+    birthYear.trim() !== "" && (y === null || y < 1900 || y > 2100) ? "Enter a year between 1900 and 2100" : undefined;
   const patch = {
-    ...(h !== null ? { height_cm: h } : {}),
-    ...(y !== null ? { birth_year: y } : {}),
-    ...(sex ? { sex } : {}),
-    ...(activity ? { activity_level: activity } : {}),
+    height_cm: height.trim() === "" ? null : h,
+    birth_year: birthYear.trim() === "" ? null : y,
+    sex,
+    activity_level: activity || null,
   };
 
   return (
@@ -185,16 +209,16 @@ function BodyDetails() {
       <summary className="cursor-pointer text-xs text-muted">Body details (for the estimate)</summary>
       <div className="mt-3 space-y-3">
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Height (cm)" htmlFor="b-height">
+          <Field label="Height (cm)" htmlFor="b-height" error={heightError}>
             <Input id="b-height" inputMode="decimal" value={height} onChange={(e) => setHeight(e.target.value)} />
           </Field>
-          <Field label="Birth year" htmlFor="b-year">
+          <Field label="Birth year" htmlFor="b-year" error={yearError}>
             <Input id="b-year" inputMode="numeric" value={birthYear} onChange={(e) => setBirthYear(e.target.value)} />
           </Field>
         </div>
         <div className="flex gap-2">
           {(["male", "female"] as const).map((s) => (
-            <Button key={s} variant={sex === s ? "selected" : "ghost"} onClick={() => setSex(s)}>
+            <Button key={s} variant={sex === s ? "selected" : "ghost"} onClick={() => setSex(sex === s ? null : s)}>
               {s === "male" ? "Male" : "Female"}
             </Button>
           ))}
@@ -216,12 +240,17 @@ function BodyDetails() {
         </Field>
         <Button
           variant="ghost"
-          disabled={Object.keys(patch).length === 0}
+          // Not before the profile has loaded: the save sends all four details,
+          // and blanks would clear the ones not yet shown (final review).
+          disabled={!profile.data || !!heightError || !!yearError}
           loading={save.isPending}
           onClick={() => save.mutate(patch)}
         >
           Save details
         </Button>
+        {save.isError && (
+          <FormError>{save.error instanceof ApiError ? save.error.message : "Couldn't save your details."}</FormError>
+        )}
       </div>
     </details>
   );

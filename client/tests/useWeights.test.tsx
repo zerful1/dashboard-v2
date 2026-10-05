@@ -127,4 +127,19 @@ describe("useWeights", () => {
     expect(result.current.entries[0]!.date).toBe("2025-09-26");
     expect(typeof result.current.entries[0]!.date).toBe("string");
   });
+
+  // #17 review (16): a weigh-in moves the adaptive estimate, but the hint kept the old one.
+  it("refreshes the TDEE estimate after a weigh-in", async () => {
+    vi.spyOn(apiModule, "api").mockImplementation(async (_path: string, init?: RequestInit) =>
+      (init?.method === "POST" ? entry("2026-09-22", 78) : []) as never);
+    const client = fresh();
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+    const { result } = renderHook(() => useWeights(), { wrapper: wrapper(client) });
+    await waitFor(() => expect(result.current.entries).toEqual([]));
+    act(() => {
+      result.current.saveWeight.mutate({ date: "2026-09-22", weight_kg: 78 });
+    });
+    await waitFor(() => expect(result.current.saveWeight.isSuccess).toBe(true));
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["tdeeHint"] });
+  });
 });

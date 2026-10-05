@@ -70,4 +70,12 @@ describe("AmountStep", () => {
     await userEvent.click(add);
     expect(onAdd).toHaveBeenCalledTimes(1);
   });
+
+  // #17 review (7): phase 1's spec §3 asked for label nutrients in the preview.
+  it("previews the label nutrients, with a dash for what's unknown", () => {
+    const labels = { fibre: 9, satFat: 1.2, salt: 0.3 };
+    const labelled: FoodHit = { ...oats, servings: [{ ...oats.servings[0]!, ...labels }], per100g: { ...per100g, ...labels } };
+    render(<AmountStep choice={hitToChoice(labelled)} date="2026-09-20" onAdd={() => {}} onBack={() => {}} />);
+    expect(screen.getByText("Fibre 9 g · Sugar — · Sat fat 1 g · Salt 0.3 g")).toBeInTheDocument();
+  });
 });

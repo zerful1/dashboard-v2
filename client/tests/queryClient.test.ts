@@ -8,7 +8,7 @@ vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
 
 beforeEach(() => vi.mocked(toast.error).mockClear());
 
-async function failWith(options: { onError?: () => void }): Promise<void> {
+async function failWith(options: { onError?: () => void; meta?: Record<string, unknown> }): Promise<void> {
   const observer = new MutationObserver(createQueryClient(), {
     mutationFn: () => Promise.reject(new ApiError(500, "Could not save")),
     retry: false,
@@ -36,6 +36,12 @@ describe("mutation failures", () => {
     await failWith({});
     expect(toast.error).toHaveBeenCalledTimes(1);
   });
+
+  // CLAUDE.md, as for queries: a screen that shows its own failure opts out.
+  it("stays quiet for a write whose screen shows its own failure", async () => {
+    await failWith({ meta: { errorToast: false } });
+    expect(toast.error).not.toHaveBeenCalled();
+  });
 });
 
 describe("writes made offline", () => {
@@ -55,5 +61,43 @@ describe("writes made offline", () => {
     await vi.waitFor(() => expect(observer.getCurrentResult().isError).toBe(true));
     expect(observer.getCurrentResult().isPaused).toBe(false);
     expect(toast.error).toHaveBeenCalledTimes(1);
+  });
+
+  // #17 review (53): "Something went wrong" read as an unexplained fault beside
+  // a banner that already said changes won't save.
+  it("say the device is offline", async () => {
+    onlineManager.setOnline(false);
+    const observer = new MutationObserver(createQueryClient(), {
+      mutationFn: () => Promise.reject(new TypeError("Failed to fetch")),
+      retry: false,
+    });
+    await observer.mutate(undefined).catch(() => {});
+    expect(toast.error).toHaveBeenCalledWith("You're offline — not saved");
+  });
+
+  // Final review: TanStack's onlineManager starts online and changes only on an
+  // online/offline event, so an app opened with no signal (no event ever fires)
+  // still showed "Something went wrong" beside the offline banner.
+  it("say the device is offline when the app was opened with no signal", async () => {
+    const onLine = vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+    try {
+      const observer = new MutationObserver(createQueryClient(), {
+        mutationFn: () => Promise.reject(new TypeError("Failed to fetch")),
+        retry: false,
+      });
+      await observer.mutate(undefined).catch(() => {});
+      expect(toast.error).toHaveBeenCalledWith("You're offline — not saved");
+    } finally {
+      onLine.mockRestore();
+    }
+  });
+
+  it("keep the general message for a network failure while online", async () => {
+    const observer = new MutationObserver(createQueryClient(), {
+      mutationFn: () => Promise.reject(new TypeError("Failed to fetch")),
+      retry: false,
+    });
+    await observer.mutate(undefined).catch(() => {});
+    expect(toast.error).toHaveBeenCalledWith("Something went wrong");
   });
 });

@@ -80,18 +80,23 @@ export async function deleteEntry(userId: string, id: string): Promise<boolean> 
 
 /**
  * Append a copy of every entry on `from` to `to`. Each logged_at moves by the
- * whole days between the dates, so the copies keep their times and order.
+ * whole local days between the dates, in the user's timezone, so the copies
+ * keep their wall-clock times and order.
  */
 export async function copyDay(userId: string, from: string, to: string): Promise<FoodLogEntry[]> {
   const { rows } = await pool.query<FoodLogEntry>(
-    `WITH ins AS (
+    `WITH tz AS (SELECT timezone AS z FROM ${T.profiles} WHERE user_id = $1),
+     ins AS (
        INSERT INTO ${T.foodLogEntries}
          (user_id, date, logged_at, food_item_id, name, quantity, unit, calories, protein_g, fat_g, carbs_g,
           fibre_g, sugar_g, sat_fat_g, salt_g)
-       SELECT user_id, $3::date, logged_at + ($3::date - $2::date) * interval '1 day',
+       SELECT user_id, $3::date,
+              -- Whole local days in the user's timezone, so 08:00 stays 08:00
+              -- across a clock change (#17 review 14).
+              ((logged_at AT TIME ZONE tz.z) + ($3::date - $2::date) * interval '1 day') AT TIME ZONE tz.z,
               food_item_id, name, quantity, unit, calories, protein_g, fat_g, carbs_g,
               fibre_g, sugar_g, sat_fat_g, salt_g
-         FROM ${T.foodLogEntries}
+         FROM ${T.foodLogEntries}, tz
         WHERE user_id = $1 AND date = $2::date
        RETURNING *
      )

@@ -268,7 +268,9 @@ success. The rule is `networkMode: "always"` in `defaultOptions.mutations`
 offline and replays it on reconnect, so it looks saved and is lost if the app
 closes first. A hook inherits the rule unless it sets its own `networkMode`,
 and none should. Its tests use `createQueryClient()`, because a bare
-`new QueryClient()` in a test does not have it.
+`new QueryClient()` in a test does not have it. The global toast then says
+**"You're offline — not saved"** (`writeFailureMessage`, same file), so it agrees
+with the banner rather than reading as some other fault.
 
 ---
 
@@ -310,6 +312,12 @@ and failures go unreported. (A plain option such as `networkMode` *is* safe in
 `meta: { errorToast: false }`, and shows its error card only when there is no
 data. A failed refetch keeps the last good data, so `isError` alone does not
 mean there is nothing to show.
+
+**A mutation whose screen shows its own failure** opts out the same way, with
+`meta: { errorToast: false }` on the mutation, which the `MutationCache` checks
+(`mutation.options.meta`). The Targets sheet's body details were the first. Use
+it only where an inline error replaces the toast, otherwise the failure goes
+unreported.
 
 ---
 

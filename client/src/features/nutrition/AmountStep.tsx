@@ -1,10 +1,11 @@
 import { useRef, useState } from "react";
-import { buildEntryInput, resolveMacros, type FoodChoice } from "@dashboard/shared";
+import { buildEntryInput, resolveLabelNutrients, resolveMacros, type FoodChoice } from "@dashboard/shared";
 import type { DiaryEntryInput, FoodLogUnit } from "@dashboard/shared";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { parseDecimal } from "@/lib/number";
+import { LABEL_ROWS } from "./LabelStrip";
 
 const MAX_AMOUNT = 100000;
 
@@ -38,6 +39,7 @@ export function AmountStep({
   const parsed = parseDecimal(raw);
   const quantity = parsed !== null && parsed > 0 && parsed <= MAX_AMOUNT ? parsed : null;
   const m = quantity === null ? null : resolveMacros(choice, picked, quantity, effectiveUnit);
+  const labels = quantity === null ? null : resolveLabelNutrients(choice, picked, quantity, effectiveUnit);
 
   const switchUnit = (next: FoodLogUnit) => {
     setUnit(next);
@@ -89,6 +91,15 @@ export function AmountStep({
           ? `${Math.round(m.kcal)} kcal · P ${Math.round(m.p)} · C ${Math.round(m.c)} · F ${Math.round(m.f)}`
           : "Enter an amount"}
       </p>
+      {labels && (
+        // Phase 1's spec §3: the label nutrients, unknown as "—", never as 0 (#17 review 7).
+        <p className="tnum text-xs text-muted">
+          {LABEL_ROWS.map((r) => {
+            const v = labels[r.key];
+            return `${r.label} ${v === null ? "—" : `${v.toFixed(r.dp)} g`}`;
+          }).join(" · ")}
+        </p>
+      )}
 
       <Button
         className="w-full"

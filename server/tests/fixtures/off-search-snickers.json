@@ -1,0 +1,294 @@
+{
+ "hits": [
+  {
+   "code": "5000159484480",
+   "product_name": "Snickers",
+   "brands": [
+    "Mars Snickers",
+    " Snickers"
+   ],
+   "nutriments": {
+    "fat_100g": 28,
+    "saturated-fat_100g": 9.7,
+    "salt_100g": 0.44,
+    "energy-kj_100g": 2133,
+    "sodium_100g": 0.176,
+    "energy-kcal_100g": 510,
+    "proteins_100g": 9.5,
+    "sugars_100g": 45,
+    "carbohydrates_100g": 54
+   }
+  },
+  {
+   "code": "5900951251191",
+   "product_name": "Snickers",
+   "brands": [
+    "Snickers"
+   ],
+   "nutriments": {
+    "sodium_100g": 0.236,
+    "sugars_100g": 51,
+    "carbohydrates_100g": 60,
+    "salt_100g": 0.59,
+    "saturated-fat_100g": 7.8,
+    "proteins_100g": 8.1,
+    "fat_100g": 24,
+    "energy-kcal_100g": 487
+   }
+  },
+  {
+   "code": "5000159521420",
+   "product_name": "snicker",
+   "brands": [
+    "Snickers"
+   ]
+  },
+  {
+   "code": "5000159526227",
+   "product_name": "Snickers",
+   "brands": [
+    "Snickers"
+   ]
+  },
+  {
+   "code": "5000159470629",
+   "product_name": "Snickers",
+   "brands": [
+    "Snickers"
+   ],
+   "nutriments": {
+    "fat_100g": 58.3,
+    "salt_100g": 0.9380000000000001,
+    "saturated-fat_100g": 20,
+    "sodium_100g": 0.375,
+    "energy-kcal_100g": 510,
+    "proteins_100g": 19.8,
+    "carbohydrates_100g": 112,
+    "sugars_100g": 93.8
+   }
+  },
+  {
+   "code": "5000159504669",
+   "product_name": "Snickers",
+   "brands": [
+    "Snickers"
+   ],
+   "nutriments": {
+    "proteins_100g": 9.5,
+    "energy-kcal_100g": 510,
+    "carbohydrates_100g": 54.4,
+    "sugars_100g": 44.9,
+    "salt_100g": 0.45,
+    "saturated-fat_100g": 9.6,
+    "fat_100g": 27.9,
+    "sodium_100g": 0.18,
+    "energy-kj_100g": 2131
+   }
+  },
+  {
+   "code": "0088152484480",
+   "product_name": "Snickers",
+   "brands": [
+    "Snickers"
+   ]
+  },
+  {
+   "code": "5000159564014",
+   "product_name": "Snickers",
+   "brands": [
+    "Snickers"
+   ]
+  },
+  {
+   "code": "9300682064057",
+   "product_name": "Snickers Butterscotch",
+   "brands": [
+    "Snickers"
+   ],
+   "nutriments": {
+    "carbohydrates_100g": 25.7,
+    "energy-kcal_100g": 212,
+    "fat_100g": 10.2,
+    "proteins_100g": 3.7,
+    "salt_100g": 0.288,
+    "saturated-fat_100g": 36,
+    "sodium_100g": 0.115,
+    "sugars_100g": 22.9
+   }
+  },
+  {
+   "code": "00689007",
+   "product_name": "Snickers protein",
+   "brands": [
+    "Snickers"
+   ],
+   "nutriments": {
+    "saturated-fat_100g": 0,
+    "sugars_100g": 0
+   }
+  },
+  {
+   "code": "5056357902257",
+   "product_name": "Snickers protein",
+   "brands": [
+    "Snickers"
+   ],
+   "nutriments": {
+    "sugars_100g": 0,
+    "saturated-fat_100g": 0
+   }
+  },
+  {
+   "code": "40000544470",
+   "product_name": "Snickers white",
+   "brands": [
+    "Snickers"
+   ],
+   "nutriments": {
+    "sodium_100g": 0.036,
+    "carbohydrates_100g": 21,
+    "sugars_100g": 20,
+    "proteins_100g": 3,
+    "saturated-fat_100g": 3.5,
+    "salt_100g": 0.09,
+    "energy-kcal_100g": 210,
+    "fat_100g": 9
+   }
+  },
+  {
+   "code": "4607065735319",
+   "product_name": "Snickers Crisp",
+   "brands": [
+    "Snickers"
+   ],
+   "nutriments": {
+    "sodium_100g": 0.21200000000000002,
+    "sugars_100g": 44,
+    "carbohydrates_100g": 61,
+    "saturated-fat_100g": 9.2,
+    "proteins_100g": 7.1,
+    "salt_100g": 0.53,
+    "energy-kcal_100g": 483,
+    "fat_100g": 23
+   }
+  },
+  {
+   "code": "4607065735333",
+   "product_name": "Snickers Crisp",
+   "brands": [
+    "Snickers"
+   ],
+   "nutriments": {
+    "sodium_100g": 0.21200000000000002,
+    "carbohydrates_100g": 61,
+    "sugars_100g": 44,
+    "salt_100g": 0.53,
+    "proteins_100g": 7.1,
+    "saturated-fat_100g": 9.2,
+    "fat_100g": 23,
+    "energy-kcal_100g": 483
+   }
+  },
+  {
+   "code": "5056357907528",
+   "product_name": "Snickers drink",
+   "brands": [
+    "Snickers"
+   ],
+   "nutriments": {
+    "carbohydrates_100g": 7.1,
+    "energy-kcal_100g": 59,
+    "fat_100g": 1.9,
+    "proteins_100g": 3.3,
+    "salt_100g": 0.33,
+    "saturated-fat_100g": 1.2,
+    "sodium_100g": 0.132,
+    "sugars_100g": 6.4
+   }
+  },
+  {
+   "code": "5000159550376",
+   "product_name": "Snickers Snacksize 35g",
+   "brands": [
+    "Snickers"
+   ],
+   "nutriments": {
+    "carbohydrates_100g": 58,
+    "energy-kcal_100g": 496,
+    "fat_100g": 25,
+    "proteins_100g": 9,
+    "salt_100g": 0.52,
+    "saturated-fat_100g": 8.3,
+    "sodium_100g": 0.208,
+    "sugars_100g": 49
+   }
+  },
+  {
+   "code": "5000159560832",
+   "product_name": "Snickers minis",
+   "brands": [
+    "Snickers"
+   ],
+   "nutriments": {
+    "carbohydrates_100g": 60,
+    "energy-kcal_100g": 490,
+    "fat_100g": 23,
+    "proteins_100g": 8.7,
+    "saturated-fat_100g": 7.6,
+    "sugars_100g": 51
+   }
+  },
+  {
+   "code": "5056357905678",
+   "product_name": "Snickers triple treat",
+   "brands": [
+    "Snickers",
+    ""
+   ],
+   "nutriments": {
+    "energy-kcal_100g": 436,
+    "sodium_100g": 0.08,
+    "salt_100g": 0.2,
+    "carbohydrates_100g": 49,
+    "saturated-fat_100g": 5,
+    "fat_100g": 20,
+    "sugars_100g": 42,
+    "fiber_100g": 8,
+    "proteins_100g": 11
+   }
+  },
+  {
+   "code": "5000159460927",
+   "product_name": "Snickers Ice Cream",
+   "brands": [
+    "Snickers"
+   ],
+   "nutriments": {
+    "carbohydrates_100g": 34.5,
+    "energy-kcal_100g": 338,
+    "energy-kj_100g": 1409,
+    "fat_100g": 19.4,
+    "proteins_100g": 5.8,
+    "salt_100g": 0.22,
+    "saturated-fat_100g": 10.2,
+    "sodium_100g": 0.088,
+    "sugars_100g": 26.3
+   }
+  },
+  {
+   "code": "500015954543378",
+   "product_name": "Snickers Peanut Butter",
+   "brands": [
+    "Snickers"
+   ],
+   "nutriments": {
+    "carbohydrates_100g": 35,
+    "saturated-fat_100g": 9.800000190734863,
+    "energy-kcal_100g": 349,
+    "sugars_100g": 28,
+    "proteins_100g": 5.699999809265137,
+    "fat_100g": 21
+   }
+  }
+ ]
+}

@@ -8,13 +8,13 @@ export interface User {
   created_at: string;
 }
 
-export type WeightUnit = "kg" | "lb";
-
 /**
  * Units are a display concern only — everything is stored in kg and converted at
  * render time. Storing user-dependent units would put a conversion in the path of
  * every aggregate.
  */
+export type WeightUnit = "kg" | "lb";
+
 export type Sex = "male" | "female";
 export type ActivityLevel = "sedentary" | "light" | "moderate" | "very" | "extra";
 

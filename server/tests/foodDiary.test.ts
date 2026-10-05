@@ -102,6 +102,38 @@ describe("food diary", () => {
     expect(await listDiary(id, "2026-09-21")).toHaveLength(2);
   });
 
+  // #17 review (9): a text-search hit carries no serving sizes, and logging it
+  // overwrote the serving data a product lookup had stored.
+  it("keeps a saved food's serving data when the same food is logged without any", async () => {
+    const { agent, id } = await signedIn(alice);
+    const BAR = {
+      ...OATS, source: "off", external_id: "5000159484480", name: "Snickers",
+      serving_description: "1 bar (45 g)", serving_grams: 45,
+      kcal_per_serving: 230, protein_per_serving: 4, fat_per_serving: 11, carbs_per_serving: 27,
+    };
+    await agent.post("/api/nutrition/diary").send(entry({ name: "Snickers", food: BAR })).expect(201);
+    await agent.post("/api/nutrition/diary").send(entry({ name: "Snickers", food: { ...BAR, ...NULLS, kcal_per_100g: 510 } })).expect(201);
+    const { rows } = await pool.query(
+      `SELECT serving_description, serving_grams::float8 AS serving_grams,
+              kcal_per_serving::float8 AS kcal_per_serving, kcal_per_100g::float8 AS kcal_per_100g
+         FROM ${T.foodItems} WHERE user_id = $1`,
+      [id],
+    );
+    // Serving data kept; the per-100 g value still refreshed.
+    expect(rows).toEqual([{ serving_description: "1 bar (45 g)", serving_grams: 45, kcal_per_serving: 230, kcal_per_100g: 510 }]);
+  });
+
+  // #17 review (14): copying across a clock change moved every entry by an hour.
+  it("keeps the local time when copying across a clock change", async () => {
+    const { agent, id } = await signedIn(alice); // profiles.timezone defaults to Europe/London
+    const e = await addEntry(id, entry({ date: "2026-10-24", name: "Oats" }) as never);
+    // 08:00 in London on Saturday 24 October is 07:00Z (BST). The clocks go back on the 25th.
+    await pool.query(`UPDATE ${T.foodLogEntries} SET logged_at = $2 WHERE id = $1`, [e!.id, "2026-10-24T07:00:00Z"]);
+    const res = await agent.post("/api/nutrition/diary/copy").send({ from: "2026-10-24", to: "2026-10-26" }).expect(201);
+    // 08:00 in London on Monday 26 October is 08:00Z (GMT).
+    expect(new Date(res.body[0].logged_at).toISOString()).toBe("2026-10-26T08:00:00.000Z");
+  });
+
   it("refuses to copy a day onto itself, and copies nothing from an empty day", async () => {
     const { agent } = await signedIn(alice);
     await agent.post("/api/nutrition/diary/copy").send({ from: "2026-09-21", to: "2026-09-21" }).expect(400);

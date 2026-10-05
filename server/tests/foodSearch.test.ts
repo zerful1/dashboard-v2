@@ -4,6 +4,7 @@ import { createApp } from "../src/app";
 import { pool } from "../src/db/pool";
 import { T } from "../src/config";
 import { mapSearchHit, searchOpenFoodFacts, OFF_SEARCH_URL } from "../src/services/openFoodFacts";
+import { searchCofid } from "../src/repositories/cofid";
 
 const app = createApp();
 const alice = { email: "alice@example.com", password: "correct-horse-9" };
@@ -168,5 +169,64 @@ describe("Open Food Facts", () => {
     const started = Date.now();
     await expect(searchOpenFoodFacts("oats", 50)).rejects.toBeDefined();
     expect(Date.now() - started).toBeLessThan(1000);
+  });
+});
+
+describe("Open Food Facts mapping limits", () => {
+  // #17 review (4): hits the diary POST would refuse.
+  it("treats a negative nutrient as unknown, and a negative energy as no energy", () => {
+    const hit = mapSearchHit({ code: "1", product_name: "Bar", nutriments: { "energy-kcal_100g": 400, proteins_100g: 5, fat_100g: -2, sugars_100g: -1 } });
+    expect(hit?.per100g).toMatchObject({ kcal: 400, p: 5, f: 0, sugar: null });
+    expect(mapSearchHit({ code: "2", product_name: "Bar", nutriments: { "energy-kcal_100g": -5 } })).toBeNull();
+  });
+
+  it("trims an over-long name and brand, and leaves out an over-long id", () => {
+    const long = "x".repeat(250);
+    const hit = mapSearchHit({ code: "3", product_name: long, brands: long, nutriments: { "energy-kcal_100g": 100 } });
+    expect(hit?.name).toHaveLength(200);
+    expect(hit?.brand).toHaveLength(200);
+    expect(mapSearchHit({ code: "9".repeat(101), product_name: "Bar", nutriments: { "energy-kcal_100g": 100 } })).toBeNull();
+  });
+});
+
+describe("Open Food Facts impossible values", () => {
+  // Final review: real products list values that cannot be true - 59,000 kcal
+  // per 100 g, or 112 g of carbohydrate in 100 g - and the diary POST refuses
+  // some of them outright. Impossible core values leave the hit out; impossible
+  // label values become unknown.
+  it("leaves out a hit with impossible energy or macros", () => {
+    expect(mapSearchHit({ code: "187006", product_name: "Creamy Pork Bolognese", nutriments: { "energy-kcal_100g": 59000 } })).toBeNull();
+    expect(mapSearchHit({ code: "4", product_name: "Bar", nutriments: { "energy-kcal_100g": 400, carbohydrates_100g: 112 } })).toBeNull();
+  });
+
+  it("treats an impossible label value as unknown", () => {
+    const hit = mapSearchHit({ code: "5", product_name: "Bar", nutriments: { "energy-kcal_100g": 400, proteins_100g: 10, sugars_100g: 1500, salt_100g: 120 } });
+    expect(hit?.per100g).toMatchObject({ kcal: 400, p: 10, sugar: null, salt: null });
+  });
+});
+
+describe("Open Food Facts query text", () => {
+  // #17 review (15): "(light" or "brand:x" was Lucene syntax, and the error
+  // read as "Branded foods are unavailable".
+  it("sends the user's words as text, not query syntax", async () => {
+    const calls = stubOff(() => ({ hits: [] }));
+    await searchOpenFoodFacts("(light brand:x");
+    expect(new URL(calls[0]!.url).searchParams.get("q")).toBe('countries_tags:"en:united-kingdom" \\(light brand\\:x');
+  });
+});
+
+describe("CoFID search size", () => {
+  // #17 review (16): the spec asks for 20 generic foods; the code returned 15.
+  it("returns up to 20 generic foods", async () => {
+    for (let i = 1; i <= 22; i++) {
+      await pool.query(
+        `INSERT INTO ${T.cofidFoods}
+           (food_code, name, food_group, kcal_per_100g, protein_per_100g, fat_per_100g, carbs_per_100g,
+            fibre_per_100g, sugar_per_100g, sat_fat_per_100g, salt_per_100g)
+         VALUES ($1, $2, 'T', 100, 1, 1, 1, NULL, NULL, NULL, NULL)`,
+        [`T-L${i}`, `Testfood ${String(i).padStart(2, "0")}`],
+      );
+    }
+    expect(await searchCofid("Testfood")).toHaveLength(20);
   });
 });

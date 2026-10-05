@@ -29,26 +29,66 @@ const num = (v: unknown): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
-/** A search hit, or null when it cannot be logged: no name, or no energy. */
+// The diary POST's limits (routes/nutrition.ts foodBody): a hit beyond them
+// could never be logged, so it is trimmed or left out here (#17 review 4).
+const MAX_NAME = 200;
+const MAX_EXTERNAL_ID = 100;
+
+/** A nutrient amount, or null when missing, unreadable or negative: unknown, never zero. */
+const amount = (v: unknown): number | null => {
+  const n = num(v);
+  return n === null || n < 0 ? null : n;
+};
+
+// Physical ceilings per 100 g: nothing holds more than 100 g of a nutrient in
+// 100 g, or much more energy than fat's 900 kcal. Real entries break both
+// (59,000 kcal; 112 g of carbohydrate), and the diary POST refuses some of them
+// outright. Impossible core values leave the hit out; impossible label values
+// become unknown (final review).
+const MAX_KCAL_PER_100G = 1000;
+const MAX_GRAMS_PER_100G = 100;
+
+/** A label nutrient, or null when it is missing, negative or impossible. */
+const label = (v: unknown): number | null => {
+  const n = amount(v);
+  return n === null || n > MAX_GRAMS_PER_100G ? null : n;
+};
+
+/**
+ * The user's words as literal text. Search-a-licious reads `q` as Lucene
+ * syntax, so "(light" or "brand:x" was a query error that read as "Branded
+ * foods are unavailable" (#17 review 15). The app's own country clause is
+ * added after this, and stays syntax.
+ */
+export function escapeLucene(text: string): string {
+  return text.replace(/[+\-&|!(){}[\]^"~*?:\\/]/g, "\\$&");
+}
+
+/** A search hit, or null when it cannot be logged: no name, no energy, or an unusable id. */
 export function mapSearchHit(p: OffProduct): FoodHit | null {
   const n = p.nutriments ?? {};
-  const kcal = num(n["energy-kcal_100g"]);
-  if (!p.product_name || kcal === null) return null;
+  const kcal = amount(n["energy-kcal_100g"]);
+  const name = p.product_name?.trim().slice(0, MAX_NAME);
+  const externalId = String(p.code ?? p.product_name ?? "").trim();
+  if (!name || kcal === null || kcal > MAX_KCAL_PER_100G || !externalId || externalId.length > MAX_EXTERNAL_ID) return null;
+  const macros = [n.proteins_100g, n.fat_100g, n.carbohydrates_100g].map(amount);
+  if (macros.some((g) => g !== null && g > MAX_GRAMS_PER_100G)) return null;
+  const [protein, fat, carbs] = macros;
   const per100g = {
     kcal,
-    p: num(n.proteins_100g) ?? 0,
-    f: num(n.fat_100g) ?? 0,
-    c: num(n.carbohydrates_100g) ?? 0,
-    fibre: num(n.fiber_100g),
-    sugar: num(n.sugars_100g),
-    satFat: num(n["saturated-fat_100g"]),
-    salt: num(n.salt_100g),
+    p: protein ?? 0,
+    f: fat ?? 0,
+    c: carbs ?? 0,
+    fibre: label(n.fiber_100g),
+    sugar: label(n.sugars_100g),
+    satFat: label(n["saturated-fat_100g"]),
+    salt: label(n.salt_100g),
   };
   return {
     source: "off",
-    externalId: String(p.code ?? p.product_name),
-    name: p.product_name,
-    brand: brandOf(p.brands),
+    externalId,
+    name,
+    brand: brandOf(p.brands)?.slice(0, MAX_NAME),
     // Search-a-licious does not index serving sizes, so text hits offer 100 g only.
     servings: [{ label: "100 g", grams: 100, ...per100g }],
     per100g,
@@ -73,10 +113,11 @@ async function searchOnce(q: string, signal: AbortSignal): Promise<FoodHit[]> {
  */
 export async function searchOpenFoodFacts(q: string, timeoutMs = OFF_TIMEOUT_MS): Promise<FoodHit[]> {
   const signal = AbortSignal.timeout(timeoutMs);
-  const uk = await searchOnce(`${UK_CLAUSE} ${q}`, signal);
+  const terms = escapeLucene(q);
+  const uk = await searchOnce(`${UK_CLAUSE} ${terms}`, signal);
   if (uk.length >= MIN_UK_HITS) return uk;
   try {
-    const all = await searchOnce(q, signal);
+    const all = await searchOnce(terms, signal);
     const seen = new Set(uk.map((h) => h.externalId));
     return [...uk, ...all.filter((h) => !seen.has(h.externalId))];
   } catch {

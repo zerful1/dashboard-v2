@@ -9,7 +9,7 @@ import {
 } from "../repositories/foodLog";
 import type { DiaryEntryInput } from "@dashboard/shared";
 import {
-  distinctLoggedDates, mifflinStJeor, shiftISO, tdeeFromLog, TDEE_WINDOW_DAYS,
+  distinctLoggedDates, mifflinStJeor, plausibleAdaptive, shiftISO, tdeeFromLog, TDEE_WINDOW_DAYS,
 } from "@dashboard/shared";
 import type { BodyWeightEntry, Profile, TdeeHint } from "@dashboard/shared";
 import { getProfile } from "../repositories/profiles";
@@ -22,7 +22,7 @@ nutritionRouter.use(requireAuth);
 
 // The client resolves its own calendar day and sends it. The server never
 // infers one: a deployed host is UTC for everyone.
-export const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
 
 const targetBody = z.object({
   effective_from: isoDate,
@@ -203,9 +203,13 @@ nutritionRouter.get("/tdee", validate({ query: z.object({ today: isoDate }) }), 
     ]);
     const latest = weightsNewestFirst.find((w) => w.date <= today) ?? null;
     const adaptive = tdeeFromLog({ entries, weights: [...weightsNewestFirst].reverse(), windowStart, windowEnd });
+    const formula = formulaHint(profile, latest, today);
     const body: TdeeHint = {
-      formula: formulaHint(profile, latest, today),
-      adaptive: adaptive && { kcal: adaptive.kcal, days_logged: adaptive.daysLogged, weigh_ins: adaptive.weighIns },
+      formula,
+      adaptive:
+        adaptive && plausibleAdaptive(adaptive.kcal, formula?.kcal ?? null)
+          ? { kcal: adaptive.kcal, days_logged: adaptive.daysLogged, weigh_ins: adaptive.weighIns }
+          : null,
       days_logged: distinctLoggedDates(entries).length,
     };
     res.json(body);
