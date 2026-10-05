@@ -139,9 +139,16 @@ export interface OffProductPage extends OffProduct {
  * A product page as a hit: the search mapping's rules (part 1), plus the label
  * serving when the product gives a usable size. The serving's values are
  * scaled from the per-100 g ones, so the two can never disagree.
+ *
+ * The id is Open Food Facts' own code, not the one asked for: given a 12-digit
+ * UPC-A it answers under the 13-digit form, which is also the id text search
+ * gives the product, so a food saved from search is updated by a scan rather
+ * than duplicated (final review I3).
  */
 export function mapProduct(p: OffProductPage, code: string): FoodHit | null {
-  const hit = mapSearchHit({ ...p, code });
+  const own = p.code === undefined ? "" : String(p.code);
+  const canonical = /^\d{8,14}$/.test(own) ? own : code;
+  const hit = mapSearchHit({ ...p, code: canonical });
   if (!hit || !hit.per100g) return null;
   const grams = num(p.serving_quantity);
   const servings = [...hit.servings];
@@ -150,14 +157,16 @@ export function mapProduct(p: OffProductPage, code: string): FoodHit | null {
     const v = hit.per100g;
     const scaled = (x: number | null | undefined) => (x === null || x === undefined ? null : x * k);
     const size = p.serving_size?.trim() || `${grams} g`;
-    servings.push({
+    // First, so the amount step's serving list opens on the packet's serving,
+    // as a saved food's does (final review I2).
+    servings.unshift({
       label: `1 serving (${size})`.slice(0, 100),
       grams,
       kcal: v.kcal * k, p: v.p * k, f: v.f * k, c: v.c * k,
       fibre: scaled(v.fibre), sugar: scaled(v.sugar), satFat: scaled(v.satFat), salt: scaled(v.salt),
     });
   }
-  return { ...hit, barcode: code, servings };
+  return { ...hit, barcode: canonical, servings };
 }
 
 /**

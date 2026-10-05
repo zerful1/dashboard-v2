@@ -84,6 +84,15 @@ describe("GET /api/food/barcode/:code", () => {
     expect(serving.kcal).toBeCloseTo(body.hit.per100g.kcal * 2.5, 5);
   });
 
+  // Final review I2: the amount step's serving list starts with the packet's
+  // serving, as a saved food's does, not with "100 g".
+  it("lists the label serving before 100 g", async () => {
+    stubProducts({ "5000112548167": COKE });
+    const agent = await signedIn(alice);
+    const { body } = await agent.get("/api/food/barcode/5000112548167").expect(200);
+    expect(body.hit.servings.map((s: { label: string }) => s.label)).toEqual(["1 serving (250ml)", "100 g"]);
+  });
+
   it("offers only per-100 g for a product without a serving size", async () => {
     const noServing = JSON.parse(COKE);
     delete noServing.product.serving_size;
@@ -107,12 +116,35 @@ describe("GET /api/food/barcode/:code", () => {
     expect((await agent.get("/api/food/barcode/5000112548167").expect(502)).body.message).toBe("Product lookup is unavailable right now");
   });
 
-  // Review focus 5: scanners read UPC-A as 12 digits; Open Food Facts often
-  // files the same product under its 13-digit EAN form.
-  it("retries a 12-digit UPC-A as its 13-digit EAN", async () => {
-    const urls = stubProducts({ "0049000006582": COKE });
+  // Review focus 5, as Open Food Facts really behaves (final review I3, checked
+  // live 2026-10-05): asked for a 12-digit UPC-A, it answers with the product
+  // under its own 13-digit code. That is the id text search gives the product
+  // too, so a food first saved from search is updated by a scan, not duplicated.
+  it("takes Open Food Facts' own 13-digit code for a 12-digit UPC-A", async () => {
+    const page = JSON.parse(COKE);
+    page.code = page.product.code = "0049000006582";
+    stubProducts({ "049000006582": JSON.stringify(page) });
     const agent = await signedIn(alice);
-    await agent.get("/api/food/barcode/049000006582").expect(200);
-    expect(urls.map((u) => u.slice(OFF_PRODUCT_URL.length + 1).split("?")[0])).toEqual(["049000006582", "0049000006582"]);
+    const { body } = await agent.get("/api/food/barcode/049000006582").expect(200);
+    expect(body.hit).toMatchObject({ externalId: "0049000006582", barcode: "0049000006582" });
+  });
+
+  // Open Food Facts pads an unknown 12-digit code itself, so asking twice only doubles the wait.
+  it("asks Open Food Facts once for an unknown UPC-A", async () => {
+    const urls = stubProducts({});
+    const agent = await signedIn(alice);
+    await agent.get("/api/food/barcode/049000000000").expect(404);
+    expect(urls).toHaveLength(1);
+  });
+
+  it("finds a UPC-A food in the library under either spelling of its code", async () => {
+    stubProducts({});
+    const agent = await signedIn(alice);
+    const as13 = { ...MANUAL_BAR, name: "Diet cola", barcode: "0049000006582" };
+    await agent.post("/api/nutrition/diary").send({ ...logBar, name: "Diet cola", food: as13 }).expect(201);
+    expect((await agent.get("/api/food/barcode/049000006582").expect(200)).body.item.name).toBe("Diet cola");
+    const as12 = { ...MANUAL_BAR, name: "Protein bar", barcode: "012345678905" };
+    await agent.post("/api/nutrition/diary").send({ ...logBar, name: "Protein bar", food: as12 }).expect(201);
+    expect((await agent.get("/api/food/barcode/0012345678905").expect(200)).body.item.name).toBe("Protein bar");
   });
 });

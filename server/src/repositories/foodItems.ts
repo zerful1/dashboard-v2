@@ -62,11 +62,22 @@ export async function upsertFoodItem(client: PoolClient, userId: string, food: F
   return rows[0]!.id;
 }
 
+/**
+ * A UPC-A code's two spellings: 12 digits as a scanner reads it, 13 with a
+ * leading 0 as Open Food Facts files it (final review I3). Every other code has one.
+ */
+function barcodeSpellings(code: string): string[] {
+  if (code.length === 12) return [code, `0${code}`];
+  if (code.length === 13 && code.startsWith("0")) return [code, code.slice(1)];
+  return [code];
+}
+
 /** The caller's own food with this barcode, newest first: a scanned or hand-added food, found again as saved. */
 export async function findFoodByBarcode(userId: string, barcode: string): Promise<FoodItem | null> {
   const { rows } = await pool.query<FoodItem>(
-    `SELECT ${ITEM_COLS} FROM ${T.foodItems} WHERE user_id = $1 AND barcode = $2 ORDER BY created_at DESC LIMIT 1`,
-    [userId, barcode],
+    `SELECT ${ITEM_COLS} FROM ${T.foodItems}
+     WHERE user_id = $1 AND barcode = ANY($2::text[]) ORDER BY created_at DESC LIMIT 1`,
+    [userId, barcodeSpellings(barcode)],
   );
   return rows[0] ?? null;
 }
