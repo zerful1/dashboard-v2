@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { customToChoice, entryToChoice, hitToChoice, itemToChoice, type FoodChoice } from "@dashboard/shared";
 import type { FoodHit, FoodLogUnit, RecentFood } from "@dashboard/shared";
 import { Sheet } from "@/components/ui/Sheet";
@@ -43,6 +43,10 @@ export function AddFoodSheet({
   const [q, setQ] = useState("");
   // A scanned code nobody has filed, carried into Custom so it is saved with the food.
   const [customBarcode, setCustomBarcode] = useState<string | null>(null);
+  // The sheet's content outlives a close by its exit animation, so a scan's
+  // lookup can land after the reset below: it checks this first (final review I1).
+  const openRef = useRef(open);
+  openRef.current = open;
   const recents = useRecents(open);
   // Most adds are a repeat, so the sheet opens on Recent when there is anything
   // to re-log (#17 review 6). Decided once the list is in, so it never flips
@@ -102,7 +106,9 @@ export function AddFoodSheet({
             )}
             {shown === "scan" && (
               <ScanTab
-                onFound={(choice) => setChosen({ choice })}
+                onFound={(choice) => {
+                  if (openRef.current) setChosen({ choice });
+                }}
                 onAddYourself={(barcode) => {
                   setCustomBarcode(barcode);
                   setTab("custom");

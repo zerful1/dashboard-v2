@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { BarcodeResult, FoodHit, FoodItem } from "@dashboard/shared";
@@ -154,6 +154,35 @@ describe("Scan tab", () => {
     await waitFor(() => expect(getUserMedia).toHaveBeenCalled());
     await userEvent.click(screen.getByRole("tab", { name: "Recent" }));
     await waitFor(() => expect(stop).toHaveBeenCalled());
+  });
+
+  // Final review I1: a lookup's answer belongs to the screen it was asked from.
+  it("drops a lookup that finishes after the Scan tab is left", async () => {
+    stubCamera([CODE]);
+    let answer!: (r: BarcodeResult) => void;
+    const calls = mockApi(() => new Promise((resolve) => (answer = resolve)));
+    renderSheet();
+    await userEvent.click(await screen.findByRole("tab", { name: "Scan" }));
+    await waitFor(() => expect(calls).toContain(`/api/food/barcode/${CODE}`));
+    await userEvent.click(screen.getByRole("tab", { name: "Recent" }));
+    await act(async () => answer({ source: "off", hit: COKE }));
+    expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Recent" })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("drops a lookup that finishes after the sheet closes", async () => {
+    stubCamera([CODE]);
+    let answer!: (r: BarcodeResult) => void;
+    const calls = mockApi(() => new Promise((resolve) => (answer = resolve)));
+    const { rerender } = renderSheet();
+    await userEvent.click(await screen.findByRole("tab", { name: "Scan" }));
+    await waitFor(() => expect(calls).toContain(`/api/food/barcode/${CODE}`));
+    rerender(false);
+    await act(async () => answer({ source: "off", hit: COKE }));
+    rerender(true);
+    // Reopened on its tabs, not on the abandoned product's amount step.
+    expect(await screen.findByRole("tab", { name: "Search" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
   });
 
   it("stops the camera when the sheet closes", async () => {

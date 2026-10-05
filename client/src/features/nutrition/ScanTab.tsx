@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { hitToChoice, itemToChoice, type FoodChoice } from "@dashboard/shared";
 import { nutritionApi } from "@/api/nutrition";
 import { ApiError } from "@/lib/api";
@@ -48,13 +48,20 @@ export function ScanTab({ onFound, onAddYourself }: {
   const online = useOnline();
   const [status, setStatus] = useState<Status>({ kind: "scanning" });
   const [typed, setTyped] = useState("");
+  // An answer belongs to the lookup that asked for it: a newer lookup, or
+  // leaving the tab, makes it stale (final review I1).
+  const latest = useRef(0);
+  useEffect(() => () => void latest.current++, []);
 
   async function lookUp(code: string) {
+    const ask = ++latest.current;
     setStatus({ kind: "looking" });
     try {
       const r = await nutritionApi.barcode(code);
+      if (ask !== latest.current) return;
       onFound(r.source === "library" ? itemToChoice(r.item) : hitToChoice(r.hit));
     } catch (err) {
+      if (ask !== latest.current) return;
       if (err instanceof ApiError && err.status === 404) setStatus({ kind: "missing", code });
       else setStatus({ kind: "failed", message: err instanceof ApiError ? err.message : "Product lookup is unavailable right now" });
     }
