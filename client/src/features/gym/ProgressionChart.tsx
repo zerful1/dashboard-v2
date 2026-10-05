@@ -67,14 +67,14 @@ export function ProgressionChart({
 
   if (series.points.length === 0) {
     return (
-      <div className="rounded-card border border-raised bg-surface p-6 text-center text-sm text-dim">
+      <div className="py-6 text-center text-sm text-muted">
         Not enough data to chart yet.
       </div>
     );
   }
 
   return (
-    <div className="rounded-card border border-raised bg-surface p-3">
+    <div className="border-t border-raised py-3">
       {!bodyweightOnly && (
         <div className="mb-3 flex gap-1.5">
           {METRICS.map((m) => (
@@ -83,7 +83,7 @@ export function ProgressionChart({
               onClick={() => setMetric(m.key)}
               aria-pressed={metric === m.key}
               className={cn(
-                "flex-1 rounded-md py-1.5 font-mono text-[10px] uppercase tracking-[0.12em]",
+                "flex-1 rounded-full py-1.5 text-xs font-medium",
                 // Tinted: a selection within a set, not the screen's action.
                 metric === m.key ? "bg-accent/10 text-accent" : "text-muted",
               )}
@@ -118,8 +118,8 @@ export function ProgressionChart({
             <Tooltip
               contentStyle={{
                 background: "var(--color-surface)",
-                border: "1px solid var(--color-raised)",
-                borderRadius: 8,
+                border: "1px solid var(--color-edge)",
+                borderRadius: 12,
                 fontSize: 12,
               }}
               labelStyle={{ color: "var(--color-muted)" }}
@@ -129,7 +129,7 @@ export function ProgressionChart({
               dataKey="value"
               stroke="var(--color-accent)"
               strokeWidth={2}
-              dot={{ r: 2, fill: "var(--color-accent)" }}
+              dot={{ r: 2, fill: "var(--color-dim)", stroke: "none" }}
               activeDot={{ r: 4 }}
               isAnimationActive={false}
             />
@@ -137,7 +137,7 @@ export function ProgressionChart({
             <Line
               type="linear"
               dataKey="trend"
-              stroke="var(--color-muted)"
+              stroke="var(--color-dim)"
               strokeWidth={1.5}
               strokeDasharray="4 4"
               dot={false}

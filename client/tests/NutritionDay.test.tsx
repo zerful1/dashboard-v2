@@ -23,11 +23,22 @@ describe("SummaryCard", () => {
     expect(screen.getByText("762 left")).toBeInTheDocument();
   });
 
-  it("turns an over-target macro gold, and never protein", () => {
+  // Over target, the part past the goal is amber stripes after a notch
+  // (redesign spec §5.7); protein is never "over".
+  it("draws the excess past a macro's target as stripes, and never for protein", () => {
     const summary = deriveDay([entry({ protein_g: 200, carbs_g: 230 })], [cut], "2026-09-23");
     render(<SummaryCard summary={summary} onSetTargets={() => {}} />);
-    expect(screen.getByRole("progressbar", { name: "Carbs" }).firstElementChild).toHaveClass("bg-caution");
-    expect(screen.getByRole("progressbar", { name: "Protein" }).firstElementChild).not.toHaveClass("bg-caution");
+    expect(screen.getByRole("progressbar", { name: "Carbs" }).querySelector('[data-part="over"]')).toHaveClass("bar-over");
+    expect(screen.getByRole("progressbar", { name: "Protein" }).querySelector('[data-part="over"]')).toBeNull();
+  });
+
+  // The positive complement: under target there is a fill and no stripes.
+  it("draws an under-target macro as a plain white fill", () => {
+    const summary = deriveDay([entry({ protein_g: 20, carbs_g: 20 })], [cut], "2026-09-23");
+    render(<SummaryCard summary={summary} onSetTargets={() => {}} />);
+    const carbs = screen.getByRole("progressbar", { name: "Carbs" });
+    expect(carbs.querySelector('[data-part="fill"]')).toHaveClass("bg-accent");
+    expect(carbs.querySelector('[data-part="over"]')).toBeNull();
   });
 
   it("offers to set targets when there are none", async () => {
