@@ -75,10 +75,10 @@ export function AppLayout() {
           onClick={() => setMoreOpen(false)}
         >
           <div
-            className="w-full rounded-t-2xl border-t border-raised bg-surface p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+            className="w-full rounded-t-[22px] border-t border-edge bg-surface p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="lbl mb-3">More</div>
+            <div className="mb-3 text-[17px] font-semibold tracking-tight">More</div>
             {NAV_ITEMS.filter((i) => !i.primary).map(({ to, label }) => (
               <button
                 key={to}
