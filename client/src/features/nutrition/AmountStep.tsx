@@ -59,10 +59,10 @@ export function AmountStep({
       </div>
 
       <div className="flex gap-2">
-        <Button variant={effectiveUnit === "g" ? "selected" : "ghost"} disabled={!canWeigh} onClick={() => switchUnit("g")}>
+        <Button variant={effectiveUnit === "g" ? "selected" : "subtle"} disabled={!canWeigh} onClick={() => switchUnit("g")}>
           g
         </Button>
-        <Button variant={effectiveUnit === "serving" ? "selected" : "ghost"} onClick={() => switchUnit("serving")}>
+        <Button variant={effectiveUnit === "serving" ? "selected" : "subtle"} onClick={() => switchUnit("serving")}>
           Serving
         </Button>
       </div>

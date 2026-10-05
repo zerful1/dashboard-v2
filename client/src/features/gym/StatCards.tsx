@@ -3,9 +3,9 @@ import type { ExerciseStats } from "@dashboard/shared";
 
 function Cell({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-card border border-raised bg-surface p-3">
+    <div className="border-t border-raised py-3">
       <div className="lbl">{label}</div>
-      <div className="tnum mt-1 text-lg font-extrabold tracking-tight">{value}</div>
+      <div className="figure mt-1 text-lg">{value}</div>
       {sub && <div className="lbl mt-1 text-dim">{sub}</div>}
     </div>
   );
@@ -40,9 +40,9 @@ export function StatCards({ stats }: { stats: ExerciseStats }) {
               : "—"
         }
       />
-      <div className="rounded-card border border-raised bg-surface p-3">
+      <div className="border-t border-raised py-3">
         <div className="lbl">30-day change</div>
-        <div className={`tnum mt-1 text-lg font-extrabold tracking-tight ${deltaTone}`}>
+        <div className={`figure mt-1 text-lg ${deltaTone}`}>
           {stats.delta30 === null
             ? "—"
             : `${stats.delta30.value > 0 ? "+" : ""}${stats.delta30.value.toFixed(1)} ${stats.delta30.unit}`}
@@ -53,7 +53,7 @@ export function StatCards({ stats }: { stats: ExerciseStats }) {
         value={String(stats.sessionCount)}
         // Anchored to the last SESSION date, not today — "3 weeks ago" is the
         // useful fact, and it does not drift while you are not training.
-        sub={stats.lastTrainedDate ? `LAST ${stats.lastTrainedDate}` : undefined}
+        sub={stats.lastTrainedDate ? `Last ${stats.lastTrainedDate}` : undefined}
       />
     </div>
   );

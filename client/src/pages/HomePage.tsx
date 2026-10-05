@@ -26,7 +26,7 @@ export function HomePage() {
     <div className="space-y-4">
       <div>
         <div className="lbl text-accent">Overview</div>
-        <h1 className="mt-1.5 text-2xl font-extrabold tracking-tight">{heading}</h1>
+        <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">{heading}</h1>
       </div>
 
       {isLoading ? (

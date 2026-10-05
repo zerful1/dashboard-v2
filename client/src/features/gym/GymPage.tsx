@@ -98,7 +98,7 @@ export function GymPage() {
       <div className="flex items-end justify-between gap-2">
         <div className="min-w-0">
           <div className="lbl text-accent">Gym</div>
-          <h1 className="mt-1 text-2xl font-extrabold tracking-tight">
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
             {getDayName(split, dayType)}
           </h1>
         </div>

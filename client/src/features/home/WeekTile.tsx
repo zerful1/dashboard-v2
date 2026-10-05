@@ -4,9 +4,9 @@ const LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
 
 export function WeekTile({ week }: { week: HomeWeek }) {
   return (
-    <div className="rounded-card border border-raised bg-surface p-4">
+    <div className="border-t border-raised py-4">
       <div className="lbl">This week</div>
-      <div className="tnum mt-1 text-3xl font-extrabold tracking-tight">
+      <div className="figure mt-1 text-3xl">
         {week.logged}
         <span className="text-sm font-semibold text-muted"> / {week.target}</span>
       </div>
@@ -15,7 +15,7 @@ export function WeekTile({ week }: { week: HomeWeek }) {
           <div key={i} className="flex flex-col items-center gap-1">
             <span
               className={
-                done ? "h-2 w-2 rounded-full bg-accent" : "h-2 w-2 rounded-full bg-raised"
+                done ? "h-2 w-2 rounded-full bg-accent" : "h-2 w-2 rounded-full border border-dim"
               }
             />
             <span className="text-[10px] leading-none text-dim">{LETTERS[i]}</span>

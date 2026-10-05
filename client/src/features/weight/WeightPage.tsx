@@ -42,7 +42,7 @@ export function WeightPage() {
     <div className="space-y-4">
       <div>
         <div className="lbl text-accent">Weight</div>
-        <h1 className="mt-1.5 text-2xl font-extrabold tracking-tight">Body weight</h1>
+        <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">Body weight</h1>
       </div>
 
       <LogWeightCard save={saveWeight} entries={entries} />

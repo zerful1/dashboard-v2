@@ -117,13 +117,13 @@ describe("ExerciseSheet", () => {
   it("renders coaching when the API returns a recommendation", async () => {
     mockCoaching({ tag: "ADD WEIGHT", color: "green", headline: "Add 2.5 kg next session" });
     renderSheet();
-    expect(await screen.findByText("ADD WEIGHT")).toBeInTheDocument();
+    expect(await screen.findByText("Add weight")).toBeInTheDocument();
   });
 
   it("renders nothing for coaching when the API returns null", async () => {
     mockCoaching(null);
     renderSheet();
-    await waitFor(() => expect(screen.queryByText(/ADD WEIGHT|REPEAT|DELOAD/)).toBeNull());
+    await waitFor(() => expect(screen.queryByText(/Add weight|Repeat|Deload/)).toBeNull());
   });
 
   it("clears the inputs after logging, ready for the next set", async () => {

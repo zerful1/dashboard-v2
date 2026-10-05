@@ -12,12 +12,12 @@ export function TodayCard({ today }: { today: HomeToday }) {
       initial={safe ? { opacity: 0, y: 8 } : false}
       animate={{ opacity: 1, y: 0 }}
       transition={springOrNone(TRANSITIONS.snappy, safe)}
-      className="rounded-card border border-raised bg-surface p-4"
+      className="border-t border-raised py-4"
     >
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="lbl text-accent">Today</div>
-          <div className="mt-1 truncate text-xl font-extrabold tracking-tight">
+          <div className="mt-1 truncate text-xl font-semibold tracking-tight">
             {today.label}
           </div>
           <div className="mt-0.5 text-xs text-muted">
@@ -41,10 +41,10 @@ export function TodayCard({ today }: { today: HomeToday }) {
           <Link
             to="/gym"
             className={cn(
-              "inline-flex shrink-0 items-center justify-center rounded-lg px-4 py-2.5",
+              "inline-flex shrink-0 items-center justify-center rounded-full px-4 py-2.5",
               "text-sm font-semibold transition",
               "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg",
-              "bg-accent text-bg hover:brightness-110 active:brightness-95",
+              "bg-accent text-bg hover:brightness-90 active:brightness-75",
             )}
           >
             {today.started ? "Continue" : "Log"}

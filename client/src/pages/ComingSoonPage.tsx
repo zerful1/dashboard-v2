@@ -20,7 +20,7 @@ export function ComingSoonPage() {
     <div className="max-w-lg space-y-4">
       <div>
         <div className="lbl text-accent">{item ? item.label : "Nothing here"}</div>
-        <h1 className="mt-1.5 text-2xl font-extrabold tracking-tight">
+        <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">
           {item ? `${item.label} isn't built yet` : "No such page"}
         </h1>
       </div>

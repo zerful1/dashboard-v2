@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { TRANSITIONS, useMotionSafe, springOrNone } from "@/lib/motion";
 import type { BodyWeightEntry } from "@dashboard/shared";
+import { List } from "@/components/ui/List";
 
 export function WeightList({
   entries,
@@ -12,8 +13,8 @@ export function WeightList({
   const safe = useMotionSafe();
 
   return (
-    <div className="overflow-hidden rounded-card border border-raised bg-surface">
-      <div className="lbl px-4 pt-3 pb-2">History</div>
+    <List>
+      <div className="lbl pt-3 pb-2">History</div>
       <AnimatePresence initial={false}>
         {entries.map((e) => (
           <motion.button
@@ -26,12 +27,8 @@ export function WeightList({
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: safe ? 0 : "auto" }}
             transition={springOrNone(TRANSITIONS.gentle, safe)}
-            // `raised` — the border token. Used here as a hover surface, which
-            // is the one non-border use the token rule allows, since it is
-            // chrome rather than data.
-            whileHover={safe ? { backgroundColor: "rgb(41 37 36)" } : undefined}
             onClick={() => onSelect(e)}
-            className="flex w-full items-center justify-between border-t border-raised px-4 py-3 text-left"
+            className="flex w-full items-center justify-between py-3 text-left hover:bg-accent/5"
           >
             {/* Rendered as stored. No Date, no reformatting — a weigh-in dated
                 in BST would come back a day earlier if this parsed it. */}
@@ -41,10 +38,10 @@ export function WeightList({
         ))}
       </AnimatePresence>
       {entries.length === 0 && (
-        <p className="border-t border-raised px-4 py-6 text-center text-sm text-dim">
+        <p className="py-6 text-center text-sm text-muted">
           No entries yet.
         </p>
       )}
-    </div>
+    </List>
   );
 }

@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { cardioLine } from "@dashboard/shared";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { List } from "@/components/ui/List";
 import { useCardio } from "@/hooks/useCardio";
 
 const FIELDS = [
@@ -48,11 +49,11 @@ export function CardioSection({
   };
 
   return (
-    <div className="overflow-hidden rounded-card border border-raised bg-surface">
+    <List>
       {entries.map((e) => (
         <div
           key={e.id}
-          className="flex items-center justify-between gap-2 border-b border-raised px-3 py-2.5"
+          className="flex items-center justify-between gap-2 py-2.5"
         >
           <span className="truncate text-xs text-text">{cardioLine(e)}</span>
           <button
@@ -67,14 +68,14 @@ export function CardioSection({
 
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between px-3 py-3 text-muted"
+        className="flex w-full items-center justify-between py-3 text-muted"
       >
         <span className="lbl">{entries.length > 0 ? "Add another" : "Add cardio"}</span>
         {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </button>
 
       {open && (
-        <div className="space-y-2 border-t border-raised px-3 pb-3 pt-3">
+        <div className="space-y-2 pb-3 pt-3">
           <Input
             placeholder="Exercise (e.g. Treadmill)"
             value={exercise}
@@ -111,6 +112,6 @@ export function CardioSection({
               cardio-only day works. */}
         </div>
       )}
-    </div>
+    </List>
   );
 }

@@ -4,6 +4,7 @@ import type { WorkoutSession } from "@dashboard/shared";
 import { useSplit } from "@/hooks/useSplit";
 import { useWorkoutHistory, useHistoryDayNames } from "@/hooks/useWorkoutHistory";
 import { SessionDetailSheet } from "./SessionDetailSheet";
+import { List } from "@/components/ui/List";
 import { cn } from "@/lib/cn";
 
 export function HistoryTab({ onEditInLog }: { onEditInLog: (s: WorkoutSession) => void }) {
@@ -46,16 +47,20 @@ export function HistoryTab({ onEditInLog }: { onEditInLog: (s: WorkoutSession) =
         <p className="py-8 text-center text-xs text-dim">No sessions logged yet</p>
       )}
 
-      {sessions.map((s) => (
-        <button
-          key={s.id}
-          onClick={() => setActive(s)}
-          className="w-full rounded-card border border-raised bg-surface px-3 py-3 text-left hover:bg-raised/40"
-        >
-          <span className="text-sm font-semibold text-text">{s.date}</span>
-          <span className="ml-2 text-sm text-muted">— {s.day_name}</span>
-        </button>
-      ))}
+      {sessions.length > 0 && (
+        <List>
+          {sessions.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setActive(s)}
+              className="w-full py-3 text-left hover:bg-accent/5"
+            >
+              <span className="text-sm font-semibold text-text">{s.date}</span>
+              <span className="ml-2 text-sm text-muted">— {s.day_name}</span>
+            </button>
+          ))}
+        </List>
+      )}
 
       {hasMore && (
         <button

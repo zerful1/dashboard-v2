@@ -42,7 +42,7 @@ export function ExerciseRow({
 }: Props) {
   if (editMode) {
     return (
-      <div className="flex items-center gap-2 border-t border-raised px-4 py-3">
+      <div className="flex items-center gap-2 py-3">
         <div className="flex shrink-0 flex-col">
           <button
             onClick={() => onMove("up")}
@@ -90,7 +90,7 @@ export function ExerciseRow({
   return (
     <button
       onClick={onOpen}
-      className="flex w-full items-center gap-3 border-t border-raised px-4 py-3 text-left hover:bg-raised/40"
+      className="flex w-full items-center gap-3 py-3 text-left hover:bg-accent/5"
     >
       <span
         className={cn(

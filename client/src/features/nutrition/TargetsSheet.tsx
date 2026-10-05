@@ -78,7 +78,7 @@ export function TargetsSheet({
 
         <div className="flex gap-2">
           {GOALS.map((g) => (
-            <Button key={g.id} variant={goal === g.id ? "selected" : "ghost"} onClick={() => setGoal(g.id)}>
+            <Button key={g.id} variant={goal === g.id ? "selected" : "subtle"} onClick={() => setGoal(g.id)}>
               {g.label}
             </Button>
           ))}
@@ -218,7 +218,7 @@ function BodyDetails() {
         </div>
         <div className="flex gap-2">
           {(["male", "female"] as const).map((s) => (
-            <Button key={s} variant={sex === s ? "selected" : "ghost"} onClick={() => setSex(sex === s ? null : s)}>
+            <Button key={s} variant={sex === s ? "selected" : "subtle"} onClick={() => setSex(sex === s ? null : s)}>
               {s === "male" ? "Male" : "Female"}
             </Button>
           ))}

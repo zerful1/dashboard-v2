@@ -9,6 +9,11 @@ const TONE = {
   red: { text: "text-negative", edge: "border-l-negative" },
 } as const;
 
+/** The domain's tags are capitals ("ADD WEIGHT"); labels are sentence case now. */
+function sentence(tag: string): string {
+  return tag.charAt(0) + tag.slice(1).toLowerCase();
+}
+
 export function CoachingCard({
   data,
   isLoading,
@@ -24,9 +29,9 @@ export function CoachingCard({
   const tone = TONE[data.color];
   return (
     <div
-      className={`flex items-start gap-3 rounded-lg border border-raised border-l-2 bg-surface px-3 py-2 ${tone.edge}`}
+      className={`flex items-start gap-3 border-l-2 py-1 pl-3 ${tone.edge}`}
     >
-      <span className={`lbl shrink-0 font-bold ${tone.text}`}>{data.tag}</span>
+      <span className={`lbl shrink-0 font-semibold ${tone.text}`}>{sentence(data.tag)}</span>
       <span className="text-xs leading-snug text-text">{data.headline}</span>
     </div>
   );

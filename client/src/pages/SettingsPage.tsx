@@ -126,7 +126,7 @@ export function SettingsPage() {
       <div className="max-w-lg space-y-4">
         <div>
           <div className="lbl text-accent">Settings</div>
-          <h1 className="mt-1.5 text-2xl font-extrabold tracking-tight">Your account</h1>
+          <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">Your account</h1>
           <p className="mt-1 text-sm text-muted">{user?.email}</p>
         </div>
 
@@ -148,7 +148,7 @@ export function SettingsPage() {
     <div className="max-w-lg space-y-4">
       <div>
         <div className="lbl text-accent">Settings</div>
-        <h1 className="mt-1.5 text-2xl font-extrabold tracking-tight">Your account</h1>
+        <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">Your account</h1>
         <p className="mt-1 text-sm text-muted">{user?.email}</p>
       </div>
 
@@ -190,7 +190,7 @@ export function SettingsPage() {
                 // and the filled accent 100px below it says "press this to
                 // change your password". Two different jobs must not share one
                 // treatment.
-                variant={profile.units === u ? "selected" : "ghost"}
+                variant={profile.units === u ? "selected" : "subtle"}
                 aria-pressed={profile.units === u}
                 onClick={() => saveProfile.mutate({ units: u })}
                 className="flex-1"

@@ -19,7 +19,7 @@ export function StatsTab() {
 
   if (names.length === 0) {
     return (
-      <div className="rounded-card border border-raised bg-surface p-6 text-center text-sm text-dim">
+      <div className="py-6 text-center text-sm text-muted">
         Log some sets and your stats will appear here.
       </div>
     );

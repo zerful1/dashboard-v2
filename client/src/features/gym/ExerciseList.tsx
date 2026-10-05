@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import type { Exercise, WorkoutSet } from "@dashboard/shared";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { List } from "@/components/ui/List";
 import { canonicalName, suggestNames } from "@/lib/exerciseNames";
 import { ExerciseRow } from "./ExerciseRow";
 
@@ -62,8 +63,8 @@ export function ExerciseList({
   };
 
   return (
-    <div className="overflow-hidden rounded-card border border-raised bg-surface">
-      <div className="flex items-baseline justify-between px-4 pt-3 pb-2">
+    <List>
+      <div className="flex items-baseline justify-between pt-3 pb-2">
         <span className="lbl">Exercises</span>
         {!editMode && exercises.length > 0 && (
           <span className="tnum lbl text-dim">
@@ -89,13 +90,13 @@ export function ExerciseList({
       ))}
 
       {exercises.length === 0 && !editMode && (
-        <p className="border-t border-raised px-4 py-6 text-center text-sm text-dim">
+        <p className="py-6 text-center text-sm text-muted">
           No exercises on this day yet. Tap the pencil to add some.
         </p>
       )}
 
       {editMode && (
-        <div className="border-t border-raised px-4 py-3">
+        <div className="py-3">
           <div className="flex gap-2">
             <Input
               placeholder="Exercise name"
@@ -117,7 +118,7 @@ export function ExerciseList({
                   <button
                     type="button"
                     onClick={() => add(n)}
-                    className="rounded-full border border-raised px-3 py-1 text-xs text-muted hover:text-text"
+                    className="rounded-full border border-edge px-3 py-1 text-xs text-muted hover:text-text"
                   >
                     {n}
                   </button>
@@ -127,6 +128,6 @@ export function ExerciseList({
           )}
         </div>
       )}
-    </div>
+    </List>
   );
 }
