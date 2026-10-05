@@ -109,3 +109,10 @@ describe('buildEntryInput', () => {
     expect(input.food).toBeUndefined()
   })
 })
+
+it('carries a barcode hit\'s barcode into the food it stores', () => {
+  const hit = { source: 'off' as const, externalId: '5000112548167', barcode: '5000112548167', name: 'Coca-Cola Light',
+    servings: [{ label: '100 g', grams: 100, kcal: 0.2, p: 0, f: 0, c: 0 }], per100g: { kcal: 0.2, p: 0, f: 0, c: 0 } }
+  const choice = hitToChoice(hit)
+  expect(choice.link).toMatchObject({ kind: 'store', food: { barcode: '5000112548167' } })
+})
