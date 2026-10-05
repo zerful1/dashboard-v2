@@ -15,7 +15,7 @@ export function SummaryCard({ summary, onSetTargets }: { summary: DaySummary; on
           </span>
         </p>
         {target && left !== null ? (
-          <p className={cn("tnum text-sm font-semibold", left < 0 ? "text-gold" : "text-muted")}>
+          <p className={cn("tnum text-sm font-semibold", left < 0 ? "text-caution" : "text-muted")}>
             {left < 0 ? `${Math.abs(left).toLocaleString()} over` : `${left.toLocaleString()} left`}
           </p>
         ) : (
@@ -46,7 +46,7 @@ function MacroMeter({ bar }: { bar: MacroBar }) {
         </span>
       </div>
       {/* The track is chrome, so `raised` is allowed; the fill is data, so it
-          is neutral, and gold only when over. Never the accent. */}
+          is neutral, and caution only when over. Never the accent. */}
       <div
         role="progressbar"
         aria-label={bar.label}
@@ -55,7 +55,7 @@ function MacroMeter({ bar }: { bar: MacroBar }) {
         aria-valuemax={bar.target}
         className="mt-1 h-1.5 overflow-hidden rounded-full bg-raised"
       >
-        <div className={cn("h-full rounded-full", bar.over ? "bg-gold" : "bg-muted")} style={{ width: `${pct}%` }} />
+        <div className={cn("h-full rounded-full", bar.over ? "bg-caution" : "bg-muted")} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );

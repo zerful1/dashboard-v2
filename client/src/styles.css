@@ -9,42 +9,49 @@
    Roles, not shades. Components never name a raw hex or a stone number.
    --------------------------------------------------------------------------- */
 @theme {
-  /* Surfaces — Tailwind's stone scale, aliased by the job each one does */
-  --color-bg: #0c0a09; /* stone-950 — page */
-  --color-surface: #1c1917; /* stone-900 — cards */
-  --color-raised: #292524; /* stone-800 — BORDERS AND GRIDLINES ONLY, never data */
+  /* Surfaces. True black, from the 2026-10-06 redesign (direction A: "pure
+     black, hairlines"). Grouping is a hairline, never a box, so `surface` is
+     for things that float — sheets, inputs, tooltips — and not for cards. */
+  --color-bg: #000000; /* page */
+  --color-surface: #0d0d0d; /* sheets, inputs, tooltips */
+  --color-raised: #1c1c1c; /* BORDERS AND GRIDLINES ONLY, never data */
+  /* The outline of a control: an input, an outline button, the sheet's edge, an
+     unticked ring. Brighter than `raised`, because a control has to be found,
+     where a hairline only separates. */
+  --color-edge: #333333;
 
-  /* Text */
-  --color-text: #fafaf9; /* stone-50  — 19:1 on bg */
-  --color-muted: #a8a29e; /* stone-400 — 7.8:1 */
-  --color-dim: #57534e; /* stone-600 — decorative, not for body copy */
+  /* Text. Contrast on bg: 21, 6.1 and 2.8 (dim is decoration only). */
+  --color-text: #ffffff;
+  --color-muted: #8a8a8a;
+  --color-dim: #555555; /* decorative, not for body copy */
 
-  /* Data ink. Every one clears 4.5:1 against bg, so all are safe for text. */
-  /* Terracotta marks exactly three roles and nothing else. FILLED
-     (bg-accent text-bg) is the one action to take. TINTED (bg-accent/10 with
-     text-accent) is the currently selected item in a set — a state, never an
-     action. The `lbl` micro-label below carries it for identity and wayfinding
-     chrome — wordmark, page eyebrow, active nav item — which is outside the
-     rule, being neither. Anything else that wants to be terracotta is one of
-     those three or it is not terracotta: a role is checkable while writing a
-     single element, which a per-screen count never was. */
-  --color-accent: #e07a5f; /* terracotta, 6.7:1 */
-  --color-sage: #81b29a; /* positive,   8.3:1 */
-  --color-gold: #f2cc8f; /* caution,    13:1  */
-  --color-negative: #e5646d; /* destructive, 6.0:1 */
+  /* White is the only accent, and it has four roles. A FILLED white pill
+     (bg-accent text-bg, the primary Button) is the one action to take, at most
+     one per screen. TINTED white (bg-accent/10 text-accent) is the selected item
+     in a set: a state, never an action. A small FILLED white circle (24px or
+     less: a set tick, a habit tick, a week dot) is a done mark, a state its
+     shape keeps from reading as a button. And identity chrome: the wordmark,
+     the page eyebrow, the active tab. Nothing else is a filled white shape;
+     tests/accentRule.test.ts holds the list. */
+  --color-accent: #ffffff;
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Signal colours: one job each. Every one clears 4.5:1 on bg and surface. */
+  --color-good: #86d3a7; /* toward your goal; progress advice. 11.9:1 */
+  --color-caution: #e8c27a; /* over a target; warnings; "hold" advice. 12.4:1 */
+  --color-negative: #ff6b6b; /* errors and destructive actions. 7.6:1 */
+
+  /* Inter is bundled (index.tsx imports @fontsource-variable/inter), so it is
+     served from /static and works offline. Never a font CDN. */
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* Colour-free size primitive for micro-labels — same metrics as the `lbl`
-     utility below, minus its hardcoded muted colour, so elements that
-     recolour themselves (a nav item turning text-accent when active) can
-     still sit on the instrument-panel type scale instead of falling back to
-     a body size. */
-  --text-label: 0.5rem;
+  /* The bottom tabs' label size. lib/cn.ts tells tailwind-merge it is a font
+     size; without that it reads as a colour and is dropped beside one. */
+  --text-label: 0.625rem;
   --text-label--line-height: 1;
-  --tracking-label: 0.16em;
+  --tracking-label: 0em;
 
+  /* Media only (the barcode camera). Grouping is hairlines, not rounded boxes. */
   --radius-card: 11px;
 }
 
@@ -69,16 +76,31 @@
   }
 }
 
-/* Micro-label: uppercase mono with wide tracking. Used for every field label
-   and section heading, and it is the reason the interface reads as instrument
-   panel rather than form. */
+/* Labels: 11px, medium, grey, sentence case. Used for every field label and
+   section heading. The source strings are sentence case; nothing uppercases
+   them any more, so write them the way they should read. */
 @utility lbl {
-  font-family: var(--font-mono);
-  font-size: 0.5rem;
-  line-height: 1;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  font-weight: 500;
   color: var(--color-muted);
+}
+
+/* Large numbers: light, tight and tabular. The size stays with each page. */
+@utility figure {
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The part of a bar past its target: amber stripes over the track. */
+@utility bar-over {
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--color-caution) 0 3px,
+    transparent 3px 5.5px
+  );
 }
 
 /* Numbers are the point of this app — tabular figures stop columns jittering

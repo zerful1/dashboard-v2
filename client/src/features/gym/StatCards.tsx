@@ -12,15 +12,15 @@ function Cell({ label, value, sub }: { label: string; value: string; sub?: strin
 }
 
 export function StatCards({ stats }: { stats: ExerciseStats }) {
-  // Sage for gains, gold for losses. Never the accent — that belongs to the one
+  // Good for gains, caution for losses. Never the accent — that belongs to the one
   // action on the screen, and a stat is not an action.
   const deltaTone =
     stats.delta30 === null
       ? "text-dim"
       : stats.delta30.value > 0
-        ? "text-sage"
+        ? "text-good"
         : stats.delta30.value < 0
-          ? "text-gold"
+          ? "text-caution"
           : "text-muted";
 
   return (

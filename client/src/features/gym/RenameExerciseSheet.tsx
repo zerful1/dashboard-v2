@@ -73,7 +73,7 @@ export function RenameExerciseSheet({ oldName, dayType, onClose, onRename, isPen
           // stats. Say so before it happens — it is not reversible by renaming
           // back, because both exercises then share one name and there is no
           // record of which sets came from which.
-          <p className="rounded-lg border border-gold/40 bg-gold/10 px-3 py-2 text-xs text-gold">
+          <p className="rounded-lg border border-caution/40 bg-caution/10 px-3 py-2 text-xs text-caution">
             This will merge with <strong>{evaluation.mergeWith}</strong> on another day. Their
             history and stats combine.
           </p>

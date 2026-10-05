@@ -26,8 +26,8 @@ describe("SummaryCard", () => {
   it("turns an over-target macro gold, and never protein", () => {
     const summary = deriveDay([entry({ protein_g: 200, carbs_g: 230 })], [cut], "2026-09-23");
     render(<SummaryCard summary={summary} onSetTargets={() => {}} />);
-    expect(screen.getByRole("progressbar", { name: "Carbs" }).firstElementChild).toHaveClass("bg-gold");
-    expect(screen.getByRole("progressbar", { name: "Protein" }).firstElementChild).not.toHaveClass("bg-gold");
+    expect(screen.getByRole("progressbar", { name: "Carbs" }).firstElementChild).toHaveClass("bg-caution");
+    expect(screen.getByRole("progressbar", { name: "Protein" }).firstElementChild).not.toHaveClass("bg-caution");
   });
 
   it("offers to set targets when there are none", async () => {

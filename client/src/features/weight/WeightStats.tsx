@@ -16,7 +16,7 @@ function Delta({ value, label }: { value: number | null; label: string }) {
       </div>
     );
   }
-  const tone = value < 0 ? "text-sage" : value > 0 ? "text-gold" : "text-muted";
+  const tone = value < 0 ? "text-good" : value > 0 ? "text-caution" : "text-muted";
   return (
     <div>
       <div className="lbl">{label}</div>

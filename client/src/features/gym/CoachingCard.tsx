@@ -1,11 +1,11 @@
 import type { CoachingResult } from "@dashboard/shared";
 
-// The domain returns green/amber/red; the palette speaks sage/gold/negative.
+// The domain returns green/amber/red; the palette speaks good/caution/negative.
 // Mapping here keeps the domain free of presentation — computeRecommendation
 // has no idea what colours this app uses, and should not.
 const TONE = {
-  green: { text: "text-sage", edge: "border-l-sage" },
-  amber: { text: "text-gold", edge: "border-l-gold" },
+  green: { text: "text-good", edge: "border-l-good" },
+  amber: { text: "text-caution", edge: "border-l-caution" },
   red: { text: "text-negative", edge: "border-l-negative" },
 } as const;
 

@@ -144,7 +144,7 @@ function SearchTab({ q, setQ, onPick }: { q: string; setQ: (q: string) => void; 
     body = (
       <div className="space-y-2">
         {warnings?.map((w) => (
-          <p key={w} className="text-xs text-gold">
+          <p key={w} className="text-xs text-caution">
             {w}
           </p>
         ))}
