@@ -4,6 +4,7 @@ import type {
   ExerciseNameRow,
   LiftProgress,
   LiftSetRow,
+  SessionSummary,
   WorkoutSession,
   WorkoutSet,
   LastTime,
@@ -64,12 +65,13 @@ export const gymApi = {
 
   getSession: (date: string, dayType: number) =>
     api<WorkoutSession | null>(`/api/workouts/session?date=${date}&day_type=${dayType}`),
-  getSessions: (opts: { limit?: number; offset?: number; day_name?: string } = {}) => {
+  getSessions: (opts: { limit?: number; offset?: number; day_name?: string; since?: string } = {}) => {
     const p = new URLSearchParams();
     if (opts.limit != null) p.set("limit", String(opts.limit));
     if (opts.offset != null) p.set("offset", String(opts.offset));
     if (opts.day_name) p.set("day_name", opts.day_name);
-    return api<WorkoutSession[]>(`/api/workouts/sessions?${p}`);
+    if (opts.since) p.set("since", opts.since);
+    return api<SessionSummary[]>(`/api/workouts/sessions?${p}`);
   },
   listSets: (sessionId: string) => api<WorkoutSet[]>(`/api/workouts/sets?session_id=${sessionId}`),
   logSet: (input: SetInput) =>

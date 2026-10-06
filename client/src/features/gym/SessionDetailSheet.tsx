@@ -1,4 +1,5 @@
-import { setShort, cardioLine } from "@dashboard/shared";
+import { setCell, cardioLine } from "@dashboard/shared";
+import { prettyDate } from "@/lib/dates";
 import type { WorkoutSession } from "@dashboard/shared";
 import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
@@ -28,7 +29,7 @@ export function SessionDetailSheet({
     <Sheet
       open={!!session}
       onClose={onClose}
-      title={session ? `${session.date} — ${session.day_name}` : ""}
+      title={session ? `${prettyDate(session.date)} · ${session.day_name}` : ""}
     >
       <div className="max-h-[60vh] overflow-auto">
         {isLoading && <p className="py-4 text-center text-xs text-muted">Loading…</p>}
@@ -62,7 +63,7 @@ export function SessionDetailSheet({
                     const s = sets.find((x) => x.exercise_name === name && x.set_number === n);
                     return (
                       <td key={n} className="tnum px-2 py-1.5 text-center text-muted">
-                        {s ? setShort(s) : "—"}
+                        {s ? setCell(s) : "—"}
                       </td>
                     );
                   })}

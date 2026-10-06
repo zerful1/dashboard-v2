@@ -38,6 +38,7 @@ export const SESSION_READERS = [
   "historyDayNames",
   "workoutStats",
   "liftProgress",
+  "trainingGrid",
   "historyExerciseNames",
   ...INSIGHTS_READERS,
 ] as const;

@@ -15,6 +15,7 @@ const ALLOWED: Record<string, string> = {
   "features/home/FoodSection.tsx": "the kcal bar's fill: data ink",
   "features/home/WeekLine.tsx": "week dots: small done marks",
   "features/gym/ExerciseRow.tsx": "the set-done tick",
+  "features/gym/TrainingGrid.tsx": "trained days on History's grid: small done marks",
   "features/habits/TodayHabitsCard.tsx": "habit ticks",
   "features/habits/HabitRow.tsx": "habit ticks on the week strip",
   "layout/BottomTabs.tsx": "the active tab's dot: identity chrome",
