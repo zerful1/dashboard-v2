@@ -6,6 +6,8 @@ import { cn } from "@/lib/cn";
 
 export interface HomeWorkout {
   label: string;
+  /** The day type Home is showing, which on a swapped day is not the scheduled one. Null on a rest day. */
+  dayType: number | null;
   isRest: boolean;
   progress: WorkoutProgress | null;
   isError: boolean;
@@ -48,6 +50,9 @@ export function WorkoutSection({ workout, prominent = false }: { workout: HomeWo
   const p = workout.progress;
   if (!p) return null;
   const verb = p.started ? "Continue" : "Start";
+  // Open Gym on the day named here: on a swapped day the scheduled one would
+  // show nothing ticked, and the sets would look gone.
+  const toDay = workout.dayType === null ? undefined : { gymDay: workout.dayType };
 
   if (prominent) {
     return (
@@ -60,7 +65,7 @@ export function WorkoutSection({ workout, prominent = false }: { workout: HomeWo
             <div className="h-full bg-accent" style={{ width: `${(p.done / p.total) * 100}%` }} />
           </div>
         )}
-        <Link to="/gym" className={cn(PILL, "mt-4 w-full bg-accent px-4 py-3 text-bg hover:brightness-90")}>
+        <Link to="/gym" state={toDay} className={cn(PILL, "mt-4 w-full bg-accent px-4 py-3 text-bg hover:brightness-90")}>
           {verb} workout
         </Link>
       </Card>
@@ -80,7 +85,7 @@ export function WorkoutSection({ workout, prominent = false }: { workout: HomeWo
             <Check size={12} strokeWidth={3} aria-hidden />
           </span>
         ) : (
-          <Link to="/gym" className={cn(PILL, "shrink-0 border border-edge px-4 py-2 text-text hover:bg-accent/5")}>
+          <Link to="/gym" state={toDay} className={cn(PILL, "shrink-0 border border-edge px-4 py-2 text-text hover:bg-accent/5")}>
             {verb}
           </Link>
         )}

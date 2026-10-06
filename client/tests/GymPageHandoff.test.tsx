@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
 import { GymPage } from "../src/features/gym/GymPage";
 import { DEFAULT_SPLIT } from "@dashboard/shared";
 import * as apiModule from "../src/lib/api";
@@ -59,9 +60,11 @@ function renderPage() {
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   const { container } = render(
-    <QueryClientProvider client={qc}>
-      <GymPage />
-    </QueryClientProvider>,
+    <MemoryRouter>
+      <QueryClientProvider client={qc}>
+        <GymPage />
+      </QueryClientProvider>
+    </MemoryRouter>,
   );
   // The visible date label is locale-formatted ("20 May" vs "May 20"), so
   // assertions read the underlying input instead.

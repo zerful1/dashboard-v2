@@ -219,6 +219,7 @@ describe("useHomeDay (redesign part 2, §3)", () => {
     const { result } = run(WED);
     await waitFor(() => expect(result.current.isPending).toBe(false));
     expect(result.current.workout.label).toBe("Push");
+    expect(result.current.workout.dayType).toBe(3);
     expect(calls.some((c) => c.startsWith("/api/exercises?day_type=3"))).toBe(true);
   });
 

@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getDayName } from "@dashboard/shared";
+import { getDayName, toLocalISO } from "@dashboard/shared";
 import type { Exercise } from "@dashboard/shared";
 import { useAuth } from "@/auth/AuthProvider";
 import { gymApi } from "@/api/gym";
@@ -43,6 +44,18 @@ export function GymPage() {
   });
 
   const { dayType, date, selectDay, selectDate, jumpTo } = useGymDay(split, splitPending, lastLogged);
+
+  // Home's Start/Continue names the day it shows, which on a swapped day is not
+  // the scheduled one, and sends it here. Applied once, on arrival; jumpTo
+  // latches, so the schedule and the rest-day fallback cannot pull it back.
+  const location = useLocation();
+  const sentDay = (location.state as { gymDay?: number } | null)?.gymDay;
+  const arrived = useRef(false);
+  useEffect(() => {
+    if (arrived.current || sentDay === undefined) return;
+    arrived.current = true;
+    jumpTo(sentDay, toLocalISO());
+  }, [sentDay, jumpTo]);
   const { exercises, addExercise, deleteExercise, reorder, renameExercise } = useExercises(dayType);
   const { session, sets, logSet, deleteSet } = useWorkoutDay(dayType, date);
   const { byName: lastTimes, isPending: lastPending } = useLastTimes(exercises.map((e) => e.exercise_name), date);

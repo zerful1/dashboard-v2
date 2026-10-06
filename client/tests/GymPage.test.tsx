@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, waitFor, within, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
 import { DEFAULT_SPLIT } from "@dashboard/shared";
 import { GymPage } from "../src/features/gym/GymPage";
 import { createQueryClient } from "../src/lib/queryClient";
@@ -44,14 +45,17 @@ function mockByPath() {
   return calls;
 }
 
-function renderPage() {
+/** `gymDay` is what Home's Start/Continue link carries. */
+function renderPage(gymDay?: number) {
   const qc = createQueryClient();
   const def = qc.getDefaultOptions();
   qc.setDefaultOptions({ ...def, queries: { ...def.queries, retry: false } });
   render(
-    <QueryClientProvider client={qc}>
-      <GymPage />
-    </QueryClientProvider>,
+    <MemoryRouter initialEntries={[{ pathname: "/gym", state: gymDay === undefined ? null : { gymDay } }]}>
+      <QueryClientProvider client={qc}>
+        <GymPage />
+      </QueryClientProvider>
+    </MemoryRouter>,
   );
 }
 
@@ -68,6 +72,16 @@ describe("Gym's header (redesign part 3a, §2)", () => {
     expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("Pull");
     expect(screen.getByLabelText(/change date/i)).toHaveValue(TUE);
     expect(screen.queryByRole("button", { name: "Back to today" })).toBeNull();
+  });
+
+  // Final review, important 3: on a swapped day Home names the day trained, so
+  // its button must open that day rather than the scheduled one.
+  it("opens on the day Home's button sent it to", async () => {
+    freeze();
+    mockByPath();
+    renderPage(1);
+    await waitFor(() => expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Legs"));
+    expect(screen.getByLabelText(/change date/i)).toHaveValue(TUE);
   });
 
   it("offers Back to today only on another date, and it returns to today", async () => {

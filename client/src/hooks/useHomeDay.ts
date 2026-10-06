@@ -102,7 +102,13 @@ export function useHomeDay(today: string) {
   return {
     isPending,
     top,
-    workout: { label: workoutToday?.label ?? "Rest day", isRest: workoutToday === null, progress, isError: workoutError },
+    workout: {
+      label: workoutToday?.label ?? "Rest day",
+      dayType: workoutToday?.dayType ?? null,
+      isRest: workoutToday === null,
+      progress,
+      isError: workoutError,
+    },
     food: {
       day,
       isError: (diary.isError && !diary.hasData) || (targets.isError && !targets.hasData),
