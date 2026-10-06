@@ -25,10 +25,11 @@ const set = (name: string) => ({
 const NEVER = () => new Promise(() => {});
 
 interface Data {
-  split?: () => unknown;
   weights?: () => unknown;
   exercises?: unknown[];
   sets?: () => unknown;
+  /** A path prefix that never answers. */
+  pending?: string;
   /** While `now` is true, today's own sources fail: a refetch after the data arrived. */
   down?: { now: boolean };
 }
@@ -40,7 +41,7 @@ const REFETCHED = ["/api/weight", "/api/nutrition/diary", "/api/nutrition/target
 function mockApi(d: Data = {}) {
   const calls: string[] = [];
   const routes: [string, () => unknown][] = [
-    ["/api/split", d.split ?? (() => DEFAULT_SPLIT)],
+    ["/api/split", () => DEFAULT_SPLIT],
     ["/api/workouts/sessions", () => []],
     ["/api/workouts/session?", () => ({ id: "s1", user_id: "u1", date: WED, day_type: 1, day_name: "Legs", notes: null, created_at: "" })],
     ["/api/workouts/sets", d.sets ?? (() => [])],
@@ -52,6 +53,7 @@ function mockApi(d: Data = {}) {
   ];
   vi.spyOn(apiModule, "api").mockImplementation(async (path: string) => {
     calls.push(path);
+    if (d.pending && path.startsWith(d.pending)) return (await NEVER()) as never;
     if (d.down?.now && REFETCHED.some((p) => path.startsWith(p))) throw new ApiError(500, "down");
     const hit = routes.find(([p]) => path.startsWith(p));
     if (!hit) throw new Error(`unexpected ${path}`);
@@ -131,14 +133,36 @@ describe("useHomeDay (redesign part 2, §3)", () => {
   });
 
   // Review focus 1: the slot is a conclusion, so it waits for every source.
-  it("stays pending while today's sets are still loading on a training day", async () => {
+  // One case per source (final review, important 2): each fails when its source
+  // leaves the gate, so "Weigh in" can't flash before today's weigh-in arrives.
+  it.each([
+    ["the split", "/api/split"],
+    ["this week's sessions", "/api/workouts/sessions"],
+    ["the weigh-ins", "/api/weight"],
+    ["today's food", "/api/nutrition/diary"],
+    ["the targets", "/api/nutrition/targets"],
+    ["the goals", "/api/goals"],
+    ["today's exercise list", "/api/exercises"],
+    ["today's sets", "/api/workouts/sets"],
+  ])("stays pending while waiting for %s on a training day", async (_source, path) => {
     freeze(WED);
-    mockApi({ weights: () => [weighIn(WED)], sets: NEVER });
+    mockApi({ weights: () => [weighIn(WED)], pending: path });
     const { result } = run(WED);
     await act(async () => {
       await new Promise((r) => setTimeout(r, 50));
     });
     expect(result.current.isPending).toBe(true);
+  });
+
+  // The positive complement: with every source answered, the gate opens.
+  it("stops pending once every source has answered", async () => {
+    freeze(WED);
+    mockApi({ weights: () => [weighIn(WED)] });
+    const { result } = run(WED);
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    expect(result.current.isPending).toBe(false);
   });
 
   // Final review, important 1. TanStack keeps the data when a refetch fails and
@@ -171,13 +195,4 @@ describe("useHomeDay (redesign part 2, §3)", () => {
     expect(result.current.workout.progress).not.toBeNull();
   });
 
-  it("stays pending while the split is still loading", async () => {
-    freeze(WED);
-    mockApi({ split: NEVER, weights: () => [weighIn(WED)] });
-    const { result } = run(WED);
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 50));
-    });
-    expect(result.current.isPending).toBe(true);
-  });
 });

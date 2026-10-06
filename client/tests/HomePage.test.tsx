@@ -131,10 +131,16 @@ describe("HomePage, today at a glance", () => {
     // useSplit returns DEFAULT_SPLIT until it loads, so an unloaded split names
     // a real but WRONG day on a customised split.
     freeze(WED);
-    mockApi({ weights: [weighIn(WED)], splitNeverResolves: true });
+    const calls = mockApi({ weights: [weighIn(WED)], splitNeverResolves: true });
     renderPage();
-    // Let every other source settle first, or the spinner is up for an
-    // unrelated reason and the guard holds either way.
+    // Let every other source be asked and answered first. Until Home's own
+    // queries start, the spinner is up for sign-in, and the guard holds either way.
+    await waitFor(() =>
+      expect(
+        ["GET /api/workouts/sessions", "GET /api/weight", "GET /api/nutrition/diary", "GET /api/nutrition/targets", "GET /api/goals"]
+          .every((p) => calls.some((c) => c.key.startsWith(p))),
+      ).toBe(true),
+    );
     await act(async () => {
       await new Promise((r) => setTimeout(r, 50));
     });
