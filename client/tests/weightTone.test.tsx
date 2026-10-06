@@ -5,7 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import type { Goal } from "@dashboard/shared";
 import { WeightStats } from "../src/features/weight/WeightStats";
-import { WeightTile } from "../src/features/home/WeightTile";
+import { WeightSection } from "../src/features/home/WeightSection";
 import type { WeightSummary } from "../src/features/weight/deriveWeight";
 import { useWeightGoalKg } from "../src/hooks/useGoals";
 import { createQueryClient } from "../src/lib/queryClient";
@@ -49,7 +49,7 @@ describe("weight trend tone (redesign spec §5.8)", () => {
   it("colours the Home tile the same way", () => {
     render(
       <MemoryRouter>
-        <WeightTile summary={summary({ deltaWeek: -0.6 })} goalKg={78} />
+        <WeightSection weight={{ summary: summary({ deltaWeek: -0.6 }), goalKg: 78, isError: false }} />
       </MemoryRouter>,
     );
     expect(toneOf(shown(/0\.6 kg in 7 days/)[0]!)).toBe("good");
@@ -59,7 +59,7 @@ describe("weight trend tone (redesign spec §5.8)", () => {
   it("leaves the Home tile neutral without a goal", () => {
     const { container } = render(
       <MemoryRouter>
-        <WeightTile summary={summary({ deltaWeek: -0.6 })} goalKg={null} />
+        <WeightSection weight={{ summary: summary({ deltaWeek: -0.6 }), goalKg: null, isError: false }} />
       </MemoryRouter>,
     );
     expect(container.querySelector(".text-good")).toBeNull();

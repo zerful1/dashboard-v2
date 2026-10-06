@@ -221,6 +221,14 @@ number, different label.
 `useSplit` therefore exposes `isPending` and deliberately does **not** expose
 `isLoading`.
 
+**Query options are shared, not re-declared.** `goalsQueryOptions`,
+`exercisesQueryOptions` and `workoutDayQueryOptions` are the one definition of
+their query; a second reader spreads them and overrides only `enabled` (Home
+disables the workout queries on a rest day). Two hooks declaring the same key
+separately is how a cache entry ends up with two shapes. Home's top slot
+(`useHomeDay`) waits for every source it reads, for the same reason as
+`useSplit`: it is a conclusion.
+
 ---
 
 ## Two version constants, moved for different reasons

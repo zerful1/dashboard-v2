@@ -16,7 +16,7 @@ export function WeightPage() {
   // isPending, not isLoading: while auth resolves the query is DISABLED, and a
   // disabled query reports isLoading false - so the page would paint "No
   // entries yet" over a history that simply had not arrived. Same defect as
-  // the one fixed in useHomeOverview, in the smaller of the two places.
+  // the one fixed in useHomeDay, in the smaller of the two places.
   const { entries, isPending, isError, saveWeight, deleteWeight } = useWeights();
   const goalKg = useWeightGoalKg();
   const [editing, setEditing] = useState<BodyWeightEntry | null>(null);

@@ -4,7 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { toLocalISO, type Exercise, type HabitSummary } from "@dashboard/shared";
 import { ExerciseRow } from "../src/features/gym/ExerciseRow";
 import { HabitRow } from "../src/features/habits/HabitRow";
-import { WeekTile } from "../src/features/home/WeekTile";
+import { WeekLine } from "../src/features/home/WeekLine";
 import { TodayHabitsCard } from "../src/features/habits/TodayHabitsCard";
 import { createQueryClient } from "../src/lib/queryClient";
 import * as apiModule from "../src/lib/api";
@@ -44,8 +44,8 @@ describe("unticked done marks", () => {
   });
 
   // The positive complement: Home's week dots already use dim.
-  it("rings an unlogged day of the week in dim", () => {
-    const { container } = render(<WeekTile week={{ logged: 0, target: 4, days: [false, false, false, false, false, false, false] }} />);
+  it("rings an unlogged day of the week in dim, on Home's week line", () => {
+    const { container } = render(<WeekLine week={{ logged: 0, target: 4, days: [false, false, false, false, false, false, false] }} />);
     expect(container.querySelector('[data-part="mark"]')).toHaveClass("border-dim");
   });
 

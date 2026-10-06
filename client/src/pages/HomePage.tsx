@@ -1,62 +1,60 @@
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/auth/AuthProvider";
-import { useHomeOverview } from "@/hooks/useHomeOverview";
-import { useWeightGoalKg } from "@/hooks/useGoals";
-import { profileQuery } from "@/lib/profileQuery";
-import { TodayCard } from "@/features/home/TodayCard";
-import { WeekTile } from "@/features/home/WeekTile";
-import { WeightTile } from "@/features/home/WeightTile";
-import { LastSessionCard } from "@/features/home/LastSessionCard";
-import { TodayHabitsCard } from "@/features/habits/TodayHabitsCard";
-import { Card } from "@/components/ui/Card";
+import { useState } from "react";
+import { useToday } from "@/hooks/useToday";
+import { useHomeDay } from "@/hooks/useHomeDay";
+import { longDate } from "@/lib/dates";
 import { Spinner } from "@/components/ui/Spinner";
+import { TodayHabitsCard } from "@/features/habits/TodayHabitsCard";
+import { WeighIn } from "@/features/home/WeighIn";
+import { WorkoutSection } from "@/features/home/WorkoutSection";
+import { FoodSection } from "@/features/home/FoodSection";
+import { WeightSection } from "@/features/home/WeightSection";
+import { WeekLine } from "@/features/home/WeekLine";
+import { AddFoodSheet } from "@/features/nutrition/AddFoodSheet";
 
+/**
+ * Today at a glance (redesign part 2). The top slot holds the next thing and
+ * the screen's one white action — weigh-in, then workout, then food — and the
+ * rest of today follows in a fixed order, minus whichever is on top.
+ */
 export function HomePage() {
-  const { user } = useAuth();
-  const { data: profile } = useQuery(profileQuery);
-  const { today, week, lastSession, weight, isLoading } = useHomeOverview();
-  const goalKg = useWeightGoalKg();
-
-  // Three cases, one answer. `display_name` is `NOT NULL DEFAULT ''`, so a
-  // freshly registered user has an empty one; the query may still be in flight
-  // on first paint; and it may have failed outright. The email is the only
-  // value guaranteed present in all three, and `||` (not `??`) is what makes
-  // the empty-string case fall through as well as the missing one.
-  const heading = profile?.display_name || user?.email;
+  // Kept current: an app left open overnight rolls to the new day.
+  const today = useToday();
+  const home = useHomeDay(today);
+  const [adding, setAdding] = useState(false);
+  const openAdd = () => setAdding(true);
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-xl space-y-4">
       <div>
-        <div className="lbl text-accent">Overview</div>
-        <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">{heading}</h1>
+        <div className="lbl text-accent">{longDate(today)}</div>
+        <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">Today</h1>
       </div>
 
-      {isLoading ? (
-        <Spinner label="Loading your overview" />
+      {home.isPending ? (
+        <Spinner label="Loading your day" />
       ) : (
         <>
-          <TodayCard today={today} />
-          <TodayHabitsCard />
-
-          {/* Two up from the smallest screen: these tiles are short enough that
-              stacking them wastes the fold on a phone. */}
-          <div className="grid grid-cols-2 gap-4">
-            <WeightTile summary={weight} goalKg={goalKg} />
-            <WeekTile week={week} />
-          </div>
-
-          {lastSession ? (
-            <LastSessionCard session={lastSession} />
-          ) : (
-            <Card>
-              <div className="lbl">No sessions yet</div>
-              <p className="mt-2 text-sm text-muted">
-                Log your first workout and it will show up here.
-              </p>
-            </Card>
+          {home.top === "weigh-in" && (
+            <WeighIn
+              latest={home.weight.summary.latest}
+              latestDate={home.weight.summary.latestDate}
+              today={today}
+              save={home.weight.saveWeight}
+            />
           )}
+          {home.top === "workout" && <WorkoutSection prominent workout={home.workout} />}
+          {home.top === "food" && <FoodSection prominent food={home.food} onAdd={openAdd} />}
+
+          {home.top !== "workout" && <WorkoutSection workout={home.workout} />}
+          {home.top !== "food" && <FoodSection food={home.food} onAdd={openAdd} />}
+          <TodayHabitsCard />
+          {/* The weigh-in on top already says the last weight. */}
+          {home.top !== "weigh-in" && <WeightSection weight={home.weight} />}
+          <WeekLine week={home.week} />
         </>
       )}
+
+      <AddFoodSheet open={adding} onClose={() => setAdding(false)} date={today} addEntry={home.food.addEntry} />
     </div>
   );
 }
