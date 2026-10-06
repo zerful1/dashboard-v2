@@ -107,6 +107,12 @@ export interface WorkoutSet {
   is_bodyweight: boolean;
 }
 
+/** The last time one exercise was done (redesign part 3a, §4): that session's date, and its sets of it. */
+export interface LastTime {
+  date: string;
+  sets: WorkoutSet[];
+}
+
 /**
  * One cardio entry within a session. Named for what it is — v1 called the table
  * `cardio_sessions`, which was a misnomer since it stores entries keyed by session.
