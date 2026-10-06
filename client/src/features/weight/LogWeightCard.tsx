@@ -44,7 +44,7 @@ export function LogWeightCard({
   const isToday = date === toLocalISO();
 
   return (
-    <div className="rounded-card border border-raised bg-surface p-4">
+    <div className="border-t border-raised py-4">
       <div className="mb-3 flex items-center justify-between">
         <span className="lbl">{existing === null ? "Log weight" : "Edit entry"}</span>
         <DateSelector value={date} onChange={setDate} />

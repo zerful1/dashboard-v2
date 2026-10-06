@@ -18,12 +18,17 @@ Run from the repo root, not here:
   sets `credentials: 'include'` so the session cookie travels.
 - Design tokens live in `src/styles.css` under Tailwind v4's `@theme`. Use the
   role names (`bg`, `surface`, `raised`, `muted`, `accent`…), never raw hex.
-- `raised` (#292524) is for borders and gridlines only — never for data.
-- The accent marks exactly three roles and nothing else: **filled** (the one
-  action to take), **tinted** (the currently selected item in a set), and the
-  `lbl` micro-label (identity and wayfinding chrome — wordmark, page eyebrow,
-  active nav item). Anything else is not terracotta. Semantic state uses
-  `sage` / `gold` / `negative`.
+- `raised` (#1c1c1c) is for hairlines and gridlines only — never for data.
+  `edge` (#333333) outlines controls: inputs, outline buttons, unticked rings.
+- White is the only accent (the 2026-10-06 redesign). A **filled white pill** is
+  the one action to take; **tinted** (`bg-accent/10`) is the selected item in a
+  set; a **small filled white circle** is a done mark; and identity chrome
+  (wordmark, page eyebrow, active tab). `tests/accentRule.test.ts` lists every
+  file allowed a solid `bg-accent`. Signal colours have one job each: `good`
+  (toward your goal), `caution` (over a target, warnings), `negative` (errors,
+  destructive). There is no `sage`, `gold` or terracotta any more: Tailwind 4
+  compiles an unknown token's class to nothing, silently. See CLAUDE.md's
+  "Frontend conventions".
 - **Errors: a form submission renders its own inline error next to its
   controls; everything else toasts.** Inline is `FormError` (whole-submission)
   or `Field`'s `error` (one field). Everything else — autosaves, background

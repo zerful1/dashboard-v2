@@ -77,10 +77,10 @@ export function CustomFoodForm({ onNext, barcode = null }: { onNext: (food: Food
         <Input id="custom-brand" value={f.brand} onChange={set("brand")} />
       </Field>
       <div className="flex gap-2">
-        <Button variant={basis === "100g" ? "selected" : "ghost"} onClick={() => setBasis("100g")}>
+        <Button variant={basis === "100g" ? "selected" : "subtle"} onClick={() => setBasis("100g")}>
           Per 100 g
         </Button>
-        <Button variant={basis === "serving" ? "selected" : "ghost"} onClick={() => setBasis("serving")}>
+        <Button variant={basis === "serving" ? "selected" : "subtle"} onClick={() => setBasis("serving")}>
           Per serving
         </Button>
       </div>

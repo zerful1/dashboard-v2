@@ -31,7 +31,7 @@ export function LastSessionCard({ session }: { session: WorkoutSession }) {
   }));
 
   return (
-    <Link to="/gym" className="block rounded-card border border-raised bg-surface p-4">
+    <Link to="/gym" className="block border-t border-raised py-4">
       <div className="lbl">Last session</div>
       <div className="mt-1 text-sm font-semibold">
         {/* The SNAPSHOTTED name, rendered directly. Resolving it through

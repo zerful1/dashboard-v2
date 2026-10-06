@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { RouterProvider } from "react-router-dom";
 import { Toaster } from "sonner";
@@ -28,8 +29,38 @@ export function App() {
     >
       <AuthProvider>
         <RouterProvider router={router} />
-        <Toaster theme="dark" position="top-center" richColors />
+        <Toaster
+          theme="dark"
+          position="top-center"
+          // The kit's toast: a raised black panel and a hairline edge, with the
+          // signal colour only in the icon (redesign spec §5.7). sonner reads
+          // these variables; richColors would flood the whole toast instead.
+          style={
+            {
+              "--normal-bg": "var(--color-surface)",
+              "--normal-border": "var(--color-edge)",
+              "--normal-text": "var(--color-text)",
+              "--border-radius": "14px",
+              fontFamily: "var(--font-sans)",
+            } as CSSProperties
+          }
+          icons={{
+            success: <ToastDot className="bg-good">✓</ToastDot>,
+            error: <ToastDot className="bg-negative">!</ToastDot>,
+          }}
+        />
       </AuthProvider>
     </PersistQueryClientProvider>
+  );
+}
+
+function ToastDot({ className, children }: { className: string; children: string }) {
+  return (
+    <span
+      aria-hidden
+      className={`flex h-[18px] w-[18px] items-center justify-center rounded-full text-[11px] font-bold text-bg ${className}`}
+    >
+      {children}
+    </span>
   );
 }

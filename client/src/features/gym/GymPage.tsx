@@ -87,7 +87,7 @@ export function GymPage() {
           onClick={() => setEditMode((v) => !v)}
           aria-label={editMode ? "Done editing" : "Edit exercises"}
           className={cn(
-            "shrink-0 rounded-lg p-2",
+            "shrink-0 rounded-full p-2",
             editMode ? "bg-accent/10 text-accent" : "text-muted",
           )}
         >
@@ -98,7 +98,7 @@ export function GymPage() {
       <div className="flex items-end justify-between gap-2">
         <div className="min-w-0">
           <div className="lbl text-accent">Gym</div>
-          <h1 className="mt-1 text-2xl font-extrabold tracking-tight">
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
             {getDayName(split, dayType)}
           </h1>
         </div>
@@ -108,14 +108,14 @@ export function GymPage() {
       {/* The day selector and date picker above stay visible on ALL three tabs.
           They are the page's context, and hiding them on History would make the
           Edit-in-Log hand-off look like it did nothing. */}
-      <div className="flex rounded-lg border border-raised bg-surface p-0.5">
+      <div className="flex rounded-full border border-edge p-0.5">
         {SUB_TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             aria-pressed={tab === t.key}
             className={cn(
-              "flex-1 rounded-md py-1.5 font-mono text-[10px] uppercase tracking-[0.12em]",
+              "flex-1 rounded-full py-1.5 text-xs font-medium",
               // Tinted — a selection, not the screen's action.
               tab === t.key ? "bg-accent/10 text-accent" : "text-muted",
             )}

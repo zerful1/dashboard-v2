@@ -44,12 +44,19 @@ export function TodayHabitsCard() {
                 aria-pressed={done}
                 disabled={isUnsaved(h)}
                 onClick={() => setDone.mutate({ id: h.id, date: today, done: !done })}
-                className={cn(
-                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border disabled:opacity-40",
-                  done ? "border-transparent bg-accent/10 text-accent" : "border-raised text-dim",
-                )}
+                className="flex h-9 w-9 shrink-0 items-center justify-center disabled:opacity-40"
               >
-                <Check size={18} aria-hidden />
+                {/* A white circle when ticked: a done mark (the accent rule's
+                    circle), inside a full-size tap target. */}
+                <span
+                  data-part="mark"
+                  className={cn(
+                    "flex h-5 w-5 items-center justify-center rounded-full",
+                    done ? "bg-accent text-bg" : "border-[1.5px] border-dim text-muted",
+                  )}
+                >
+                  <Check size={12} strokeWidth={3} aria-hidden />
+                </span>
               </button>
             </li>
           );

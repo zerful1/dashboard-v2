@@ -149,13 +149,13 @@ export function ExerciseSheet({
             onClick={() => setIsBodyweight((v) => !v)}
             aria-pressed={isBodyweight}
             className={cn(
-              "flex-1 rounded-lg border py-2 font-mono text-[10px] uppercase tracking-[0.12em]",
+              "flex-1 rounded-full py-2 text-xs font-medium",
               isBodyweight
-                ? "border-accent/40 bg-accent/10 text-accent"
-                : "border-raised bg-surface text-muted",
+                ? "bg-accent/10 text-accent"
+                : "border border-edge text-muted",
             )}
           >
-            {isBodyweight ? "Bodyweight ON" : "Mark as bodyweight"}
+            {isBodyweight ? "Bodyweight: on" : "Mark as bodyweight"}
           </button>
           <button
             onClick={() => {
@@ -164,11 +164,11 @@ export function ExerciseSheet({
             }}
             aria-pressed={sides}
             className={cn(
-              "flex-1 rounded-lg border py-2 font-mono text-[10px] uppercase tracking-[0.12em]",
-              sides ? "border-accent/40 bg-accent/10 text-accent" : "border-raised bg-surface text-muted",
+              "flex-1 rounded-full py-2 text-xs font-medium",
+              sides ? "bg-accent/10 text-accent" : "border border-edge text-muted",
             )}
           >
-            {sides ? "Left / right ON" : "Left / right"}
+            {sides ? "Left / right: on" : "Left / right"}
           </button>
         </div>
 

@@ -19,7 +19,7 @@ export function StatsTab() {
 
   if (names.length === 0) {
     return (
-      <div className="rounded-card border border-raised bg-surface p-6 text-center text-sm text-dim">
+      <div className="py-6 text-center text-sm text-muted">
         Log some sets and your stats will appear here.
       </div>
     );
@@ -35,7 +35,7 @@ export function StatsTab() {
           id="stats-exercise"
           value={selected ?? ""}
           onChange={(e) => setSelected(e.target.value)}
-          className="mt-1.5 w-full rounded-lg border border-raised bg-surface px-3 py-2 text-sm text-text focus:border-accent focus:outline-none"
+          className="mt-1.5 w-full rounded-xl border border-edge bg-surface px-3 py-2 text-sm text-text focus:border-accent focus:outline-none"
         >
           {/* From history, not the template — exercises you have stopped doing
               stay reachable, and they are often the interesting ones. */}

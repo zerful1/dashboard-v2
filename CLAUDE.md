@@ -276,12 +276,36 @@ with the banner rather than reading as some other fault.
 
 ## Frontend conventions
 
-**The accent colour marks exactly three roles.** Filled (`bg-accent text-bg`) is
-*the one action to take* — at most one per screen. Tinted (`bg-accent/10
-text-accent`) is *the currently selected item in a set* — a state, never an
-action. The `lbl` micro-label carries it for identity chrome (wordmark, page
-eyebrow, active nav item), which is outside the rule. Anything else wanting to
-be terracotta is one of those three or it is not terracotta.
+**White is the only accent, and it has four roles** (the 2026-10-06 redesign
+replaced terracotta). A filled white **pill** (`bg-accent text-bg`, the
+`primary` Button) is *the one action to take* — at most one per screen. Tinted
+(`bg-accent/10 text-accent`, a grey pill on black) is *the selected item in a
+set* — a state, never an action. A small filled white **circle** (24 px or
+less: a set tick, a habit tick, a week dot) is a *done mark*, a state its shape
+keeps from reading as a button. And identity chrome: the wordmark, the page
+eyebrow, the active tab. `tests/accentRule.test.ts` lists every file allowed a
+solid `bg-accent`, with its reason; adding one is a decision, not a
+convenience.
+
+**Each signal colour has one job.** `good` (green) means *toward your goal* or
+progress advice; `caution` (amber) means over a target or a warning;
+`negative` (red) means an error or a destructive action. A weight trend is only
+ever `good` or white (`trendTone` in shared): whether a weight is bad depends
+on the phase, and the goal already says what progress is.
+
+**No boxes.** Grouping is `Card` (content under a hairline) or `List` (rows
+between hairlines). `rounded-card` is for media only (the barcode camera). The
+redesign swept 21 hand-made boxes onto these two; a new box brings back the
+look it replaced.
+
+**Inter is bundled** (`@fontsource-variable/inter`, imported in `index.tsx`).
+Never load a font from a CDN: the app must draw itself offline, and a font host
+is a third-party request on every first visit. `tests/fonts.test.ts` fails on
+either.
+
+**`figure` for big numbers, `lbl` for labels.** `figure` is light and tabular;
+`lbl` is 11 px grey sentence case. Neither uppercases, so write label strings
+the way they should read.
 
 **`raised` is borders and gridlines only.** Never data.
 

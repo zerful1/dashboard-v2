@@ -25,7 +25,7 @@ export function HabitsPage() {
       <div className="flex items-end justify-between gap-3">
         <div>
           <div className="lbl text-accent">Habits</div>
-          <h1 className="mt-1.5 text-2xl font-extrabold tracking-tight">Daily habits</h1>
+          <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">Daily habits</h1>
         </div>
         {habits.length > 0 && (
           // Tinted while on: a state, not an action (the accent rule).

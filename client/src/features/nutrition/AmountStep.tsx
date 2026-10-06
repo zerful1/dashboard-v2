@@ -59,10 +59,10 @@ export function AmountStep({
       </div>
 
       <div className="flex gap-2">
-        <Button variant={effectiveUnit === "g" ? "selected" : "ghost"} disabled={!canWeigh} onClick={() => switchUnit("g")}>
+        <Button variant={effectiveUnit === "g" ? "selected" : "subtle"} disabled={!canWeigh} onClick={() => switchUnit("g")}>
           g
         </Button>
-        <Button variant={effectiveUnit === "serving" ? "selected" : "ghost"} onClick={() => switchUnit("serving")}>
+        <Button variant={effectiveUnit === "serving" ? "selected" : "subtle"} onClick={() => switchUnit("serving")}>
           Serving
         </Button>
       </div>
@@ -72,7 +72,7 @@ export function AmountStep({
           aria-label="Serving size"
           value={servingIdx}
           onChange={(e) => setServingIdx(Number(e.target.value))}
-          className="w-full rounded-lg border border-raised bg-surface px-3 py-2.5 text-sm text-text"
+          className="w-full rounded-xl border border-edge bg-surface px-3 py-2.5 text-sm text-text"
         >
           {choice.servings.map((s, i) => (
             <option key={`${s.label}-${i}`} value={i}>

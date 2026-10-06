@@ -2,6 +2,7 @@ import {
   CartesianGrid,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -26,6 +27,8 @@ interface Props {
   points: ChartPoint[];
   /** Two points — the OLS line's endpoints, from linearTrend in shared. */
   trend: ChartPoint[];
+  /** The weight goal, drawn dashed; null or absent draws none. */
+  goalKg?: number | null;
 }
 
 /**
@@ -41,9 +44,10 @@ interface Props {
  *
  * Series colours are `var(--color-*)` rather than hexes so the chart inherits
  * the app's palette. `raised` is the gridline colour and appears nowhere as
- * data, per the token rule.
+ * data, per the token rule. Since the redesign the weigh-ins are dots and the
+ * fitted trend is the white line.
  */
-export function WeightChart({ points, trend }: Props) {
+export function WeightChart({ points, trend, goalKg = null }: Props) {
   // One row per point, with the trend value present only at its two endpoints.
   // `connectNulls` then draws a single straight segment between them, which is
   // what keeps the overlay reading as a trend rather than as a second series
@@ -58,15 +62,12 @@ export function WeightChart({ points, trend }: Props) {
   }));
 
   if (points.length === 0) {
-    return (
-      <div className="flex h-56 items-center justify-center rounded-card border border-raised bg-surface">
-        <p className="text-sm text-dim">No weigh-ins to chart yet.</p>
-      </div>
-    );
+    return <p className="py-14 text-center text-sm text-muted">No weigh-ins to chart yet.</p>;
   }
 
+  const lastIndex = points.length - 1;
   return (
-    <div className="rounded-card border border-raised bg-surface p-4">
+    <div className="border-t border-raised py-4">
       <div className="lbl">Weight · {points.length} entries</div>
       <div className="mt-3 h-56">
         <ResponsiveContainer width="100%" height="100%">
@@ -77,6 +78,7 @@ export function WeightChart({ points, trend }: Props) {
               stroke="var(--color-dim)"
               tick={{ fontSize: 10 }}
               tickLine={false}
+              axisLine={false}
               // Ten months of weigh-ins would overlap every label. Start and end
               // are the two a reader actually looks for.
               interval="preserveStartEnd"
@@ -89,6 +91,7 @@ export function WeightChart({ points, trend }: Props) {
               stroke="var(--color-dim)"
               tick={{ fontSize: 10 }}
               tickLine={false}
+              axisLine={false}
               width={44}
               domain={["dataMin - 1", "dataMax + 1"]}
               tickFormatter={(v: number) => v.toFixed(0)}
@@ -97,8 +100,8 @@ export function WeightChart({ points, trend }: Props) {
               cursor={{ stroke: "var(--color-raised)" }}
               contentStyle={{
                 background: "var(--color-surface)",
-                border: "1px solid var(--color-raised)",
-                borderRadius: "11px",
+                border: "1px solid var(--color-edge)",
+                borderRadius: "12px",
                 fontSize: "12px",
               }}
               labelStyle={{ color: "var(--color-muted)" }}
@@ -110,22 +113,41 @@ export function WeightChart({ points, trend }: Props) {
                 name === "kg" ? "Weight" : "Trend",
               ]}
             />
+            {goalKg !== null && (
+              // Extends the y-axis to reach it: a goal off the chart is the one
+              // a reader most needs to see (redesign spec §5.8).
+              <ReferenceLine
+                y={goalKg}
+                stroke="var(--color-dim)"
+                strokeDasharray="3 4"
+                ifOverflow="extendDomain"
+                label={{ value: `goal ${goalKg}`, position: "insideBottomRight", fill: "var(--color-dim)", fontSize: 10 }}
+              />
+            )}
+            {/* Weigh-ins as grey dots, the latest a white ring; the trend below
+                is the one white line (the approved kit). */}
             <Line
               type="monotone"
               dataKey="kg"
-              stroke="var(--color-accent)"
-              strokeWidth={2}
-              dot={false}
-              // The one accent on this card, and it is the data itself.
-              activeDot={{ r: 3, fill: "var(--color-accent)" }}
+              stroke="none"
               isAnimationActive={false}
+              activeDot={{ r: 4, fill: "var(--color-accent)", stroke: "none" }}
+              dot={(props: unknown) => {
+                const { cx, cy, index } = props as { cx?: number; cy?: number; index?: number };
+                const key = `dot-${index}`;
+                if (cx === undefined || cy === undefined) return <g key={key} />;
+                return index === lastIndex ? (
+                  <circle key={key} cx={cx} cy={cy} r={4} fill="var(--color-bg)" stroke="var(--color-accent)" strokeWidth={2} />
+                ) : (
+                  <circle key={key} cx={cx} cy={cy} r={2} fill="var(--color-dim)" />
+                );
+              }}
             />
             <Line
               type="linear"
               dataKey="trend"
-              stroke="var(--color-muted)"
-              strokeWidth={1.5}
-              strokeDasharray="4 4"
+              stroke="var(--color-accent)"
+              strokeWidth={2}
               dot={false}
               activeDot={false}
               connectNulls

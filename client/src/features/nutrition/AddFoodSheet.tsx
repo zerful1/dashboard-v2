@@ -2,8 +2,9 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { customToChoice, entryToChoice, hitToChoice, itemToChoice, type FoodChoice } from "@dashboard/shared";
 import type { FoodHit, FoodLogUnit, RecentFood } from "@dashboard/shared";
 import { Sheet } from "@/components/ui/Sheet";
-import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { List } from "@/components/ui/List";
+import { Tabs } from "@/components/ui/Tabs";
 import { Spinner } from "@/components/ui/Spinner";
 import { useFoodSearch, useRecents } from "@/hooks/useFoods";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -79,19 +80,7 @@ export function AddFoodSheet({
           />
         ) : (
           <>
-            <div role="tablist" className="mb-3 flex gap-2">
-              {TABS.map((t) => (
-                <Button
-                  key={t.id}
-                  role="tab"
-                  aria-selected={shown === t.id}
-                  variant={shown === t.id ? "selected" : "ghost"}
-                  onClick={() => setTab(t.id)}
-                >
-                  {t.label}
-                </Button>
-              ))}
-            </div>
+            <Tabs tabs={TABS} value={shown} onChange={setTab} className="mb-3" />
             {shown === null && <Spinner label="Loading" />}
             {shown === "search" && <SearchTab q={q} setQ={setQ} onPick={(hit) => setChosen({ choice: hitToChoice(hit) })} />}
             {shown === "recent" && (
@@ -144,19 +133,19 @@ function SearchTab({ q, setQ, onPick }: { q: string; setQ: (q: string) => void; 
     body = (
       <div className="space-y-2">
         {warnings?.map((w) => (
-          <p key={w} className="text-xs text-gold">
+          <p key={w} className="text-xs text-caution">
             {w}
           </p>
         ))}
         {hits.length === 0 ? (
           <p className="text-sm text-dim">No matches.</p>
         ) : (
-          <div className="overflow-hidden rounded-card border border-raised">
-            {hits.map((h, i) => (
+          <List>
+            {hits.map((h) => (
               <button
                 key={`${h.source}-${h.externalId}`}
                 onClick={() => onPick(h)}
-                className={`flex w-full items-center gap-3 px-3 py-2.5 text-left ${i > 0 ? "border-t border-raised" : ""}`}
+                className="flex w-full items-center gap-3 py-2.5 text-left hover:bg-accent/5"
               >
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm">{h.name}</span>
@@ -169,7 +158,7 @@ function SearchTab({ q, setQ, onPick }: { q: string; setQ: (q: string) => void; 
                 </span>
               </button>
             ))}
-          </div>
+          </List>
         )}
       </div>
     );
@@ -189,12 +178,12 @@ function RecentTab({ onPick }: { onPick: (r: RecentFood) => void }) {
   if (recents.isError) return <p className="text-sm text-muted">Could not load recent foods.</p>;
   if (recents.data.length === 0) return <p className="text-sm text-dim">Foods you log will appear here.</p>;
   return (
-    <div className="overflow-hidden rounded-card border border-raised">
-      {recents.data.map((r, i) => (
+    <List>
+      {recents.data.map((r) => (
         <button
           key={r.entry.id}
           onClick={() => onPick(r)}
-          className={`flex w-full items-center gap-3 px-3 py-2.5 text-left ${i > 0 ? "border-t border-raised" : ""}`}
+          className="flex w-full items-center gap-3 py-2.5 text-left hover:bg-accent/5"
         >
           <span className="min-w-0 flex-1 truncate text-sm">
             <span>{r.entry.name}</span> <span className="text-muted">· {amountOf(r.entry)}</span>
@@ -202,6 +191,6 @@ function RecentTab({ onPick }: { onPick: (r: RecentFood) => void }) {
           <span className="tnum shrink-0 text-xs text-muted">{Math.round(r.entry.calories)}</span>
         </button>
       ))}
-    </div>
+    </List>
   );
 }

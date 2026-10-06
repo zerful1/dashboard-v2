@@ -20,59 +20,43 @@ const PUBLIC = resolve(HERE, "../public");
 
 const SOURCE = readFileSync(resolve(PUBLIC, "favicon.svg"), "utf8");
 
-/** The tile colour, from the SVG's own background rect. */
-const TILE = "#1C1917";
+/** The tile colour: the page's black. */
+const TILE = "#000000";
 
 /**
- * The mark alone — the source with its rounded background rect removed.
- *
- * Taken from the SVG rather than restated here, so editing the artwork cannot
- * leave the maskable icon drawing a previous version of it.
+ * The mark alone — the source with its svg wrapper and its tile rect removed.
+ * Taken from the SVG rather than restated, so editing the artwork cannot leave
+ * the PNGs drawing a previous version of it.
  */
-const MARK = SOURCE.replace(/\s*<rect width="32" height="32"[^>]*><\/rect>/, "");
+const MARK = SOURCE.replace(/<svg[^>]*>/, "")
+  .replace("</svg>", "")
+  .replace(/\s*<rect[^>]*><\/rect>/, "")
+  .trim();
 
 /**
- * Normal icons: the artwork as-is, rounded corners included.
+ * Every PNG is FULL-BLEED black: no corner radius, no edge. iOS and Android
+ * apply their own masks, and a pre-rounded tile would show the wallpaper in
+ * the gap between our corners and theirs (redesign spec §6).
  *
- * `any` purpose icons are shown as drawn, so the rx="7.5" tile is what the
- * platform displays and the mark keeps its natural 56.25% of the canvas.
+ * `scale` shrinks the mark about the centre. Only maskable needs it: the
+ * guaranteed-visible area is a circle of radius 40%, and the mark's dot edge
+ * sits sqrt(8.5² + 5.5²) + 2.9 = 13.0 units from centre — 40.7% of 32, just
+ * outside. At 0.8 it is 32.5%.
  */
-function plain(size) {
-  return SOURCE.replace('width="32" height="32"', `width="${size}" height="${size}"`);
-}
-
-/**
- * Maskable: background bled to all four edges, mark shrunk to 50%.
- *
- * Two separate requirements, both mandatory and neither cosmetic:
- *
- * 1. NO corner radius. Android applies its own mask — circle, squircle,
- *    teardrop, whatever the launcher uses — so a pre-rounded tile shows the
- *    page colour in the gap between our corners and theirs.
- * 2. The mark at ~50%, not its natural 56.25%. Only the centre 80% of a
- *    maskable icon is guaranteed visible, i.e. a safe circle of radius 40%.
- *    At natural size the outer squares' far corners sit at
- *    sqrt(9^2 + 9^2) / 32 = 39.8% from centre — inside 40% by a fifth of a
- *    percent, which is not a margin. At 50% they sit at 35.4%.
- */
-function maskable(size) {
-  // 50 / 56.25: shrink the mark from its natural share of the canvas to the
-  // share that survives a circular crop. Scaled about the centre, not the
-  // origin, or it would drift up and left.
-  const scale = 50 / 56.25;
-  const inner = MARK.replace(/<svg[^>]*>/, "").replace("</svg>", "").trim();
+function tile(size, scale) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 32 32">
   <rect width="32" height="32" fill="${TILE}"></rect>
   <g transform="translate(16 16) scale(${scale}) translate(-16 -16)">
-    ${inner}
+    ${MARK}
   </g>
 </svg>`;
 }
 
 const TARGETS = [
-  ["icon-192.png", plain(192), 192],
-  ["icon-512.png", plain(512), 512],
-  ["icon-maskable-512.png", maskable(512), 512],
+  ["apple-touch-icon.png", tile(180, 1), 180],
+  ["icon-192.png", tile(192, 1), 192],
+  ["icon-512.png", tile(512, 1), 512],
+  ["icon-maskable-512.png", tile(512, 0.8), 512],
 ];
 
 for (const [name, svg, size] of TARGETS) {

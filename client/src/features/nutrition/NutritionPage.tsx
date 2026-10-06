@@ -45,7 +45,7 @@ export function NutritionPage() {
     <div className="space-y-4">
       <div>
         <div className="lbl text-accent">Food</div>
-        <h1 className="mt-1.5 text-2xl font-extrabold tracking-tight">Nutrition</h1>
+        <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">Nutrition</h1>
       </div>
 
       <div className="flex items-center justify-between">

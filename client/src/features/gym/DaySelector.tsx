@@ -29,15 +29,15 @@ export function DaySelector({
             transition={springOrNone(TRANSITIONS.snappy, safe)}
             aria-pressed={active}
             className={cn(
-              "flex-1 whitespace-nowrap rounded-lg border px-3 py-2 text-xs transition-colors",
+              "flex-1 whitespace-nowrap rounded-full px-3 py-2 text-xs font-medium transition-colors",
               // TINTED, not filled. This is a selection within a set, and the
               // filled accent belongs to the one action on the screen — which
-              // is "Add set" in the exercise sheet. Two filled terracotta
+              // is "Add set" in the exercise sheet. Two filled white
               // elements meaning different things is what the role rule exists
               // to prevent.
               active
-                ? "border-accent/40 bg-accent/10 font-semibold text-accent"
-                : "border-raised bg-surface text-muted",
+                ? "bg-accent/10 font-semibold text-accent"
+                : "text-muted hover:text-text",
             )}
           >
             {label}

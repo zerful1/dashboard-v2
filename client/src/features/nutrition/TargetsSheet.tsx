@@ -78,7 +78,7 @@ export function TargetsSheet({
 
         <div className="flex gap-2">
           {GOALS.map((g) => (
-            <Button key={g.id} variant={goal === g.id ? "selected" : "ghost"} onClick={() => setGoal(g.id)}>
+            <Button key={g.id} variant={goal === g.id ? "selected" : "subtle"} onClick={() => setGoal(g.id)}>
               {g.label}
             </Button>
           ))}
@@ -218,7 +218,7 @@ function BodyDetails() {
         </div>
         <div className="flex gap-2">
           {(["male", "female"] as const).map((s) => (
-            <Button key={s} variant={sex === s ? "selected" : "ghost"} onClick={() => setSex(sex === s ? null : s)}>
+            <Button key={s} variant={sex === s ? "selected" : "subtle"} onClick={() => setSex(sex === s ? null : s)}>
               {s === "male" ? "Male" : "Female"}
             </Button>
           ))}
@@ -228,7 +228,7 @@ function BodyDetails() {
             id="b-activity"
             value={activity}
             onChange={(e) => setActivity(e.target.value as ActivityLevel)}
-            className="w-full rounded-lg border border-raised bg-surface px-3 py-2.5 text-sm text-text"
+            className="w-full rounded-xl border border-edge bg-surface px-3 py-2.5 text-sm text-text"
           >
             <option value="">Choose…</option>
             {ACTIVITY.map((a) => (

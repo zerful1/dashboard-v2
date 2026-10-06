@@ -1,5 +1,5 @@
 /* Minimal runtime cache. Bump CACHE to expire every old entry at once. */
-const CACHE = 'dashboard-v1';
+const CACHE = 'dashboard-v2';
 
 self.addEventListener('install', (e) => {
   // The shell only. Hashed assets arrive through the fetch handler as they are
