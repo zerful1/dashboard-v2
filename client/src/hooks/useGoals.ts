@@ -3,7 +3,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { insightsApi } from "@/api/insights";
 
 /** The goals query, shared by useGoals and useWeightGoalKg so both read one cache entry. */
-function goalsQueryOptions(userId: string | undefined) {
+export function goalsQueryOptions(userId: string | undefined) {
   return queryOptions({
     queryKey: ["goals", userId ?? "anon"],
     queryFn: insightsApi.goals,

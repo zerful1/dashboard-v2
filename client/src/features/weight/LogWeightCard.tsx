@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/Input";
 import { Field } from "@/components/ui/Field";
 import { DateSelector } from "@/components/ui/DateSelector";
 import type { useWeights } from "@/hooks/useWeights";
+import { parseWeighIn } from "./weighIn";
 
 export function LogWeightCard({
   save,
@@ -33,11 +34,11 @@ export function LogWeightCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date]);
 
-  const parsed = Number.parseFloat(kg);
-  const valid = Number.isFinite(parsed) && parsed > 0 && parsed < 500;
+  const parsed = parseWeighIn(kg);
+  const valid = parsed !== null;
 
   const submit = () => {
-    if (!valid) return;
+    if (parsed === null) return;
     save.mutate({ date, weight_kg: parsed });
   };
 

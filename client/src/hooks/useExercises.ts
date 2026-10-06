@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Exercise } from "@dashboard/shared";
 import { useAuth } from "@/auth/AuthProvider";
 import { gymApi } from "@/api/gym";
@@ -7,17 +7,21 @@ import { invalidateSessionReaders } from "./invalidate";
 export const exercisesKey = (userId: string, dayType: number) =>
   ["exercises", userId, dayType] as const;
 
+/** The day's template query, shared by useExercises and Home so both read one cache entry. */
+export function exercisesQueryOptions(userId: string, dayType: number) {
+  return queryOptions({
+    queryKey: exercisesKey(userId, dayType),
+    queryFn: () => gymApi.listExercises(dayType),
+  });
+}
+
 export function useExercises(dayType: number) {
   const qc = useQueryClient();
   const { user } = useAuth();
   const userId = user?.id ?? "anon";
   const key = exercisesKey(userId, dayType);
 
-  const query = useQuery({
-    queryKey: key,
-    queryFn: () => gymApi.listExercises(dayType),
-    enabled: !!user,
-  });
+  const query = useQuery({ ...exercisesQueryOptions(userId, dayType), enabled: !!user });
 
   const addExercise = useMutation({
     mutationFn: (name: string) => gymApi.addExercise(dayType, name),
