@@ -12,7 +12,7 @@ const EMPTY = {
 };
 
 /** A label typed in by hand: per 100 g, or per serving for things with no known weight. */
-export function CustomFoodForm({ onNext }: { onNext: (food: FoodInput) => void }) {
+export function CustomFoodForm({ onNext, barcode = null }: { onNext: (food: FoodInput) => void; barcode?: string | null }) {
   const [basis, setBasis] = useState<Basis>("100g");
   const [f, setF] = useState(EMPTY);
   const set = (k: keyof typeof EMPTY) => (e: ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
@@ -39,6 +39,7 @@ export function CustomFoodForm({ onNext }: { onNext: (food: FoodInput) => void }
       external_id: null,
       name: f.name.trim(),
       brand: f.brand.trim() || null,
+      barcode,
       serving_description: per100 ? null : f.servingDescription.trim() || "1 serving",
       serving_grams: per100 ? null : label(f.servingGrams),
       kcal_per_serving: per100 ? null : values.kcal,
@@ -68,6 +69,7 @@ export function CustomFoodForm({ onNext }: { onNext: (food: FoodInput) => void }
 
   return (
     <div className="space-y-3">
+      {barcode && <p className="tnum text-xs text-muted">Barcode {barcode}, saved with this food</p>}
       <Field label="Name" htmlFor="custom-name">
         <Input id="custom-name" value={f.name} onChange={set("name")} />
       </Field>

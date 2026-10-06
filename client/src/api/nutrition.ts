@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 import type {
-  DiaryEntryInput, FoodLogEntry, FoodSearchResult, NutritionTarget, RecentFood, TargetInput, TdeeHint,
+  BarcodeResult, DiaryEntryInput, FoodLogEntry, FoodSearchResult, NutritionTarget, RecentFood, TargetInput, TdeeHint,
 } from "@dashboard/shared";
 
 const json = (method: string, body: unknown): RequestInit => ({ method, body: JSON.stringify(body) });
@@ -17,6 +17,7 @@ export const nutritionApi = {
   copyDay: (from: string, to: string) => api<FoodLogEntry[]>("/api/nutrition/diary/copy", json("POST", { from, to })),
   recents: () => api<RecentFood[]>("/api/nutrition/recents"),
   tdee: (today: string) => api<TdeeHint>(`/api/nutrition/tdee?today=${today}`),
+  barcode: (code: string) => api<BarcodeResult>(`/api/food/barcode/${code}`),
 };
 
 export const foodApi = {

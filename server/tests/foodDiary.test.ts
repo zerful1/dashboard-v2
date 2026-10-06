@@ -134,6 +134,35 @@ describe("food diary", () => {
     expect(new Date(res.body[0].logged_at).toISOString()).toBe("2026-10-26T08:00:00.000Z");
   });
 
+  // Part 2: a scanned food keeps its barcode, so the next scan finds it in the library.
+  it("saves a food's barcode, and a later log without one keeps it", async () => {
+    const { agent, id } = await signedIn(alice);
+    const COKE = { ...OATS, source: "off", external_id: "5000112548167", name: "Coca-Cola Light", barcode: "5000112548167" };
+    await agent.post("/api/nutrition/diary").send(entry({ name: "Coca-Cola Light", food: COKE })).expect(201);
+    await agent.post("/api/nutrition/diary").send(entry({ name: "Coca-Cola Light", food: { ...COKE, barcode: null } })).expect(201);
+    const { rows } = await pool.query(`SELECT barcode FROM ${T.foodItems} WHERE user_id = $1`, [id]);
+    expect(rows).toEqual([{ barcode: "5000112548167" }]);
+  });
+
+  it("refuses a malformed barcode", async () => {
+    const { agent } = await signedIn(alice);
+    await agent.post("/api/nutrition/diary").send(entry({ food: { ...OATS, barcode: "12ab" } })).expect(400);
+  });
+
+  // Part 1 final review (M3): serving data is replaced whole or kept whole, so a
+  // new serving's unknown label values never keep the old serving's.
+  it("replaces a stored serving whole when a new one arrives", async () => {
+    const { agent, id } = await signedIn(alice);
+    const A = { ...OATS, source: "off", external_id: "5000159407236", name: "Mars",
+      serving_description: "1 bar (51 g)", serving_grams: 51, kcal_per_serving: 230, sugar_per_serving: 30 };
+    await agent.post("/api/nutrition/diary").send(entry({ name: "Mars", food: A })).expect(201);
+    await agent.post("/api/nutrition/diary").send(entry({ name: "Mars", food: {
+      ...A, serving_description: "1 fun size (17 g)", serving_grams: 17, kcal_per_serving: 76, sugar_per_serving: null } })).expect(201);
+    const { rows } = await pool.query(
+      `SELECT serving_description, serving_grams::float8 AS g, sugar_per_serving::float8 AS sugar FROM ${T.foodItems} WHERE user_id = $1`, [id]);
+    expect(rows).toEqual([{ serving_description: "1 fun size (17 g)", g: 17, sugar: null }]);
+  });
+
   it("refuses to copy a day onto itself, and copies nothing from an empty day", async () => {
     const { agent } = await signedIn(alice);
     await agent.post("/api/nutrition/diary/copy").send({ from: "2026-09-21", to: "2026-09-21" }).expect(400);

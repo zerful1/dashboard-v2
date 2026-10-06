@@ -60,6 +60,7 @@ const foodBody = z
     external_id: z.string().min(1).max(100).nullable(),
     name: z.string().trim().min(1).max(200),
     brand: z.string().trim().max(200).nullable(),
+    barcode: z.string().regex(/^\d{8,14}$/, "A barcode is 8 to 14 digits").nullable().optional(),
     serving_description: z.string().trim().max(100).nullable(),
     serving_grams: z.number().positive().max(5000).nullable(),
     kcal_per_serving: perAmount,

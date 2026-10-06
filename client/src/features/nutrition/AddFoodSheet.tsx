@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { customToChoice, entryToChoice, hitToChoice, itemToChoice, type FoodChoice } from "@dashboard/shared";
 import type { FoodHit, FoodLogUnit, RecentFood } from "@dashboard/shared";
 import { Sheet } from "@/components/ui/Sheet";
@@ -12,11 +12,13 @@ import type { useDiary } from "@/hooks/useDiary";
 import { AmountStep } from "./AmountStep";
 import { CustomFoodForm } from "./CustomFoodForm";
 import { amountOf } from "./DiaryList";
+import { ScanTab } from "./ScanTab";
 
-type Tab = "search" | "recent" | "custom";
+type Tab = "search" | "recent" | "scan" | "custom";
 const TABS: { id: Tab; label: string }[] = [
   { id: "search", label: "Search" },
   { id: "recent", label: "Recent" },
+  { id: "scan", label: "Scan" },
   { id: "custom", label: "Custom" },
 ];
 interface Chosen {
@@ -39,6 +41,12 @@ export function AddFoodSheet({
   const [chosen, setChosen] = useState<Chosen | null>(null);
   // Lifted out of SearchTab, so stepping back from the amount step keeps it.
   const [q, setQ] = useState("");
+  // A scanned code nobody has filed, carried into Custom so it is saved with the food.
+  const [customBarcode, setCustomBarcode] = useState<string | null>(null);
+  // The sheet's content outlives a close by its exit animation, so a scan's
+  // lookup can land after the reset below: it checks this first (final review I1).
+  const openRef = useRef(open);
+  openRef.current = open;
   const recents = useRecents(open);
   // Most adds are a repeat, so the sheet opens on Recent when there is anything
   // to re-log (#17 review 6). Decided once the list is in, so it never flips
@@ -51,6 +59,7 @@ export function AddFoodSheet({
       setChosen(null);
       setTab(null);
       setQ("");
+      setCustomBarcode(null);
     }
   }, [open]);
 
@@ -95,7 +104,20 @@ export function AddFoodSheet({
                 }
               />
             )}
-            {shown === "custom" && <CustomFoodForm onNext={(food) => setChosen({ choice: customToChoice(food) })} />}
+            {shown === "scan" && (
+              <ScanTab
+                onFound={(choice) => {
+                  if (openRef.current) setChosen({ choice });
+                }}
+                onAddYourself={(barcode) => {
+                  setCustomBarcode(barcode);
+                  setTab("custom");
+                }}
+              />
+            )}
+            {shown === "custom" && (
+              <CustomFoodForm barcode={customBarcode} onNext={(food) => setChosen({ choice: customToChoice(food) })} />
+            )}
           </>
         )}
         {/* Required by the data licences (spec §10). */}
