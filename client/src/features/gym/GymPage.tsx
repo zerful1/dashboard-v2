@@ -108,7 +108,7 @@ export function GymPage() {
       {/* The day selector and date picker above stay visible on ALL three tabs.
           They are the page's context, and hiding them on History would make the
           Edit-in-Log hand-off look like it did nothing. */}
-      <div className="flex rounded-lg border border-raised bg-surface p-0.5">
+      <div className="flex rounded-full border border-edge p-0.5">
         {SUB_TABS.map((t) => (
           <button
             key={t.key}

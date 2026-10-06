@@ -84,7 +84,7 @@ export function ExerciseRow({
   const meta = done
     ? `${todaySets.length} set${todaySets.length === 1 ? "" : "s"}${top ? ` · top ${setLong(top)}` : ""}`
     : top
-      ? `LAST · ${setLong(top)}`
+      ? `Last · ${setLong(top)}`
       : "No history";
 
   return (
