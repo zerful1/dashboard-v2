@@ -60,3 +60,23 @@ describe("ExerciseList suggestions", () => {
     expect(within(suggestions()!).getAllByRole("button")).toHaveLength(5);
   });
 });
+
+describe("ExerciseList, last time loading", () => {
+  const view = (lastPending: boolean) =>
+    render(
+      <ExerciseList exercises={[ex("Lat Pulldown")]} sets={[]} lastSets={{}} lastPending={lastPending} editMode={false}
+        historyNames={[]} onOpen={vi.fn()} onDelete={vi.fn()} onReorder={vi.fn()} onRename={vi.fn()} onAdd={vi.fn()} />,
+    );
+
+  // Final review, important 1.
+  it("says nothing about last time while it loads", () => {
+    view(true);
+    expect(screen.getByText("Lat Pulldown")).toBeInTheDocument();
+    expect(screen.queryByText("No history")).toBeNull();
+  });
+
+  it("says No history once loaded with none", () => {
+    view(false);
+    expect(screen.getByText("No history")).toBeInTheDocument();
+  });
+});

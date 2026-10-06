@@ -23,7 +23,7 @@ describe("useLastTimes (redesign part 3a, §4)", () => {
     const LAST = { "Row & Press": { date: "2026-10-02", sets: [] } };
     const api = vi.spyOn(apiModule, "api").mockResolvedValue(LAST as never);
     const { result } = run(["Squat", "Row & Press"], "2026-10-06");
-    await waitFor(() => expect(result.current).toEqual(LAST));
+    await waitFor(() => expect(result.current.byName).toEqual(LAST));
     expect(api).toHaveBeenCalledWith("/api/workouts/last-times?before=2026-10-06&name=Row%20%26%20Press&name=Squat");
   });
 
@@ -32,7 +32,17 @@ describe("useLastTimes (redesign part 3a, §4)", () => {
     const { result } = run([], "2026-10-06");
     await new Promise((r) => setTimeout(r, 20));
     expect(api).not.toHaveBeenCalled();
-    expect(result.current).toEqual({});
+    expect(result.current).toEqual({ byName: {}, isPending: false });
+  });
+
+  // Final review, important 1: "not loaded yet" must not read as "never done".
+  it("reports pending until last time arrives", async () => {
+    let resolve!: (v: unknown) => void;
+    vi.spyOn(apiModule, "api").mockReturnValue(new Promise((r) => { resolve = r; }) as never);
+    const { result } = run(["Squat"], "2026-10-06");
+    expect(result.current.isPending).toBe(true);
+    resolve({});
+    await waitFor(() => expect(result.current.isPending).toBe(false));
   });
 
   it("is one cache entry for the same names in any order", () => {

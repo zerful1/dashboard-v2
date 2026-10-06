@@ -19,12 +19,16 @@ export function lastTimesQueryOptions(userId: string, names: string[], before: s
   });
 }
 
-/** `{}` until loaded, and for an empty list, which asks for nothing. */
-export function useLastTimes(names: string[], before: string): Record<string, LastTime> {
+/**
+ * Last time by exercise name, and whether it is still on its way. "Not loaded
+ * yet" must never read as "never done" (CLAUDE.md, isPending not isLoading), so
+ * callers say nothing about last time while `isPending`. An empty list asks for
+ * nothing and has nothing to wait for: a disabled query stays pending forever
+ * in v5, so pending counts only while enabled.
+ */
+export function useLastTimes(names: string[], before: string): { byName: Record<string, LastTime>; isPending: boolean } {
   const { user } = useAuth();
-  const { data } = useQuery({
-    ...lastTimesQueryOptions(user?.id ?? "anon", names, before),
-    enabled: !!user && names.length > 0,
-  });
-  return data ?? NONE;
+  const enabled = !!user && names.length > 0;
+  const query = useQuery({ ...lastTimesQueryOptions(user?.id ?? "anon", names, before), enabled });
+  return { byName: query.data ?? NONE, isPending: enabled && query.isPending };
 }

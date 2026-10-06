@@ -16,6 +16,8 @@ interface Props {
   todaySets: WorkoutSet[];
   /** The last time this exercise was done, on any day (redesign part 3a, §4). */
   last: LastTime | null;
+  /** Last time is still loading: claim nothing about it until it has. */
+  lastPending?: boolean;
   onClose: () => void;
   onLogSet: (
     weightKg: number,
@@ -32,7 +34,7 @@ const NO_SETS: WorkoutSet[] = [];
  * Logging one exercise (redesign part 3a, §3): today against last time, set by
  * set, with the set being logged as a highlighted block between them.
  */
-export function ExerciseSheet({ exercise, todaySets, last, onClose, onLogSet, onDeleteSet }: Props) {
+export function ExerciseSheet({ exercise, todaySets, last, lastPending = false, onClose, onLogSet, onDeleteSet }: Props) {
   const lastSets = last?.sets ?? NO_SETS;
   const rows = lastTimeRows(todaySets, lastSets);
   const defaults = sheetDefaults(todaySets, lastSets, rows.next);
@@ -111,8 +113,21 @@ export function ExerciseSheet({ exercise, todaySets, last, onClose, onLogSet, on
     setRight("");
   };
 
-  const first = !last && todaySets.length === 0;
-  const cols = last ? 4 : 3;
+  // Until last time has loaded the sheet claims nothing about it (CLAUDE.md,
+  // isPending not isLoading): "not loaded yet" is not "never done".
+  const first = !lastPending && !last && todaySets.length === 0;
+  const showHeader = !!last || rows.above.length > 0;
+
+  // One column plan for both tables, so the rows below the block line up with
+  // the rows above it.
+  const columns = (
+    <colgroup>
+      <col className="w-[18%]" />
+      {last && <col />}
+      <col />
+      <col className="w-8" />
+    </colgroup>
+  );
 
   const nextSet = (
     // A tint, not a box: the set being logged is the selected item.
@@ -126,7 +141,7 @@ export function ExerciseSheet({ exercise, todaySets, last, onClose, onLogSet, on
             <>
               Last time <span className="font-semibold text-text">{setCell(rows.nextLast)}</span>
             </>
-          ) : last ? (
+          ) : lastPending ? null : last ? (
             `No set ${rows.next} last time`
           ) : (
             "No last time"
@@ -145,7 +160,12 @@ export function ExerciseSheet({ exercise, todaySets, last, onClose, onLogSet, on
               placeholder={isBodyweight ? "BW" : (defaults.weightHint ?? "kg")}
               value={isBodyweight ? "" : weight}
               disabled={isBodyweight}
-              onChange={(e) => setWeight(e.target.value)}
+              onChange={(e) => {
+                // Typing a weight is a choice: a bodyweight last time that
+                // arrives late must not blank and disable it.
+                bodyweightTouched.current = true;
+                setWeight(e.target.value);
+              }}
             />
           </Field>
         </div>
@@ -184,42 +204,42 @@ export function ExerciseSheet({ exercise, todaySets, last, onClose, onLogSet, on
       <div className="max-h-[70vh] space-y-4 overflow-y-auto overscroll-contain">
         <CoachingCard data={coaching} isLoading={isLoading} />
 
-        {first ? (
-          <>
-            <p className="text-xs text-muted">First time on this one. Nothing to compare yet.</p>
-            {nextSet}
-          </>
-        ) : (
-          <table className="w-full border-collapse text-[13px]">
-            <thead>
-              <tr>
-                <th scope="col" className="w-[18%] pb-1.5 text-left">
-                  <span className="sr-only">Set</span>
-                </th>
-                {last && (
+        {/* The block keeps one place in the tree whatever loads around it, so
+            last time arriving never rebuilds the inputs under a thumb. */}
+        <div className="space-y-2">
+          {first && <p className="text-xs text-muted">First time on this one. Nothing to compare yet.</p>}
+          {showHeader && (
+            <table className="w-full table-fixed border-collapse text-[13px]">
+              {columns}
+              <thead>
+                <tr>
+                  <th scope="col" className="pb-1.5 text-left">
+                    <span className="sr-only">Set</span>
+                  </th>
+                  {last && (
+                    <th scope="col" className="pb-1.5 text-left font-normal">
+                      <span className="lbl">Last · {prettyDate(last.date)}</span>
+                    </th>
+                  )}
                   <th scope="col" className="pb-1.5 text-left font-normal">
-                    <span className="lbl">Last · {prettyDate(last.date)}</span>
+                    <span className="lbl">Today</span>
                   </th>
-                )}
-                <th scope="col" className="pb-1.5 text-left font-normal">
-                  <span className="lbl">Today</span>
-                </th>
-                <th scope="col" className="w-8">
-                  <span className="sr-only">Delete</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.above.map((row) => (
-                <tr key={row.n} className="border-t border-raised">
-                  <th scope="row" className="py-2 text-left font-normal text-muted">
-                    Set {row.n}
+                  <th scope="col">
+                    <span className="sr-only">Delete</span>
                   </th>
-                  {last && <td className="tnum py-2 text-muted">{row.last ? setCell(row.last) : "—"}</td>}
-                  <td className={cn("tnum py-2", row.today ? "text-text" : "text-muted")}>
-                    {row.today ? setCell(row.today) : "—"}
-                  </td>
-                  <td className="py-2 text-right">
+                </tr>
+              </thead>
+              <tbody>
+                {rows.above.map((row) => (
+                  <tr key={row.n} className="border-t border-raised">
+                    <th scope="row" className="py-2 text-left font-normal text-muted">
+                      Set {row.n}
+                    </th>
+                    {last && <td className="tnum py-2 text-muted">{row.last ? setCell(row.last) : "—"}</td>}
+                    <td className={cn("tnum py-2", row.today ? "text-text" : "text-muted")}>
+                      {row.today ? setCell(row.today) : "—"}
+                    </td>
+                    <td className="py-2 text-right">
                     {row.today && (
                       <button
                         onClick={() => onDeleteSet(row.today!.id)}
@@ -229,27 +249,31 @@ export function ExerciseSheet({ exercise, todaySets, last, onClose, onLogSet, on
                         <Trash2 size={13} />
                       </button>
                     )}
-                  </td>
-                </tr>
-              ))}
-              <tr>
-                <td colSpan={cols} className="py-2">
-                  {nextSet}
-                </td>
-              </tr>
-              {rows.below.map((s) => (
-                <tr key={s.set_number} className="border-t border-raised">
-                  <th scope="row" className="py-2 text-left font-normal text-muted">
-                    Set {s.set_number}
-                  </th>
-                  <td className="tnum py-2 text-muted">{setCell(s)}</td>
-                  <td className="py-2 text-muted">—</td>
-                  <td />
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {nextSet}
+          {rows.below.length > 0 && (
+            <table className="w-full table-fixed border-collapse text-[13px]">
+              {columns}
+              <tbody>
+                {rows.below.map((s) => (
+                  <tr key={s.set_number} className="border-t border-raised">
+                    <th scope="row" className="py-2 text-left font-normal text-muted">
+                      Set {s.set_number}
+                    </th>
+                    <td className="tnum py-2 text-muted">{setCell(s)}</td>
+                    <td className="py-2 text-muted">—</td>
+                    <td />
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
 
         <div className="flex gap-2">
           <button

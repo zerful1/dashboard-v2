@@ -241,6 +241,40 @@ describe("ExerciseSheet, last time (redesign part 3a, §3)", () => {
     expect(reps()).toHaveValue(6);
   });
 
+  // Final review, important 1: until last time has loaded, the sheet must not
+  // claim there is none, and its arrival must not rebuild the inputs.
+  it("says nothing about last time while it loads", () => {
+    mockCoaching(null);
+    const { update } = renderSheet({ lastPending: true });
+    expect(screen.queryByText(/First time/)).toBeNull();
+    expect(screen.getByRole("group", { name: "Set 1" })).not.toHaveTextContent(/last time/i);
+    // The positive complement: once loaded and empty, it says so.
+    update({ lastPending: false });
+    expect(screen.getByText("First time on this one. Nothing to compare yet.")).toBeInTheDocument();
+  });
+
+  it("keeps the inputs, and the focus, when last time arrives", async () => {
+    mockCoaching(null);
+    const { update } = renderSheet({ lastPending: true });
+    const input = weight();
+    await userEvent.type(input, "90");
+    expect(input).toHaveFocus();
+    update({ lastPending: false, last: lastTime([aSet(1, { weight_kg: 80, reps: 8 })]) });
+    expect(weight()).toBe(input);
+    expect(input).toHaveFocus();
+    expect(input).toHaveValue(90);
+  });
+
+  it("keeps a typed weight when a bodyweight last time arrives late", async () => {
+    mockCoaching(null);
+    const { update } = renderSheet({ lastPending: true });
+    await userEvent.type(weight(), "90");
+    update({ lastPending: false, last: lastTime([aSet(1, { is_bodyweight: true, weight_kg: 0, reps: 10 })]) });
+    expect(screen.getByRole("button", { name: /mark as bodyweight/i })).toHaveAttribute("aria-pressed", "false");
+    expect(weight()).toBeEnabled();
+    expect(weight()).toHaveValue(90);
+  });
+
   it("keeps the set being logged in view, on open and after each Add set", () => {
     mockCoaching(null);
     // jsdom has no scrollIntoView, so the sheet must call it optionally.

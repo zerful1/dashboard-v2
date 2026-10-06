@@ -19,6 +19,8 @@ interface Props {
   onAdd: (name: string) => void;
   /** Every exercise name in the user's history, to suggest while adding. */
   historyNames: string[];
+  /** Last time is still loading: the rows must not claim there is none. */
+  lastPending?: boolean;
 }
 
 export function ExerciseList({
@@ -32,6 +34,7 @@ export function ExerciseList({
   onRename,
   onAdd,
   historyNames,
+  lastPending = false,
 }: Props) {
   const [newName, setNewName] = useState("");
 
@@ -78,6 +81,7 @@ export function ExerciseList({
           key={e.id}
           exercise={e}
           lastSets={lastSets[e.exercise_name] ?? []}
+          lastPending={lastPending}
           todaySets={byName[e.exercise_name] ?? []}
           editMode={editMode}
           isFirst={i === 0}
