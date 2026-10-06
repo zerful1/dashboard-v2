@@ -90,22 +90,58 @@ export interface WorkoutProgress {
   done: number
   /** Sets logged today, on any exercise. */
   sets: number
+  /** Cardio entries in today's session. */
+  cardio: number
   started: boolean
-  /** Every listed exercise has a set — or, with an empty list, any set at all. */
+  /**
+   * Every listed exercise has a set; with an empty list, any set at all. Or
+   * cardio with no sets: a cardio day, done (the user's call, 2026-10-06).
+   */
   finished: boolean
 }
 
 /**
- * How far through today's workout (redesign part 2, §3). `loggedNames` holds one
- * entry per set logged today, its exercise_name, so its length is the set
- * count. Names match exactly, as the Gym page's own done count does.
+ * How far through today's workout (redesign part 2, §3; part 3a, §5).
+ * `loggedNames` holds one entry per set logged today, its exercise_name, so its
+ * length is the set count. Names match exactly, as the Gym page's own done
+ * count does.
  */
-export function workoutProgress(exerciseNames: string[], loggedNames: string[]): WorkoutProgress {
+export function workoutProgress(exerciseNames: string[], loggedNames: string[], cardio = 0): WorkoutProgress {
   const logged = new Set(loggedNames)
   const total = exerciseNames.length
   const done = exerciseNames.filter((n) => logged.has(n)).length
   const sets = loggedNames.length
-  return { total, done, sets, started: sets > 0, finished: total > 0 ? done === total : sets > 0 }
+  return {
+    total,
+    done,
+    sets,
+    cardio,
+    started: sets > 0 || cardio > 0,
+    finished: sets === 0 ? cardio > 0 : total > 0 ? done === total : true,
+  }
+}
+
+export interface TodaysWorkout {
+  dayType: number
+  label: string
+}
+
+/**
+ * Which workout Home shows today (redesign part 3a, §5). `scheduled` is the
+ * split's day, or null on a rest day. A session already logged today wins: the
+ * scheduled day's first, then the newest of any other, under its own
+ * snapshotted name, because day_type is reused across split eras.
+ */
+export function todaysWorkout(
+  scheduled: TodaysWorkout | null,
+  sessions: WorkoutSession[],
+  today: string,
+): TodaysWorkout | null {
+  const logged = sessions.filter((s) => s.date === today)
+  if (scheduled && logged.some((s) => s.day_type === scheduled.dayType)) return scheduled
+  const newest = [...logged].sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
+  if (newest) return { dayType: newest.day_type, label: newest.day_name }
+  return scheduled
 }
 
 export type HomeTop = 'weigh-in' | 'workout' | 'food'

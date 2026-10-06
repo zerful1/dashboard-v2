@@ -101,7 +101,7 @@ describe("useHomeDay (redesign part 2, §3)", () => {
     const { result } = run(WED);
     await waitFor(() => expect(result.current.isPending).toBe(false));
     expect(result.current.top).toBe("workout");
-    expect(result.current.workout.progress).toEqual({ total: 2, done: 1, sets: 2, started: true, finished: false });
+    expect(result.current.workout.progress).toEqual({ total: 2, done: 1, sets: 2, cardio: 0, started: true, finished: false });
   });
 
   it("hands over to food once every exercise has a set", async () => {

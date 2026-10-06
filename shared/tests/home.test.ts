@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { deriveHome, DEFAULT_SPLIT, nextUp, workoutProgress, type SplitConfig } from '../src'
+import { deriveHome, DEFAULT_SPLIT, nextUp, todaysWorkout, workoutProgress, type SplitConfig } from '../src'
 import type { WorkoutSession } from '../src'
 
 // DEFAULT_SPLIT.week is [3,2,1,'rest',5,4,'rest'] Monday-first:
@@ -127,22 +127,37 @@ describe('deriveHome — last session', () => {
 
 describe('workoutProgress', () => {
   it('has not started before any set', () => {
-    expect(workoutProgress(['Squat', 'Lunge'], [])).toEqual({ total: 2, done: 0, sets: 0, started: false, finished: false })
+    expect(workoutProgress(['Squat', 'Lunge'], [])).toEqual({ total: 2, done: 0, sets: 0, cardio: 0, started: false, finished: false })
   })
   it('counts exercises with a set, and every set', () => {
-    expect(workoutProgress(['Squat', 'Lunge'], ['Squat', 'Squat'])).toEqual({ total: 2, done: 1, sets: 2, started: true, finished: false })
+    expect(workoutProgress(['Squat', 'Lunge'], ['Squat', 'Squat'])).toEqual({ total: 2, done: 1, sets: 2, cardio: 0, started: true, finished: false })
   })
   it('is finished when every listed exercise has a set', () => {
     expect(workoutProgress(['Squat', 'Lunge'], ['Lunge', 'Squat']).finished).toBe(true)
   })
   it('ignores sets of exercises not on the list', () => {
     // A Push exercise logged on a Pull day counts as a set, not as progress.
-    expect(workoutProgress(['Squat'], ['Bench Press'])).toEqual({ total: 1, done: 0, sets: 1, started: true, finished: false })
+    expect(workoutProgress(['Squat'], ['Bench Press'])).toEqual({ total: 1, done: 0, sets: 1, cardio: 0, started: true, finished: false })
   })
   // An empty list (production's was cleared on 2026-10-03 to refill): any set finishes it.
   it('with an empty list, is finished by any set', () => {
     expect(workoutProgress([], []).finished).toBe(false)
     expect(workoutProgress([], ['Squat']).finished).toBe(true)
+  })
+
+  it('counts a cardio-only session as done', () => {
+    expect(workoutProgress(['Squat', 'Lunge'], [], 1)).toEqual({
+      total: 2,
+      done: 0,
+      sets: 0,
+      cardio: 1,
+      started: true,
+      finished: true,
+    })
+  })
+
+  it('does not finish a lift that has started, because cardio was logged too', () => {
+    expect(workoutProgress(['Squat', 'Lunge'], ['Squat'], 1).finished).toBe(false)
   })
 })
 
@@ -167,5 +182,36 @@ describe('nextUp', () => {
   })
   it('passes over a workout that failed to load', () => {
     expect(nextUp({ weighedInToday: true, isRest: false, workout: null })).toBe('food')
+  })
+})
+
+describe('todaysWorkout', () => {
+  const LEGS = { dayType: 1, label: 'Legs' }
+  const at = (date: string, dayType: number, dayName: string, created: string): WorkoutSession => ({
+    ...session(date, dayType, dayName),
+    created_at: created,
+  })
+
+  it('is the scheduled day when nothing is logged today', () => {
+    expect(todaysWorkout(LEGS, [at('2026-08-25', 2, 'Pull', '2026-08-25T07:00:00Z')], WED)).toEqual(LEGS)
+  })
+
+  it('keeps the scheduled day when it has a session today, even beside a newer one', () => {
+    const s = [at(WED, 3, 'Push', '2026-08-26T18:00:00Z'), at(WED, 1, 'Legs', '2026-08-26T07:00:00Z')]
+    expect(todaysWorkout(LEGS, s, WED)).toEqual(LEGS)
+  })
+
+  it('follows a session logged today for another day, under its own name', () => {
+    expect(todaysWorkout(LEGS, [at(WED, 3, 'Push', '2026-08-26T07:00:00Z')], WED)).toEqual({ dayType: 3, label: 'Push' })
+  })
+
+  it('takes the newest of several sessions off the plan', () => {
+    const s = [at(WED, 3, 'Push', '2026-08-26T07:00:00Z'), at(WED, 2, 'Pull', '2026-08-26T18:00:00Z')]
+    expect(todaysWorkout(LEGS, s, WED)).toEqual({ dayType: 2, label: 'Pull' })
+  })
+
+  it('shows a session logged on a rest day, and nothing otherwise', () => {
+    expect(todaysWorkout(null, [at(WED, 2, 'Pull', '2026-08-26T07:00:00Z')], WED)).toEqual({ dayType: 2, label: 'Pull' })
+    expect(todaysWorkout(null, [], WED)).toBeNull()
   })
 })
