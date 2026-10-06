@@ -1,22 +1,16 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ExerciseSheet } from "../src/features/gym/ExerciseSheet";
-import type { Exercise, WorkoutSet } from "@dashboard/shared";
+import type { Exercise, LastTime, WorkoutSet } from "@dashboard/shared";
 import * as apiModule from "../src/lib/api";
 
 vi.mock("@/auth/AuthProvider", () => ({
   useAuth: () => ({ user: { id: "u1", email: "a@b.com" }, loading: false }),
 }));
 
-const exercise: Exercise = {
-  id: "e1",
-  user_id: "u1",
-  day_type: 1,
-  exercise_name: "Squat",
-  sort_order: 1,
-};
+const exercise: Exercise = { id: "e1", user_id: "u1", day_type: 1, exercise_name: "Squat", sort_order: 1 };
 const aSet = (n: number, over: Partial<WorkoutSet> = {}): WorkoutSet => ({
   id: `s${n}`,
   user_id: "u1",
@@ -30,12 +24,9 @@ const aSet = (n: number, over: Partial<WorkoutSet> = {}): WorkoutSet => ({
   is_bodyweight: false,
   ...over,
 });
+const lastTime = (sets: WorkoutSet[]): LastTime => ({ date: "2026-10-02", sets });
 
-/**
- * Mocks by path, not by call order. This sheet only fetches coaching today, so
- * order and path happen to coincide — but the pattern is the house rule, and
- * hard-coding a sequence here would break the moment a second query appears.
- */
+/** Mocks by path, not by call order: the house rule, though only coaching is fetched. */
 function mockCoaching(result: unknown) {
   vi.spyOn(apiModule, "api").mockImplementation(async (path: string) => {
     if (path.startsWith("/api/workouts/coaching")) return result;
@@ -43,63 +34,60 @@ function mockCoaching(result: unknown) {
   });
 }
 
-function renderSheet(props: Partial<Parameters<typeof ExerciseSheet>[0]> = {}) {
+type Props = Parameters<typeof ExerciseSheet>[0];
+
+/** `update` re-renders with new props, as the page does when data arrives. */
+function renderSheet(props: Partial<Props> = {}) {
   const onLogSet = vi.fn();
+  const onDeleteSet = vi.fn();
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
+  const ui = (over: Partial<Props> = {}) => (
     <QueryClientProvider client={qc}>
-      <ExerciseSheet
-        exercise={exercise}
-        todaySets={[]}
-        lastSets={[]}
-        onClose={vi.fn()}
-        onLogSet={onLogSet}
-        onDeleteSet={vi.fn()}
-        {...props}
-      />
-    </QueryClientProvider>,
+      <ExerciseSheet exercise={exercise} todaySets={[]} last={null} onClose={vi.fn()}
+        onLogSet={onLogSet} onDeleteSet={onDeleteSet} {...props} {...over} />
+    </QueryClientProvider>
   );
-  return { onLogSet };
+  const { rerender } = render(ui());
+  return { onLogSet, onDeleteSet, update: (over: Partial<Props>) => rerender(ui(over)) };
 }
+
+/** A table row, found by its row header ("Set 2"). */
+const row = (n: number) => within(screen.getByRole("rowheader", { name: `Set ${n}` }).closest("tr")!);
+const weight = () => screen.getByLabelText(/weight/i);
+const reps = () => screen.getByLabelText(/reps/i);
+const sidesToggle = () => screen.getByRole("button", { name: /left \/ right/i });
 
 afterEach(() => vi.restoreAllMocks());
 
-describe("ExerciseSheet", () => {
+describe("ExerciseSheet, logging", () => {
   it("logs a weighted set with the next set number", async () => {
     mockCoaching(null);
     const { onLogSet } = renderSheet({ todaySets: [aSet(1), aSet(2)] });
-
-    await userEvent.type(screen.getByLabelText(/weight/i), "105");
-    await userEvent.type(screen.getByLabelText(/reps/i), "5");
+    expect(weight()).toHaveValue(100);
+    await userEvent.clear(weight());
+    await userEvent.type(weight(), "105");
+    await userEvent.type(reps(), "5");
     await userEvent.click(screen.getByRole("button", { name: /add set 3/i }));
-
     expect(onLogSet).toHaveBeenCalledWith(105, 5, false, 3);
   });
 
   it("continues numbering from the highest existing set, not the count", async () => {
     // Set 2 was deleted; the next must be 4, or it collides with set 3 on
-    // UNIQUE (session_id, exercise_name, set_number) and — because the server
-    // upserts — silently overwrites it.
+    // UNIQUE (session_id, exercise_name, set_number), and the server upserts.
     mockCoaching(null);
     const { onLogSet } = renderSheet({ todaySets: [aSet(1), aSet(3)] });
-
-    await userEvent.type(screen.getByLabelText(/weight/i), "100");
-    await userEvent.type(screen.getByLabelText(/reps/i), "5");
+    await userEvent.type(reps(), "5");
     await userEvent.click(screen.getByRole("button", { name: /add set 4/i }));
-
     expect(onLogSet).toHaveBeenCalledWith(100, 5, false, 4);
   });
 
   it("disables weight and logs 0 for a bodyweight set", async () => {
     mockCoaching(null);
     const { onLogSet } = renderSheet();
-
     await userEvent.click(screen.getByRole("button", { name: /mark as bodyweight/i }));
-    expect(screen.getByLabelText(/weight/i)).toBeDisabled();
-
-    await userEvent.type(screen.getByLabelText(/reps/i), "9");
+    expect(weight()).toBeDisabled();
+    await userEvent.type(reps(), "9");
     await userEvent.click(screen.getByRole("button", { name: /add bw set 1/i }));
-
     expect(onLogSet).toHaveBeenCalledWith(0, 9, true, 1);
   });
 
@@ -117,12 +105,23 @@ describe("ExerciseSheet", () => {
   it("requires reps, and requires weight unless bodyweight", async () => {
     mockCoaching(null);
     renderSheet();
-
     expect(screen.getByRole("button", { name: /add set 1/i })).toBeDisabled();
-    await userEvent.type(screen.getByLabelText(/weight/i), "100");
+    await userEvent.type(weight(), "100");
     expect(screen.getByRole("button", { name: /add set 1/i })).toBeDisabled();
-    await userEvent.type(screen.getByLabelText(/reps/i), "5");
+    await userEvent.type(reps(), "5");
     expect(screen.getByRole("button", { name: /add set 1/i })).toBeEnabled();
+  });
+
+  it("keeps the weight and clears the reps after logging, ready for the next set", async () => {
+    mockCoaching(null);
+    renderSheet();
+    await userEvent.type(weight(), "100");
+    await userEvent.type(reps(), "5");
+    await userEvent.click(screen.getByRole("button", { name: /add set 1/i }));
+    expect(weight()).toHaveValue(100);
+    expect(reps()).toHaveValue(null);
+    // So a stray tap cannot log the same set twice.
+    expect(screen.getByRole("button", { name: /add set/i })).toBeDisabled();
   });
 
   it("renders coaching when the API returns a recommendation", async () => {
@@ -136,33 +135,142 @@ describe("ExerciseSheet", () => {
     renderSheet();
     await waitFor(() => expect(screen.queryByText(/Add weight|Repeat|Deload/)).toBeNull());
   });
+});
 
-  it("clears the inputs after logging, ready for the next set", async () => {
+describe("ExerciseSheet, last time (redesign part 3a, §3)", () => {
+  it("lines today's sets up against last time's, set by set", () => {
     mockCoaching(null);
-    renderSheet();
-
-    await userEvent.type(screen.getByLabelText(/weight/i), "100");
-    await userEvent.type(screen.getByLabelText(/reps/i), "5");
-    await userEvent.click(screen.getByRole("button", { name: /add set 1/i }));
-
-    // Sets are logged in quick succession; leaving the previous values would
-    // make the next set silently duplicate this one on a stray tap.
-    expect(screen.getByLabelText(/reps/i)).toHaveValue(null);
+    renderSheet({
+      todaySets: [aSet(1, { weight_kg: 82.5, reps: 8 }), aSet(2, { weight_kg: 82.5, reps: 7 })],
+      last: lastTime([
+        aSet(1, { weight_kg: 80, reps: 8 }),
+        aSet(2, { weight_kg: 80, reps: 8 }),
+        aSet(3, { weight_kg: 80, reps: 7 }),
+        aSet(4, { weight_kg: 80, reps: 6 }),
+      ]),
+    });
+    expect(screen.getByRole("columnheader", { name: /^Last/ })).toBeInTheDocument();
+    expect(row(1).getByText("80 × 8")).toBeInTheDocument();
+    expect(row(1).getByText("82.5 × 8")).toBeInTheDocument();
+    expect(row(1).getByRole("button", { name: "Delete set 1" })).toBeInTheDocument();
+    expect(within(screen.getByRole("group", { name: "Set 3" })).getByText("80 × 7")).toBeInTheDocument();
+    expect(row(4).getByText("80 × 6")).toBeInTheDocument();
+    expect(row(4).getByText("—")).toBeInTheDocument();
   });
 
+  // Review focus 2.
+  it("shows a deleted set as a gap, with no delete, and continues from the highest", () => {
+    mockCoaching(null);
+    renderSheet({ todaySets: [aSet(1), aSet(3)], last: lastTime([aSet(1), aSet(2), aSet(3)]) });
+    expect(row(2).getByText("100 × 5")).toBeInTheDocument();
+    expect(row(2).getByText("—")).toBeInTheDocument();
+    expect(row(2).queryByRole("button", { name: /delete/i })).toBeNull();
+    expect(screen.getByRole("group", { name: "Set 4" })).toHaveTextContent("No set 4 last time");
+  });
+
+  it("deletes a set from its row", async () => {
+    mockCoaching(null);
+    const { onDeleteSet } = renderSheet({ todaySets: [aSet(1)] });
+    await userEvent.click(row(1).getByRole("button", { name: "Delete set 1" }));
+    expect(onDeleteSet).toHaveBeenCalledWith("s1");
+  });
+
+  it("shows only the set-1 block the first time", () => {
+    mockCoaching(null);
+    renderSheet();
+    expect(screen.getByText("First time on this one. Nothing to compare yet.")).toBeInTheDocument();
+    expect(screen.queryByRole("table")).toBeNull();
+    expect(screen.getByRole("group", { name: "Set 1" })).toHaveTextContent("No last time");
+  });
+
+  it("leaves the Last column out when there is no last time", () => {
+    mockCoaching(null);
+    renderSheet({ todaySets: [aSet(1)] });
+    expect(screen.getByRole("columnheader", { name: "Today" })).toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: /^Last/ })).toBeNull();
+    expect(screen.queryByText(/First time/)).toBeNull();
+  });
+
+  it("starts from the previous set's weight, with last time's reps as the hint", () => {
+    mockCoaching(null);
+    renderSheet({
+      todaySets: [aSet(1, { weight_kg: 82.5, reps: 8 })],
+      last: lastTime([aSet(1, { weight_kg: 80, reps: 8 }), aSet(2, { weight_kg: 80, reps: 7 })]),
+    });
+    expect(weight()).toHaveValue(82.5);
+    expect(reps()).toHaveValue(null);
+    expect(reps()).toHaveAttribute("placeholder", "7");
+  });
+
+  it("hints last time's weight and reps before the first set", () => {
+    mockCoaching(null);
+    renderSheet({ last: lastTime([aSet(1, { weight_kg: 80, reps: 8 })]) });
+    expect(weight()).toHaveValue(null);
+    expect(weight()).toHaveAttribute("placeholder", "80");
+    expect(reps()).toHaveAttribute("placeholder", "8");
+  });
+
+  it("starts with bodyweight on after a bodyweight set today", () => {
+    mockCoaching(null);
+    renderSheet({ todaySets: [aSet(1, { is_bodyweight: true, weight_kg: 0, reps: 10 })] });
+    expect(screen.getByRole("button", { name: /bodyweight: on/i })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("follows last time's bodyweight when it loads late, until the switch is touched", async () => {
+    mockCoaching(null);
+    const bw = lastTime([aSet(1, { is_bodyweight: true, weight_kg: 0, reps: 10 })]);
+    const { update } = renderSheet();
+    expect(screen.getByRole("button", { name: /mark as bodyweight/i })).toHaveAttribute("aria-pressed", "false");
+    update({ last: bw });
+    expect(screen.getByRole("button", { name: /bodyweight: on/i })).toHaveAttribute("aria-pressed", "true");
+    // The user turns it off. Data changing afterwards must not overrule them.
+    await userEvent.click(screen.getByRole("button", { name: /bodyweight: on/i }));
+    update({ last: null });
+    update({ last: bw });
+    expect(screen.getByRole("button", { name: /mark as bodyweight/i })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  // Review focus 1.
+  it("keeps what you typed when last time arrives after the sheet opened", async () => {
+    mockCoaching(null);
+    const { update } = renderSheet();
+    await userEvent.type(weight(), "90");
+    await userEvent.type(reps(), "6");
+    update({ last: lastTime([aSet(1, { weight_kg: 80, reps: 8 })]) });
+    expect(weight()).toHaveValue(90);
+    expect(reps()).toHaveValue(6);
+  });
+
+  it("keeps the set being logged in view, on open and after each Add set", () => {
+    mockCoaching(null);
+    // jsdom has no scrollIntoView, so the sheet must call it optionally.
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    try {
+      const { update } = renderSheet({ last: lastTime([aSet(1), aSet(2)]) });
+      expect(scroll).toHaveBeenCalledTimes(1);
+      expect(scroll.mock.contexts[0]).toBe(screen.getByRole("group", { name: "Set 1" }));
+      update({ todaySets: [aSet(1)] });
+      expect(scroll).toHaveBeenCalledTimes(2);
+      expect(scroll.mock.contexts[1]).toBe(screen.getByRole("group", { name: "Set 2" }));
+    } finally {
+      delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    }
+  });
+});
+
+describe("ExerciseSheet, left / right", () => {
   const sidedSet = (over: Partial<WorkoutSet> = {}) => aSet(1, { reps: 7, reps_left: 7, reps_right: 8, ...over });
-  const toggle = () => screen.getByRole("button", { name: /left \/ right/i });
 
   it("logs both sides when Left / right is on, and needs both", async () => {
     mockCoaching(null);
     const { onLogSet } = renderSheet();
-    await userEvent.click(toggle());
-    await userEvent.type(screen.getByLabelText(/weight/i), "20");
+    await userEvent.click(sidesToggle());
+    await userEvent.type(weight(), "20");
     await userEvent.type(screen.getByLabelText("Left"), "7");
     expect(screen.getByRole("button", { name: /add set 1/i })).toBeDisabled();
     await userEvent.type(screen.getByLabelText("Right"), "8");
     await userEvent.click(screen.getByRole("button", { name: /add set 1/i }));
-
     expect(onLogSet).toHaveBeenCalledWith(20, { left: 7, right: 8 }, false, 1);
     expect(screen.getByLabelText("Left")).toHaveValue(null);
   });
@@ -170,14 +278,16 @@ describe("ExerciseSheet", () => {
   it("switches itself on for an exercise named Unilateral", () => {
     mockCoaching(null);
     renderSheet({ exercise: { ...exercise, exercise_name: "Unilateral Machine Row" } });
-    expect(toggle()).toHaveAttribute("aria-pressed", "true");
+    expect(sidesToggle()).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByLabelText("Left")).toBeInTheDocument();
   });
 
-  it("switches itself on when last session was logged per side", () => {
+  it("switches itself on when last time was logged per side, and hints each side", () => {
     mockCoaching(null);
-    renderSheet({ lastSets: [sidedSet()] });
-    expect(toggle()).toHaveAttribute("aria-pressed", "true");
+    renderSheet({ last: lastTime([sidedSet()]) });
+    expect(sidesToggle()).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByLabelText("Left")).toHaveAttribute("placeholder", "7");
+    expect(screen.getByLabelText("Right")).toHaveAttribute("placeholder", "8");
   });
 
   // Review finding: the sheet closes between exercises and iOS drops the app
@@ -185,42 +295,31 @@ describe("ExerciseSheet", () => {
   it("switches itself on when this session already has a set logged per side", () => {
     mockCoaching(null);
     renderSheet({ todaySets: [sidedSet()] });
-    expect(toggle()).toHaveAttribute("aria-pressed", "true");
+    expect(sidesToggle()).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("stays off for a plain exercise with a plain last session", () => {
+  it("stays off for a plain exercise with a plain last time", () => {
     mockCoaching(null);
-    renderSheet({ lastSets: [aSet(1)] });
-    expect(toggle()).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByLabelText(/reps/i)).toBeInTheDocument();
+    renderSheet({ last: lastTime([aSet(1)]) });
+    expect(sidesToggle()).toHaveAttribute("aria-pressed", "false");
+    expect(reps()).toBeInTheDocument();
   });
 
-  // Review focus 1: the sheet can open before last session's sets arrive.
-  it("follows last session when it loads after the sheet opened, until the switch is touched", async () => {
+  it("follows last time when it loads after the sheet opened, until the switch is touched", async () => {
     mockCoaching(null);
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const ui = (lastSets: WorkoutSet[]) => (
-      <QueryClientProvider client={qc}>
-        <ExerciseSheet exercise={exercise} todaySets={[]} lastSets={lastSets}
-          onClose={vi.fn()} onLogSet={vi.fn()} onDeleteSet={vi.fn()} />
-      </QueryClientProvider>
-    );
-    const { rerender } = render(ui([]));
-    expect(toggle()).toHaveAttribute("aria-pressed", "false");
-
-    rerender(ui([sidedSet()]));
-    expect(toggle()).toHaveAttribute("aria-pressed", "true");
-
-    // The user turns it off. Data changing afterwards must not overrule them.
-    await userEvent.click(toggle());
-    rerender(ui([]));
-    rerender(ui([sidedSet()]));
-    expect(toggle()).toHaveAttribute("aria-pressed", "false");
+    const { update } = renderSheet();
+    expect(sidesToggle()).toHaveAttribute("aria-pressed", "false");
+    update({ last: lastTime([sidedSet()]) });
+    expect(sidesToggle()).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(sidesToggle());
+    update({ last: null });
+    update({ last: lastTime([sidedSet()]) });
+    expect(sidesToggle()).toHaveAttribute("aria-pressed", "false");
   });
 
   it("shows both sides of a set logged that way", () => {
     mockCoaching(null);
     renderSheet({ todaySets: [sidedSet()] });
-    expect(screen.getByText("Set 1 · 100kg × L7 R8")).toBeInTheDocument();
+    expect(row(1).getByText("100 × L7 R8")).toBeInTheDocument();
   });
 });

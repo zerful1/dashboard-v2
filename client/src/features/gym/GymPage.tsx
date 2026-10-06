@@ -52,7 +52,7 @@ export function GymPage() {
     useExercises(dayType);
   const { session, sets, logSet, deleteSet } = useWorkoutDay(dayType, date);
   const lastTimes = useLastTimes(exercises.map((e) => e.exercise_name), date);
-  // The list rows want the sets alone; the sheet wants the date as well (Task 5).
+  // The list rows want the sets alone; the sheet wants the date as well.
   const lastSets = useMemo(
     () => Object.fromEntries(Object.entries(lastTimes).map(([name, t]) => [name, t.sets])),
     [lastTimes],
@@ -171,7 +171,7 @@ export function GymPage() {
       <ExerciseSheet
         exercise={active}
         todaySets={activeSets}
-        lastSets={active ? (lastSets[active.exercise_name] ?? []) : []}
+        last={active ? (lastTimes[active.exercise_name] ?? null) : null}
         onClose={() => setActive(null)}
         onLogSet={(weightKg, reps, isBodyweight, setNumber) => {
           if (!active) return;
