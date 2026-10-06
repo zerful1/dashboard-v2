@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GymPage } from "../src/features/gym/GymPage";
@@ -74,18 +74,15 @@ function renderPage() {
 afterEach(() => vi.restoreAllMocks());
 
 describe("GymPage sub-tabs and hand-off", () => {
-  it("keeps the day selector and date picker visible on every tab", async () => {
+  it("keeps the header visible on every tab", async () => {
     mockByPath();
     const { container } = renderPage();
 
-    // The day chips are the page's context. Hiding them on History would make
-    // the hand-off look like it did nothing.
+    // The day and date are the page's context. Hiding them on History would
+    // make the hand-off look like it did nothing.
     for (const tab of ["Stats", "History"]) {
       await userEvent.click(await screen.findByRole("button", { name: tab }));
-      // Scoped to the day-selector group: on History the same labels also
-      // appear as filter chips, so an unscoped query is ambiguous.
-      const days = within(screen.getByRole("group", { name: "Training day" }));
-      expect(days.getByRole("button", { name: "Legs" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /^Training day/ })).toBeInTheDocument();
       expect(container.querySelector('input[type="date"]')).not.toBeNull();
     }
   });
