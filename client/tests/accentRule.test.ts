@@ -11,8 +11,9 @@ const SRC = clientPath("src");
  */
 const ALLOWED: Record<string, string> = {
   "components/ui/Button.tsx": "the primary variant: the one action",
-  "features/home/TodayCard.tsx": "the Log link, a primary action outside Button",
-  "features/home/WeekTile.tsx": "week dots: small done marks",
+  "features/home/WorkoutSection.tsx": "the Start/Continue workout link (a primary action outside Button), its progress bar (data ink) and the done tick",
+  "features/home/FoodSection.tsx": "the kcal bar's fill: data ink",
+  "features/home/WeekLine.tsx": "week dots: small done marks",
   "features/gym/ExerciseRow.tsx": "the set-done tick",
   "features/habits/TodayHabitsCard.tsx": "habit ticks",
   "features/habits/HabitRow.tsx": "habit ticks on the week strip",

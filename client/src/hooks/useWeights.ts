@@ -95,7 +95,7 @@ export function useWeights() {
     isLoading: query.isLoading,
     // For callers that render derived values rather than a bare list: a disabled
     // query reports isLoading false, so isLoading alone lets a page paint
-    // conclusions drawn from an empty array. See useHomeOverview.
+    // conclusions drawn from an empty array. See useHomeDay.
     isPending: query.isPending,
     isError: query.isError,
     saveWeight,
