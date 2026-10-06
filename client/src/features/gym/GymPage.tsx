@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Pencil, Check, SlidersHorizontal } from "lucide-react";
-import { getDayName } from "@dashboard/shared";
+import { getDayName, toLocalISO } from "@dashboard/shared";
 import type { Exercise } from "@dashboard/shared";
 import { useAuth } from "@/auth/AuthProvider";
 import { gymApi } from "@/api/gym";
@@ -9,9 +9,10 @@ import { useSplit } from "@/hooks/useSplit";
 import { useGymDay } from "@/hooks/useGymDay";
 import { useExercises } from "@/hooks/useExercises";
 import { useWorkoutDay } from "@/hooks/useWorkoutDay";
+import { useLastTimes } from "@/hooks/useLastTimes";
 import { useHistoryExerciseNames } from "@/hooks/useExerciseStats";
-import { DaySelector } from "./DaySelector";
-import { DateSelector } from "@/components/ui/DateSelector";
+import { GymHeader } from "./GymHeader";
+import { DayPickerSheet } from "./DayPickerSheet";
 import { ExerciseList } from "./ExerciseList";
 import { ExerciseSheet } from "./ExerciseSheet";
 import { SplitEditorSheet } from "./SplitEditorSheet";
@@ -42,14 +43,27 @@ export function GymPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { dayType, date, selectDay, selectDate, jumpTo } = useGymDay(
-    split,
-    splitPending,
-    lastLogged,
+  const { dayType, date, selectDay, selectDate, jumpTo } = useGymDay(split, splitPending, lastLogged);
+
+  // Home's Start/Continue names the day it shows, which on a swapped day is not
+  // the scheduled one, and sends it here. Applied once, on arrival; jumpTo
+  // latches, so the schedule and the rest-day fallback cannot pull it back.
+  const location = useLocation();
+  const sentDay = (location.state as { gymDay?: number } | null)?.gymDay;
+  const arrived = useRef(false);
+  useEffect(() => {
+    if (arrived.current || sentDay === undefined) return;
+    arrived.current = true;
+    jumpTo(sentDay, toLocalISO());
+  }, [sentDay, jumpTo]);
+  const { exercises, addExercise, deleteExercise, reorder, renameExercise } = useExercises(dayType);
+  const { session, sets, logSet, deleteSet } = useWorkoutDay(dayType, date);
+  const { byName: lastTimes, isPending: lastPending } = useLastTimes(exercises.map((e) => e.exercise_name), date);
+  // The list rows want the sets alone; the sheet wants the date as well.
+  const lastSets = useMemo(
+    () => Object.fromEntries(Object.entries(lastTimes).map(([name, t]) => [name, t.sets])),
+    [lastTimes],
   );
-  const { exercises, addExercise, deleteExercise, reorder, renameExercise } =
-    useExercises(dayType);
-  const { session, sets, lastSets, logSet, deleteSet } = useWorkoutDay(dayType, date);
   const historyNames = useHistoryExerciseNames();
 
   const [tab, setTab] = useState<SubTab>("log");
@@ -57,11 +71,10 @@ export function GymPage() {
   const [active, setActive] = useState<Exercise | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [splitOpen, setSplitOpen] = useState(false);
+  const [dayPicker, setDayPicker] = useState(false);
 
   const activeSets = active
-    ? sets
-        .filter((s) => s.exercise_name === active.exercise_name)
-        .sort((a, b) => a.set_number - b.set_number)
+    ? sets.filter((s) => s.exercise_name === active.exercise_name).sort((a, b) => a.set_number - b.set_number)
     : [];
 
   // After every hook, before anything derived from dayType. The same rule Home
@@ -72,42 +85,19 @@ export function GymPage() {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <DaySelector days={split.days} selected={dayType} onChange={selectDay} />
-        </div>
-        <button
-          onClick={() => setSplitOpen(true)}
-          aria-label="Edit split"
-          className="shrink-0 rounded-full p-2 text-muted"
-        >
-          <SlidersHorizontal size={16} />
-        </button>
-        <button
-          onClick={() => setEditMode((v) => !v)}
-          aria-label={editMode ? "Done editing" : "Edit exercises"}
-          className={cn(
-            "shrink-0 rounded-full p-2",
-            editMode ? "bg-accent/10 text-accent" : "text-muted",
-          )}
-        >
-          {editMode ? <Check size={16} /> : <Pencil size={16} />}
-        </button>
-      </div>
+      <GymHeader
+        date={date}
+        onDate={selectDate}
+        dayName={getDayName(split, dayType)}
+        onPickDay={() => setDayPicker(true)}
+        editMode={editMode}
+        onToggleEdit={() => setEditMode((v) => !v)}
+        onEditSplit={() => setSplitOpen(true)}
+      />
 
-      <div className="flex items-end justify-between gap-2">
-        <div className="min-w-0">
-          <div className="lbl text-accent">Gym</div>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-            {getDayName(split, dayType)}
-          </h1>
-        </div>
-        <DateSelector value={date} onChange={selectDate} />
-      </div>
-
-      {/* The day selector and date picker above stay visible on ALL three tabs.
-          They are the page's context, and hiding them on History would make the
-          Edit-in-Log hand-off look like it did nothing. */}
+      {/* The header above stays on ALL three tabs. It is the page's context,
+          and hiding it on History would make the Edit-in-Log hand-off look like
+          it did nothing. */}
       <div className="flex rounded-full border border-edge p-0.5">
         {SUB_TABS.map((t) => (
           <button
@@ -116,7 +106,7 @@ export function GymPage() {
             aria-pressed={tab === t.key}
             className={cn(
               "flex-1 rounded-full py-1.5 text-xs font-medium",
-              // Tinted — a selection, not the screen's action.
+              // Tinted: a selection, not the screen's action.
               tab === t.key ? "bg-accent/10 text-accent" : "text-muted",
             )}
           >
@@ -146,6 +136,7 @@ export function GymPage() {
             exercises={exercises}
             sets={sets}
             lastSets={lastSets}
+            lastPending={lastPending}
             editMode={editMode}
             onOpen={setActive}
             onDelete={(id) => deleteExercise.mutate(id)}
@@ -155,16 +146,15 @@ export function GymPage() {
             historyNames={historyNames.data ?? []}
           />
 
-          {!editMode && (
-            <CardioSection sessionId={session?.id ?? null} date={date} dayType={dayType} />
-          )}
+          {!editMode && <CardioSection sessionId={session?.id ?? null} date={date} dayType={dayType} />}
         </>
       )}
 
       <ExerciseSheet
         exercise={active}
         todaySets={activeSets}
-        lastSets={active ? (lastSets[active.exercise_name] ?? []) : []}
+        last={active ? (lastTimes[active.exercise_name] ?? null) : null}
+        lastPending={lastPending}
         onClose={() => setActive(null)}
         onLogSet={(weightKg, reps, isBodyweight, setNumber) => {
           if (!active) return;
@@ -191,6 +181,14 @@ export function GymPage() {
       />
 
       <SplitEditorSheet open={splitOpen} onClose={() => setSplitOpen(false)} />
+
+      <DayPickerSheet
+        open={dayPicker}
+        days={split.days}
+        selected={dayType}
+        onPick={selectDay}
+        onClose={() => setDayPicker(false)}
+      />
     </div>
   );
 }

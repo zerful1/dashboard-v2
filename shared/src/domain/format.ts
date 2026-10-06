@@ -16,6 +16,11 @@ export function setLong(s: ShownSet) {
   return s.is_bodyweight ? `BW × ${repsText(s)}` : `${s.weight_kg}kg × ${repsText(s)}`
 }
 
+/** "80 × 8", "BW × 10", "30 × L10 R10": a set in a table whose column already says kg. */
+export function setCell(s: ShownSet) {
+  return s.is_bodyweight ? `BW × ${repsText(s)}` : `${s.weight_kg} × ${repsText(s)}`
+}
+
 export function cardioLine(entry: CardioEntry): string {
   const parts: string[] = [entry.exercise]
   if (entry.distance_miles != null) parts.push(`${entry.distance_miles}mi`)

@@ -10,6 +10,7 @@ export * from "./domain/insights/records";
 export * from "./domain/insights/projection";
 export * from "./domain/splitRotation";
 export * from "./domain/home";
+export * from "./domain/setSheet";
 export * from "./domain/splitEditor";
 export * from "./domain/overloadCoaching";
 export * from "./domain/workoutStats";

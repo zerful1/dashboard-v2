@@ -1,6 +1,6 @@
 import { pool } from "../db/pool";
 import { T } from "../config";
-import type { WorkoutSet } from "@dashboard/shared";
+import type { LastTime, WorkoutSet } from "@dashboard/shared";
 
 const COLS = `id, user_id, session_id, exercise_name, set_number,
               weight_kg::float8 AS weight_kg, reps, reps_left, reps_right, is_bodyweight`;
@@ -74,28 +74,40 @@ export async function deleteSet(userId: string, id: string): Promise<boolean> {
 }
 
 /**
- * The most recent session of this day_type BEFORE `date`, grouped by exercise.
- *
- * Drives the "LAST · 80kg × 8" reference while logging. Strictly before, so
- * today's own sets are never offered back as last time's — which would make
- * every set look like a repeat of itself.
+ * "Last time" for each named exercise (redesign part 3a, §4): the newest session
+ * dated before `before` that holds a set of it, on ANY day type (a same-date
+ * tie goes to the later session), and that session's sets of it. Strictly
+ * before, so today's own sets are never offered back as last time's. day_type
+ * is reused across split eras, so the same-day-type rule this replaces could
+ * compare against another era's day, and showed nothing when the last
+ * same-day session skipped the exercise.
  */
-export async function lastSessionSets(
+export async function lastTimes(
   userId: string,
-  dayType: number,
-  beforeDate: string,
-): Promise<Record<string, WorkoutSet[]>> {
-  const { rows } = await pool.query<WorkoutSet>(
-    `SELECT ${COLS} FROM ${T.workoutSets}
-      WHERE user_id = $1 AND session_id = (
-        SELECT id FROM ${T.workoutSessions}
-         WHERE user_id = $1 AND day_type = $2 AND date < $3
-         ORDER BY date DESC LIMIT 1)
-      ORDER BY set_number`,
-    [userId, dayType, beforeDate],
+  names: string[],
+  before: string,
+): Promise<Record<string, LastTime>> {
+  const { rows } = await pool.query<WorkoutSet & { date: string }>(
+    `WITH latest AS (
+       SELECT DISTINCT ON (s.exercise_name) s.exercise_name, s.session_id, ws.date
+         FROM ${T.workoutSets} s
+         JOIN ${T.workoutSessions} ws ON ws.id = s.session_id
+        WHERE s.user_id = $1 AND ws.user_id = $1
+          AND s.exercise_name = ANY($2::text[])
+          AND ws.date < $3
+        ORDER BY s.exercise_name, ws.date DESC, ws.created_at DESC
+     )
+     SELECT s.id, s.user_id, s.session_id, s.exercise_name, s.set_number,
+            s.weight_kg::float8 AS weight_kg, s.reps, s.reps_left, s.reps_right,
+            s.is_bodyweight, latest.date::text AS date
+       FROM ${T.workoutSets} s
+       JOIN latest ON latest.session_id = s.session_id AND latest.exercise_name = s.exercise_name
+      WHERE s.user_id = $1
+      ORDER BY s.exercise_name, s.set_number`,
+    [userId, names, before],
   );
-  return rows.reduce<Record<string, WorkoutSet[]>>((acc, s) => {
-    (acc[s.exercise_name] ??= []).push(s);
+  return rows.reduce<Record<string, LastTime>>((acc, { date, ...set }) => {
+    (acc[set.exercise_name] ??= { date, sets: [] }).sets.push(set);
     return acc;
   }, {});
 }

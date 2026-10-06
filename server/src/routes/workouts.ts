@@ -9,7 +9,7 @@ import {
   getOrCreateSession,
 } from "../repositories/sessions";
 import { getSplit } from "../repositories/split";
-import { listSets, upsertSet, deleteSet, lastSessionSets } from "../repositories/sets";
+import { listSets, upsertSet, deleteSet, lastTimes } from "../repositories/sets";
 import { computeRecommendation } from "@dashboard/shared";
 import { recentSessionGroups } from "../repositories/coaching";
 import { exerciseStatRows, sessionDetail, historyExerciseNames } from "../repositories/stats";
@@ -159,15 +159,19 @@ workoutsRouter.delete(
   },
 );
 
+/** One name or many: `?name=A` arrives as a string, `?name=A&name=B` as an array. */
+const exerciseNames = z.preprocess(
+  (v) => (v === undefined ? [] : Array.isArray(v) ? v : [v]),
+  z.array(z.string().trim().min(1).max(80)).min(1).max(50),
+);
+
 workoutsRouter.get(
-  "/last-session",
-  validate({
-    query: z.object({ day_type: z.coerce.number().int().positive(), before: isoDate }),
-  }),
+  "/last-times",
+  validate({ query: z.object({ before: isoDate, name: exerciseNames }) }),
   async (req, res, next) => {
     try {
-      const q = req.query as unknown as { day_type: number; before: string };
-      res.json(await lastSessionSets(req.userId, q.day_type, q.before));
+      const q = req.query as unknown as { before: string; name: string[] };
+      res.json(await lastTimes(req.userId, q.name, q.before));
     } catch (err) {
       next(err);
     }

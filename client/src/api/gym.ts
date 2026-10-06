@@ -5,6 +5,7 @@ import type {
   StatSetRow,
   WorkoutSession,
   WorkoutSet,
+  LastTime,
   CardioEntry,
   SplitConfig,
   CoachingResult,
@@ -79,9 +80,9 @@ export const gymApi = {
   logSet: (input: SetInput) =>
     api<WorkoutSet>("/api/workouts/sets", { method: "POST", body: JSON.stringify(input) }),
   deleteSet: (id: string) => api<void>(`/api/workouts/sets/${id}`, { method: "DELETE" }),
-  lastSession: (dayType: number, before: string) =>
-    api<Record<string, WorkoutSet[]>>(
-      `/api/workouts/last-session?day_type=${dayType}&before=${before}`,
+  lastTimes: (names: string[], before: string) =>
+    api<Record<string, LastTime>>(
+      `/api/workouts/last-times?before=${before}&${names.map((n) => `name=${encodeURIComponent(n)}`).join("&")}`,
     ),
   coaching: (exerciseName: string) =>
     api<CoachingResult | null>(

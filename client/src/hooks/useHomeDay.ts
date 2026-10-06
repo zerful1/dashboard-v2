@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { deriveHome, nextUp, workoutProgress, type HomeTop, type WorkoutProgress } from "@dashboard/shared";
+import { deriveHome, nextUp, todaysWorkout, workoutProgress, type HomeTop, type WorkoutProgress } from "@dashboard/shared";
 import { useAuth } from "@/auth/AuthProvider";
 import { useSplit } from "@/hooks/useSplit";
 import { useWeights } from "@/hooks/useWeights";
@@ -9,6 +9,7 @@ import { useTargets } from "@/hooks/useTargets";
 import { goalsQueryOptions } from "@/hooks/useGoals";
 import { exercisesQueryOptions } from "@/hooks/useExercises";
 import { workoutDayQueryOptions } from "@/hooks/useWorkoutDay";
+import { cardioQueryOptions } from "@/hooks/useCardio";
 import { deriveWeightSummary } from "@/features/weight/deriveWeight";
 import { deriveDay } from "@/features/nutrition/deriveDay";
 import { gymApi } from "@/api/gym";
@@ -44,30 +45,54 @@ export function useHomeDay(today: string) {
   });
 
   const home = useMemo(() => deriveHome(split, sessions.data ?? [], today), [split, sessions.data, today]);
-  const dayType = home.today.dayType;
-  // Only once the real split says today trains: a rest day reads neither query.
+  // Which workout today is (redesign part 3a, §5): a session already logged
+  // today wins over the schedule. Until the sessions arrive this is the
+  // scheduled day, so its queries start at once; the gate holds the slot.
+  const workoutToday = useMemo(
+    () =>
+      todaysWorkout(
+        home.today.dayType === null ? null : { dayType: home.today.dayType, label: home.today.label },
+        sessions.data ?? [],
+        today,
+      ),
+    [home.today.dayType, home.today.label, sessions.data, today],
+  );
+  const dayType = workoutToday?.dayType ?? null;
+  // Only once the real split says what today is: a rest day with nothing
+  // logged reads none of these.
   const training = !!user && !splitPending && dayType !== null;
   const exercises = useQuery({ ...exercisesQueryOptions(userId, dayType ?? 0), enabled: training });
   const sets = useQuery({ ...workoutDayQueryOptions(userId, dayType ?? 0, today), enabled: training });
+  // Cardio decides a cardio-only day. It can exist only once today's session does.
+  const sessionId = sets.data?.session?.id ?? null;
+  const withCardio = training && sessionId !== null;
+  const cardio = useQuery({ ...cardioQueryOptions(userId, sessionId), enabled: withCardio });
 
   const isPending =
     splitPending || sessions.isPending || weights.isPending || diary.isPending || targets.isPending ||
-    goals.isPending || (training && (exercises.isPending || sets.isPending));
+    goals.isPending || (training && (exercises.isPending || sets.isPending)) || (withCardio && cardio.isPending);
 
   // A source has failed only when it has nothing to show. A failed refetch keeps
   // the last good data and still sets isError (CLAUDE.md), and a phone refetches
   // on every focus: one flaky response must not move the slot or blank a section.
   const weightsFailed = weights.isError && !weights.hasData;
   const workoutError =
-    training && ((exercises.isError && !exercises.data) || (sets.isError && !sets.data));
+    training &&
+    ((exercises.isError && !exercises.data) ||
+      (sets.isError && !sets.data) ||
+      (withCardio && cardio.isError && !cardio.data));
   const progress: WorkoutProgress | null =
-    training && exercises.data && sets.data
-      ? workoutProgress(exercises.data.map((e) => e.exercise_name), sets.data.sets.map((s) => s.exercise_name))
+    training && exercises.data && sets.data && (!withCardio || cardio.data)
+      ? workoutProgress(
+          exercises.data.map((e) => e.exercise_name),
+          sets.data.sets.map((s) => s.exercise_name),
+          cardio.data?.length ?? 0,
+        )
       : null;
 
   const top: HomeTop = nextUp({
     weighedInToday: weightsFailed ? null : weights.entries.some((e) => e.date === today),
-    isRest: home.today.isRest,
+    isRest: workoutToday === null,
     workout: workoutError || !progress ? null : { finished: progress.finished },
   });
 
@@ -77,7 +102,13 @@ export function useHomeDay(today: string) {
   return {
     isPending,
     top,
-    workout: { label: home.today.label, isRest: home.today.isRest, progress, isError: workoutError },
+    workout: {
+      label: workoutToday?.label ?? "Rest day",
+      dayType: workoutToday?.dayType ?? null,
+      isRest: workoutToday === null,
+      progress,
+      isError: workoutError,
+    },
     food: {
       day,
       isError: (diary.isError && !diary.hasData) || (targets.isError && !targets.hasData),

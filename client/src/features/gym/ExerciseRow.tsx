@@ -26,6 +26,8 @@ interface Props {
   onDelete: () => void;
   onMove: (dir: "up" | "down") => void;
   onRename: () => void;
+  /** Last time is still loading: say nothing rather than "No history". */
+  lastPending?: boolean;
 }
 
 export function ExerciseRow({
@@ -39,6 +41,7 @@ export function ExerciseRow({
   onDelete,
   onMove,
   onRename,
+  lastPending = false,
 }: Props) {
   if (editMode) {
     return (
@@ -85,7 +88,9 @@ export function ExerciseRow({
     ? `${todaySets.length} set${todaySets.length === 1 ? "" : "s"}${top ? ` · top ${setLong(top)}` : ""}`
     : top
       ? `Last · ${setLong(top)}`
-      : "No history";
+      : lastPending
+        ? " " // keeps the row's height while last time loads
+        : "No history";
 
   return (
     <button

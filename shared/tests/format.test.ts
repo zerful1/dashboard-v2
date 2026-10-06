@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { setLong, setShort } from '../src/domain/format'
+import { setCell, setLong, setShort } from '../src/domain/format'
 
 const plain = { weight_kg: 36.3, reps: 7, is_bodyweight: false }
 
@@ -21,5 +21,11 @@ describe('set formatting', () => {
     const s = { weight_kg: 0, reps: 10, is_bodyweight: true, reps_left: 10, reps_right: 10 }
     expect(setLong(s)).toBe('BW × L10 R10')
     expect(setShort(s)).toBe('BW×L10 R10')
+  })
+
+  it('reads a set for a table cell, whose column already says kg', () => {
+    expect(setCell(plain)).toBe('36.3 × 7')
+    expect(setCell({ ...plain, reps_left: 7, reps_right: 8 })).toBe('36.3 × L7 R8')
+    expect(setCell({ ...plain, weight_kg: 0, is_bodyweight: true })).toBe('BW × 7')
   })
 })
