@@ -67,7 +67,7 @@ export function ExerciseList({
       <div className="flex items-baseline justify-between pt-3 pb-2">
         <span className="lbl">Exercises</span>
         {!editMode && exercises.length > 0 && (
-          <span className="tnum lbl text-dim">
+          <span className="tnum lbl text-muted">
             {done} / {exercises.length}
           </span>
         )}

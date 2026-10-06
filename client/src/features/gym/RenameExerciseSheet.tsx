@@ -79,7 +79,7 @@ export function RenameExerciseSheet({ oldName, dayType, onClose, onRename, isPen
           </p>
         )}
 
-        <p className="text-xs text-dim">
+        <p className="text-xs text-muted">
           Renames everywhere this exercise appears, including past sessions.
         </p>
 

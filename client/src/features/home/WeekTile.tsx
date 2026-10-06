@@ -19,7 +19,7 @@ export function WeekTile({ week }: { week: HomeWeek }) {
                 done ? "h-2 w-2 rounded-full bg-accent" : "h-2 w-2 rounded-full border border-dim"
               }
             />
-            <span className="text-[10px] leading-none text-dim">{LETTERS[i]}</span>
+            <span className="text-[10px] leading-none text-muted">{LETTERS[i]}</span>
           </div>
         ))}
       </div>

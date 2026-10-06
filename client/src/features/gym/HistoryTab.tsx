@@ -42,9 +42,9 @@ export function HistoryTab({ onEditInLog }: { onEditInLog: (s: WorkoutSession) =
         ))}
       </div>
 
-      {isPending && <p className="py-4 text-center text-xs text-dim">Loading…</p>}
+      {isPending && <p className="py-4 text-center text-xs text-muted">Loading…</p>}
       {!isPending && sessions.length === 0 && (
-        <p className="py-8 text-center text-xs text-dim">No sessions logged yet</p>
+        <p className="py-8 text-center text-xs text-muted">No sessions logged yet</p>
       )}
 
       {sessions.length > 0 && (

@@ -110,7 +110,7 @@ export function AddFoodSheet({
           </>
         )}
         {/* Required by the data licences (spec §10). */}
-        <p className="mt-4 text-[10px] leading-snug text-dim">
+        <p className="mt-4 text-[10px] leading-snug text-muted">
           Food data: Open Food Facts (ODbL) · CoFID 2021 (Open Government Licence v3.0)
         </p>
       </div>
@@ -125,7 +125,7 @@ function SearchTab({ q, setQ, onPick }: { q: string; setQ: (q: string) => void; 
 
   let body: ReactNode;
   if (!online) body = <p className="text-sm text-muted">Search needs a connection.</p>;
-  else if (debounced.trim().length < 2) body = <p className="text-sm text-dim">Type at least two letters.</p>;
+  else if (debounced.trim().length < 2) body = <p className="text-sm text-muted">Type at least two letters.</p>;
   else if (search.isPending) body = <Spinner label="Searching" />;
   else if (search.isError) body = <p className="text-sm text-muted">Search failed. Try again.</p>;
   else {
@@ -138,7 +138,7 @@ function SearchTab({ q, setQ, onPick }: { q: string; setQ: (q: string) => void; 
           </p>
         ))}
         {hits.length === 0 ? (
-          <p className="text-sm text-dim">No matches.</p>
+          <p className="text-sm text-muted">No matches.</p>
         ) : (
           <List>
             {hits.map((h) => (
@@ -149,7 +149,7 @@ function SearchTab({ q, setQ, onPick }: { q: string; setQ: (q: string) => void; 
               >
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm">{h.name}</span>
-                  <span className="block truncate text-xs text-dim">
+                  <span className="block truncate text-xs text-muted">
                     {h.brand ?? (h.source === "cofid" ? "UK food table" : "Open Food Facts")}
                   </span>
                 </span>
@@ -176,7 +176,7 @@ function RecentTab({ onPick }: { onPick: (r: RecentFood) => void }) {
   const recents = useRecents();
   if (recents.isPending) return <Spinner label="Loading recent foods" />;
   if (recents.isError) return <p className="text-sm text-muted">Could not load recent foods.</p>;
-  if (recents.data.length === 0) return <p className="text-sm text-dim">Foods you log will appear here.</p>;
+  if (recents.data.length === 0) return <p className="text-sm text-muted">Foods you log will appear here.</p>;
   return (
     <List>
       {recents.data.map((r) => (

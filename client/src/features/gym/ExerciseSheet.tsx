@@ -108,7 +108,7 @@ export function ExerciseSheet({
         <div>
           <div className="lbl mb-1.5">Last session</div>
           {lastSets.length === 0 ? (
-            <p className="text-xs text-dim">No previous data</p>
+            <p className="text-xs text-muted">No previous data</p>
           ) : (
             <div className="space-y-0.5">
               {lastSets.map((s) => (
@@ -123,7 +123,7 @@ export function ExerciseSheet({
         <div>
           <div className="lbl mb-1.5">This session</div>
           {todaySets.length === 0 ? (
-            <p className="text-xs text-dim">Nothing logged yet</p>
+            <p className="text-xs text-muted">Nothing logged yet</p>
           ) : (
             <div className="space-y-1">
               {todaySets.map((s) => (
