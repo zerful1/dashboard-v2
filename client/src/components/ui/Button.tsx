@@ -22,8 +22,9 @@ const VARIANTS: Record<Variant, string> = {
   // Any other action: an outline, so it is plainly a button without competing
   // with the one filled pill.
   ghost: "border border-edge text-text hover:bg-accent/5",
-  // Dismiss, and the unchosen items of a set (beside `selected`).
-  subtle: "text-muted hover:text-text",
+  // Dismiss, and the unchosen items of a set (beside `selected`). No fill even
+  // when disabled: a grey pill here would pass for the selected item.
+  subtle: "text-muted hover:text-text disabled:bg-transparent",
   // A red tint, so a destructive action is told apart by fill as well as hue.
   danger: "bg-negative/12 text-negative hover:bg-negative/20",
 };

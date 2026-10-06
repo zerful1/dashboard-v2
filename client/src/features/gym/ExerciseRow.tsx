@@ -93,9 +93,10 @@ export function ExerciseRow({
       className="flex w-full items-center gap-3 py-3 text-left hover:bg-accent/5"
     >
       <span
+        data-part="mark"
         className={cn(
           "flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border",
-          done ? "border-accent bg-accent" : "border-raised",
+          done ? "border-accent bg-accent" : "border-dim",
         )}
       >
         {done && <Check size={11} strokeWidth={3} className="text-bg" />}

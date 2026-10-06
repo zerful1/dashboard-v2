@@ -49,9 +49,10 @@ export function TodayHabitsCard() {
                 {/* A white circle when ticked: a done mark (the accent rule's
                     circle), inside a full-size tap target. */}
                 <span
+                  data-part="mark"
                   className={cn(
                     "flex h-5 w-5 items-center justify-center rounded-full",
-                    done ? "bg-accent text-bg" : "border-[1.5px] border-edge text-transparent",
+                    done ? "bg-accent text-bg" : "border-[1.5px] border-dim text-muted",
                   )}
                 >
                   <Check size={12} strokeWidth={3} aria-hidden />

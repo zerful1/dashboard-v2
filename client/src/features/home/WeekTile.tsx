@@ -14,6 +14,7 @@ export function WeekTile({ week }: { week: HomeWeek }) {
         {week.days.map((done, i) => (
           <div key={i} className="flex flex-col items-center gap-1">
             <span
+              data-part="mark"
               className={
                 done ? "h-2 w-2 rounded-full bg-accent" : "h-2 w-2 rounded-full border border-dim"
               }

@@ -33,9 +33,10 @@ export function HabitRow({ habit, days, today, locked, onToggle }: {
               className="flex h-9 items-center justify-center disabled:opacity-40"
             >
               <span
+                data-part="mark"
                 className={cn(
                   "flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-medium",
-                  done ? "bg-accent text-bg" : "border-[1.5px] border-edge text-muted",
+                  done ? "bg-accent text-bg" : "border-[1.5px] border-dim text-muted",
                   // Today, ringed whether ticked or not, so the strip has a "now".
                   d === today && "ring-1 ring-muted ring-offset-2 ring-offset-bg",
                 )}
