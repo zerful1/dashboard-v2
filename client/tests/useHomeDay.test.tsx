@@ -22,9 +22,15 @@ const set = (name: string) => ({
   id: `${name}-${Math.random()}`, user_id: "u1", session_id: "s1", exercise_name: name, set_number: 1,
   weight_kg: 100, reps: 5, reps_left: null, reps_right: null, is_bodyweight: false,
 });
+const session = (date: string, dayType: number, dayName: string) => ({
+  id: `s-${date}-${dayType}`, user_id: "u1", date, day_type: dayType, day_name: dayName, notes: null, created_at: `${date}T07:00:00Z`,
+});
+const treadmill = { id: "c1", user_id: "u1", session_id: "s1", exercise: "Treadmill", distance_miles: null, duration_minutes: 20, speed: null, incline: null, calories_burned: null };
 const NEVER = () => new Promise(() => {});
 
 interface Data {
+  sessions?: unknown[];
+  cardio?: () => unknown;
   weights?: () => unknown;
   exercises?: unknown[];
   sets?: () => unknown;
@@ -42,10 +48,11 @@ function mockApi(d: Data = {}) {
   const calls: string[] = [];
   const routes: [string, () => unknown][] = [
     ["/api/split", () => DEFAULT_SPLIT],
-    ["/api/workouts/sessions", () => []],
+    ["/api/workouts/sessions", () => d.sessions ?? []],
     ["/api/workouts/session?", () => ({ id: "s1", user_id: "u1", date: WED, day_type: 1, day_name: "Legs", notes: null, created_at: "" })],
     ["/api/workouts/sets", d.sets ?? (() => [])],
     ["/api/exercises", () => d.exercises ?? [exercise("Squat"), exercise("Lunge")]],
+    ["/api/cardio", d.cardio ?? (() => [])],
     ["/api/weight", d.weights ?? (() => [])],
     ["/api/nutrition/diary", () => []],
     ["/api/nutrition/targets", () => []],
@@ -144,6 +151,7 @@ describe("useHomeDay (redesign part 2, §3)", () => {
     ["the goals", "/api/goals"],
     ["today's exercise list", "/api/exercises"],
     ["today's sets", "/api/workouts/sets"],
+    ["today's cardio", "/api/cardio"],
   ])("stays pending while waiting for %s on a training day", async (_source, path) => {
     freeze(WED);
     mockApi({ weights: () => [weighIn(WED)], pending: path });
@@ -195,4 +203,31 @@ describe("useHomeDay (redesign part 2, §3)", () => {
     expect(result.current.workout.progress).not.toBeNull();
   });
 
+
+  it("counts a cardio-only session as the workout done, and hands the slot to food", async () => {
+    freeze(WED);
+    mockApi({ weights: () => [weighIn(WED)], cardio: () => [treadmill] });
+    const { result } = run(WED);
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+    expect(result.current.workout.progress).toMatchObject({ sets: 0, cardio: 1, finished: true });
+    expect(result.current.top).toBe("food");
+  });
+
+  it("shows a session logged today for another day, under its own name", async () => {
+    freeze(WED);
+    const calls = mockApi({ weights: () => [weighIn(WED)], sessions: [session(WED, 3, "Push")] });
+    const { result } = run(WED);
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+    expect(result.current.workout.label).toBe("Push");
+    expect(calls.some((c) => c.startsWith("/api/exercises?day_type=3"))).toBe(true);
+  });
+
+  it("shows a session logged on a rest day instead of Rest day", async () => {
+    freeze(THU);
+    mockApi({ weights: () => [weighIn(THU)], sessions: [session(THU, 2, "Pull")] });
+    const { result } = run(THU);
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+    expect(result.current.workout).toMatchObject({ isRest: false, label: "Pull" });
+    expect(result.current.top).toBe("workout");
+  });
 });

@@ -66,6 +66,7 @@ interface Overrides {
   sets?: unknown[];
   targets?: unknown[];
   habits?: unknown[];
+  cardio?: unknown[];
 }
 
 /**
@@ -86,6 +87,7 @@ function mockApi(o: Overrides = {}) {
     ["GET /api/workouts/session?", () => session(WED, 1, "Legs", "s1")],
     ["GET /api/workouts/sets", () => o.sets ?? []],
     ["GET /api/exercises", () => o.exercises ?? [exercise("Squat"), exercise("Lunge")]],
+    ["GET /api/cardio", () => o.cardio ?? []],
     ["POST /api/weight", (body) => {
       const e = weighIn(body!.date, body!.weight_kg);
       state.weights = [e, ...(Array.isArray(state.weights) ? state.weights : [])];
@@ -262,5 +264,17 @@ describe("HomePage, today at a glance", () => {
       document.dispatchEvent(new Event("visibilitychange"));
     });
     expect(await screen.findByLabelText("Today's weight (kg)")).toBeInTheDocument();
+  });
+
+  it("shows a cardio-only day as done, and puts food on top", async () => {
+    freeze(WED);
+    mockApi({
+      weights: [weighIn(WED)],
+      cardio: [{ id: "c1", user_id: "1", session_id: "s1", exercise: "Treadmill", distance_miles: null, duration_minutes: 20, speed: null, incline: null, calories_burned: null }],
+    });
+    renderPage();
+    expect(await screen.findByText("Legs · done")).toBeInTheDocument();
+    expect(screen.getByText("Cardio only")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add food" })).toBeInTheDocument();
   });
 });

@@ -15,6 +15,8 @@ const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? "" : "s"}`;
 
 /** "5 exercises · not started", "3 of 5 exercises · 9 sets", or "9 sets" with an empty list. */
 function detail(p: WorkoutProgress): string {
+  // A cardio-only day is done (redesign part 3a, §5).
+  if (p.sets === 0 && p.cardio > 0) return "Cardio only";
   if (!p.started) return p.total > 0 ? `${plural(p.total, "exercise")} · not started` : "Not started";
   return p.total > 0 ? `${p.done} of ${plural(p.total, "exercise")} · ${plural(p.sets, "set")}` : plural(p.sets, "set");
 }
