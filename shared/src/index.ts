@@ -15,7 +15,6 @@ export * from "./domain/liftProgress";
 export * from "./domain/trainingGrid";
 export * from "./domain/splitEditor";
 export * from "./domain/overloadCoaching";
-export * from "./domain/workoutStats";
 export * from "./domain/exerciseName";
 export * from "./domain/media";
 export * from "./domain/nutrition/queries";

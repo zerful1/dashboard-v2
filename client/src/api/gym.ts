@@ -2,7 +2,8 @@ import { api } from "@/lib/api";
 import type {
   Exercise,
   ExerciseNameRow,
-  StatSetRow,
+  LiftProgress,
+  LiftSetRow,
   WorkoutSession,
   WorkoutSet,
   LastTime,
@@ -23,12 +24,6 @@ export type SetFields = {
 } & SetReps;
 
 export type SetInput = { date: string; day_type: number } & SetFields;
-
-export interface StatsPayload {
-  sets: StatSetRow[];
-  /** session_id -> YYYY-MM-DD. An object, not a Map — JSON has no Map. */
-  sessionDates: Record<string, string>;
-}
 
 export interface CardioInput {
   exercise: string;
@@ -90,7 +85,8 @@ export const gymApi = {
     ),
 
   stats: (exerciseName: string) =>
-    api<StatsPayload>(`/api/workouts/stats?exercise_name=${encodeURIComponent(exerciseName)}`),
+    api<LiftSetRow[]>(`/api/workouts/stats?exercise_name=${encodeURIComponent(exerciseName)}`),
+  progress: (today: string) => api<LiftProgress[]>(`/api/workouts/progress?today=${today}`),
   sessionDetail: (sessionId: string) =>
     api<{ sets: WorkoutSet[]; cardio: CardioEntry[] }>(
       `/api/workouts/session-detail?session_id=${sessionId}`,

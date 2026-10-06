@@ -8,6 +8,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useMemo } from "react";
+import { linearTrend, trendPoint, type LiftChartPoint } from "@dashboard/shared";
 import { useMotionSafe } from "@/lib/motion";
 import { goalPlacement } from "./deriveWeight";
 
@@ -202,6 +204,67 @@ export function WeightSparkline({ points }: { points: ChartPoint[] }) {
             strokeWidth={2}
             dot={false}
             isAnimationActive={safe}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+/**
+ * One lift over the trend span (redesign part 3b, §4): each session's best as
+ * an estimated 1RM (or reps), new bests white and the rest dim, with a dashed
+ * fitted line that never reads as measurement. It lives here because this file
+ * is the one charting boundary; ProgressionChart broke that rule and is gone.
+ */
+export function LiftChart({ points, unit }: { points: LiftChartPoint[]; unit: "kg" | "reps" }) {
+  const data = useMemo(() => {
+    if (points.length < 2) return [];
+    // linearTrend takes {x,y}[] and trendPoint is (x, line): both compile the wrong way round.
+    const line = linearTrend(points.map((p, i) => ({ x: i, y: p.value })));
+    return points.map((p, i) => ({
+      ...p,
+      trend: i === 0 || i === points.length - 1 ? trendPoint(i, line) : undefined,
+    }));
+  }, [points]);
+
+  if (points.length < 2) {
+    return <p className="py-6 text-center text-sm text-muted">Not enough sessions to chart yet.</p>;
+  }
+
+  return (
+    <div className="h-48" role="img" aria-label={`${unit === "kg" ? "Estimated 1RM" : "Reps"} per session, ${points.length} sessions`}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -18 }}>
+          <CartesianGrid stroke="var(--color-raised)" vertical={false} />
+          <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={28} />
+          <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={44} domain={["dataMin - 2", "dataMax + 2"]} />
+          <Line
+            type="monotone"
+            dataKey="value"
+            stroke="var(--color-accent)"
+            strokeWidth={2}
+            isAnimationActive={false}
+            dot={(props: { cx?: number; cy?: number; index?: number; payload?: LiftChartPoint }) => (
+              <circle
+                key={props.index}
+                cx={props.cx}
+                cy={props.cy}
+                r={props.payload?.isBest ? 3 : 2}
+                fill={props.payload?.isBest ? "var(--color-accent)" : "var(--color-dim)"}
+                stroke="none"
+              />
+            )}
+          />
+          <Line
+            type="linear"
+            dataKey="trend"
+            stroke="var(--color-dim)"
+            strokeWidth={1.5}
+            strokeDasharray="4 4"
+            dot={false}
+            connectNulls
+            isAnimationActive={false}
           />
         </LineChart>
       </ResponsiveContainer>

@@ -28,6 +28,7 @@ const ROUTES: [string, unknown][] = [
   ["/api/workouts/session", null],
   ["/api/workouts/sets", []],
   ["/api/workouts/last-times", {}],
+  ["/api/workouts/progress", []],
   ["/api/workouts/day-names", ["Push"]],
   ["/api/workouts/exercise-names", []],
   ["/api/cardio", []],
