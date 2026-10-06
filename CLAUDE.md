@@ -283,9 +283,16 @@ replaced terracotta). A filled white **pill** (`bg-accent text-bg`, the
 set* — a state, never an action. A small filled white **circle** (24 px or
 less: a set tick, a habit tick, a week dot) is a *done mark*, a state its shape
 keeps from reading as a button. And identity chrome: the wordmark, the page
-eyebrow, the active tab. `tests/accentRule.test.ts` lists every file allowed a
-solid `bg-accent`, with its reason; adding one is a decision, not a
-convenience.
+eyebrow, the active tab. White as *data ink* — a macro bar's fill, a chart's
+line — is the data itself, not a shape, so it is not a fifth role.
+`tests/accentRule.test.ts` lists every file allowed a solid white fill
+(`bg-accent`, and `bg-text`/`bg-white`, which are white too), with its reason;
+adding one is a decision, not a convenience.
+
+**`dim` is decoration, never words.** `dim` (#555) is 2.8:1 on black: chevrons,
+placeholders, disabled text, an empty "—". Anything a person reads — hints,
+empty states, dates, "Couldn't refresh", inactive tab labels — is `muted`
+(6.1:1) or brighter. `tests/dimText.test.ts` counts every `text-dim` per file.
 
 **Each signal colour has one job.** `good` (green) means *toward your goal* or
 progress advice; `caution` (amber) means over a target or a warning;
@@ -300,8 +307,17 @@ look it replaced.
 
 **Inter is bundled** (`@fontsource-variable/inter`, imported in `index.tsx`).
 Never load a font from a CDN: the app must draw itself offline, and a font host
-is a third-party request on every first visit. `tests/fonts.test.ts` fails on
-either.
+is a third-party request on every first visit. `tests/fonts.test.ts` fails on a
+remote `@import`, `@font-face` source or font `<link>` on any host, in `src/`,
+`public/` or `rsbuild.config.ts`.
+
+**Nothing may reach past the screen's edge, fixed elements included.** iOS pans
+the whole page sideways for a fixed element that overflows; Chromium does not,
+so no desktop check sees it. sonner's phone toaster did exactly that (`width:
+100%` plus a 16 px left offset), and `styles.css` overrides it. Double-tap zoom
+is off (`touch-action: manipulation` on every element, at `:where()`
+specificity), because a zoomed page pans sideways too; pinch zoom stays, so
+never lock the viewport. `tests/viewportFit.test.ts` pins both.
 
 **`figure` for big numbers, `lbl` for labels.** `figure` is light and tabular;
 `lbl` is 11 px grey sentence case. Neither uppercases, so write label strings

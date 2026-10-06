@@ -17,7 +17,7 @@ export function LabelStrip({ labels }: { labels: LabelSums }) {
           <p key={r.key}>
             {r.label}{" "}
             <span className="tnum">{v.total === null ? "—" : `${v.total.toFixed(r.dp)} g`}</span>
-            {v.partial && <span className="text-dim"> (partial)</span>}
+            {v.partial && <span className="text-muted"> (partial)</span>}
           </p>
         );
       })}

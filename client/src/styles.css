@@ -49,7 +49,6 @@
      size; without that it reads as a colour and is dropped beside one. */
   --text-label: 0.625rem;
   --text-label--line-height: 1;
-  --tracking-label: 0em;
 
   /* Media only (the barcode camera). Grouping is hairlines, not rounded boxes. */
   --radius-card: 11px;
@@ -73,6 +72,29 @@
   :focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
+  }
+
+  /* No double-tap zoom: on iOS a quick double tap (+/−, ticking habits) zoomed
+     the page, and a zoomed page pans sideways. Pinch zoom stays — never lock the
+     viewport (WCAG 1.4.4). On every element, because touch-action is combined
+     only up to the nearest scrolling ancestor (<main>, a sheet's body), and at
+     :where() specificity so a utility or an inline drag style still wins. */
+  :where(*) {
+    touch-action: manipulation;
+  }
+}
+
+/* sonner's phone rule gives the toast strip width: 100% AND left: 16px, so
+   while a toast shows it runs 16px past the right edge — and iOS pans the page
+   sideways for a fixed element that overflows (Chromium does not, which is why
+   it hid). Let the two offsets size the strip, and the toast fill it. :root for
+   specificity: sonner injects its stylesheet after ours. */
+@media (max-width: 600px) {
+  :root [data-sonner-toaster] {
+    width: auto;
+  }
+  :root [data-sonner-toaster] [data-sonner-toast] {
+    width: 100%;
   }
 }
 

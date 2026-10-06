@@ -95,7 +95,7 @@ export function NutritionPage() {
         <Spinner label="Loading your day" />
       ) : (
         <>
-          {stale && <p className="text-xs text-dim">Couldn't refresh — showing saved data.</p>}
+          {stale && <p className="text-xs text-muted">Couldn't refresh — showing saved data.</p>}
           <SummaryCard summary={summary} onSetTargets={() => setTargeting(true)} />
           <div className="flex gap-2">
             {/* The one filled action on this screen. */}

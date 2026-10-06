@@ -34,7 +34,7 @@ export function DiaryList({ entries, onSelect }: { entries: FoodLogEntry[]; onSe
           onClick={() => onSelect(e)}
           className="flex w-full items-center gap-3 py-3 text-left hover:bg-accent/5 disabled:opacity-60"
         >
-          <span className="tnum w-11 shrink-0 text-xs text-dim">{timeOf(e.logged_at)}</span>
+          <span className="tnum w-11 shrink-0 text-xs text-muted">{timeOf(e.logged_at)}</span>
           <span className="min-w-0 flex-1 truncate text-sm">
             <span>{e.name}</span> <span className="text-muted">· {amountOf(e)}</span>
           </span>

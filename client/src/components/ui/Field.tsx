@@ -48,7 +48,7 @@ export function Field({ label, htmlFor, error, hint, children }: Props) {
       </label>
       {child}
       {hint && !error && (
-        <p id={hintId} className="text-xs text-dim">
+        <p id={hintId} className="text-xs text-muted">
           {hint}
         </p>
       )}

@@ -97,7 +97,7 @@ export function TargetsSheet({
             <Input id="t-fat" inputMode="numeric" value={fat} onChange={(e) => setFat(e.target.value)} />
           </Field>
         </div>
-        <p className="tnum text-xs text-dim">Macros add up to {fromMacros.toLocaleString()} kcal</p>
+        <p className="tnum text-xs text-muted">Macros add up to {fromMacros.toLocaleString()} kcal</p>
         <Button
           className="w-full"
           disabled={!valid}
@@ -151,10 +151,10 @@ function HintCard({ hint }: { hint: TdeeHint | undefined }) {
       : `Add your body details below for an estimate, or log food for 14 days (${hint.days_logged} so far).`;
   }
   return (
-    <div className="rounded-lg border border-raised p-3">
+    <div className="border-b border-raised pb-4">
       {headline && <p className="tnum text-sm font-semibold">{headline}</p>}
       <p className="mt-1 text-xs text-muted">{detail}</p>
-      <p className="mt-2 text-[11px] text-dim">
+      <p className="mt-2 text-[11px] text-muted">
         Counts every day you logged anything as a full day. An estimate, not medical advice.
       </p>
     </div>
@@ -205,7 +205,7 @@ function BodyDetails() {
   };
 
   return (
-    <details className="rounded-lg border border-raised px-3 py-2">
+    <details className="border-t border-raised pt-3">
       <summary className="cursor-pointer text-xs text-muted">Body details (for the estimate)</summary>
       <div className="mt-3 space-y-3">
         <div className="grid grid-cols-2 gap-3">

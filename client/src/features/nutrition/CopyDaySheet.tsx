@@ -40,8 +40,8 @@ export function CopyDaySheet({
           <span className="text-sm text-muted">Copy from</span>
           <DateSelector value={from} onChange={setFrom} />
         </div>
-        {same && <p className="text-sm text-dim">Pick a different day.</p>}
-        {!same && empty && <p className="text-sm text-dim">Nothing logged on {prettyDate(from)}.</p>}
+        {same && <p className="text-sm text-muted">Pick a different day.</p>}
+        {!same && empty && <p className="text-sm text-muted">Nothing logged on {prettyDate(from)}.</p>}
         <Button
           className="w-full"
           disabled={blocked}

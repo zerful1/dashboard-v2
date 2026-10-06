@@ -103,6 +103,17 @@ describe("ExerciseSheet", () => {
     expect(onLogSet).toHaveBeenCalledWith(0, 9, true, 1);
   });
 
+  // Redesign review: a selected toggle dropped its border, so switching one on
+  // moved everything below it by 2px. Both states keep a 1px border.
+  it("keeps the bodyweight toggle the same size when it is switched on", async () => {
+    mockCoaching(null);
+    renderSheet();
+    const off = screen.getByRole("button", { name: /mark as bodyweight/i });
+    expect(off).toHaveClass("border");
+    await userEvent.click(off);
+    expect(screen.getByRole("button", { name: /bodyweight: on/i })).toHaveClass("border");
+  });
+
   it("requires reps, and requires weight unless bodyweight", async () => {
     mockCoaching(null);
     renderSheet();

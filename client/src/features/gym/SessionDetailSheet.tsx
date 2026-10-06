@@ -31,13 +31,13 @@ export function SessionDetailSheet({
       title={session ? `${session.date} — ${session.day_name}` : ""}
     >
       <div className="max-h-[60vh] overflow-auto">
-        {isLoading && <p className="py-4 text-center text-xs text-dim">Loading…</p>}
+        {isLoading && <p className="py-4 text-center text-xs text-muted">Loading…</p>}
         {isError && (
           <p className="py-4 text-center text-xs text-negative">Couldn&apos;t load this session</p>
         )}
 
         {data && names.length === 0 && cardio.length === 0 && (
-          <p className="py-4 text-center text-xs text-dim">No data for this session</p>
+          <p className="py-4 text-center text-xs text-muted">No data for this session</p>
         )}
 
         {names.length > 0 && (

@@ -71,20 +71,20 @@ export function WeeklyReviewSection({ today }: { today: string }) {
 
       {review.data && review.isError && (
         // A failed refresh keeps the last good week on screen (the Food page's pattern).
-        <p className="mt-2 text-xs text-dim">Couldn't refresh — showing saved data.</p>
+        <p className="mt-2 text-xs text-muted">Couldn't refresh — showing saved data.</p>
       )}
       {review.data ? (
         <dl className="mt-3 space-y-2 text-sm">
           <div>
-            <dt className="lbl text-dim">Training</dt>
+            <dt className="lbl">Training</dt>
             <dd className="tnum">{trainingLine(review.data)}</dd>
           </div>
           <div>
-            <dt className="lbl text-dim">Food</dt>
+            <dt className="lbl">Food</dt>
             <dd className="tnum">{foodLine(review.data)}</dd>
           </div>
           <div>
-            <dt className="lbl text-dim">Weight</dt>
+            <dt className="lbl">Weight</dt>
             <dd className="tnum">{weightLine(review.data)}</dd>
           </div>
         </dl>

@@ -9,6 +9,7 @@ import {
   YAxis,
 } from "recharts";
 import { useMotionSafe } from "@/lib/motion";
+import { goalPlacement } from "./deriveWeight";
 
 export interface ChartPoint {
   /**
@@ -66,9 +67,19 @@ export function WeightChart({ points, trend, goalKg = null }: Props) {
   }
 
   const lastIndex = points.length - 1;
+  const goal = goalPlacement(points, trend, goalKg);
   return (
     <div className="border-t border-raised py-4">
-      <div className="lbl">Weight · {points.length} entries</div>
+      <div className="flex items-baseline justify-between gap-3">
+        <div className="lbl">Weight · {points.length} entries</div>
+        {/* A goal outside the chart's range is named, not reached for: the axis
+            stretching to it squashed the line flat. */}
+        {(goal === "below" || goal === "above") && (
+          <div className="tnum text-xs text-muted">
+            Goal {goalKg} kg {goal === "below" ? "↓" : "↑"}
+          </div>
+        )}
+      </div>
       <div className="mt-3 h-56">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -12 }}>
@@ -113,15 +124,14 @@ export function WeightChart({ points, trend, goalKg = null }: Props) {
                 name === "kg" ? "Weight" : "Trend",
               ]}
             />
-            {goalKg !== null && (
-              // Extends the y-axis to reach it: a goal off the chart is the one
-              // a reader most needs to see (redesign spec §5.8).
+            {goal === "in" && (
+              // Inside the data's own range, so the axis never moves for it —
+              // nor rescales when the goals load after the weigh-ins.
               <ReferenceLine
-                y={goalKg}
+                y={goalKg!}
                 stroke="var(--color-dim)"
                 strokeDasharray="3 4"
-                ifOverflow="extendDomain"
-                label={{ value: `goal ${goalKg}`, position: "insideBottomRight", fill: "var(--color-dim)", fontSize: 10 }}
+                label={{ value: `goal ${goalKg}`, position: "insideBottomRight", fill: "var(--color-muted)", fontSize: 10 }}
               />
             )}
             {/* Weigh-ins as grey dots, the latest a white ring; the trend below

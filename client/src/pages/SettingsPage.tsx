@@ -195,7 +195,7 @@ export function SettingsPage() {
                 onClick={() => saveProfile.mutate({ units: u })}
                 className="flex-1"
               >
-                {u.toUpperCase()}
+                {u}
               </Button>
             ))}
           </div>

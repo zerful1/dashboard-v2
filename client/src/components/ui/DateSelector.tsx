@@ -34,7 +34,7 @@ export function DateSelector({
   return (
     <div
       className={cn(
-        "relative inline-flex items-center gap-2 rounded-full border border-raised bg-surface px-3 py-1.5 text-xs text-muted",
+        "relative inline-flex items-center gap-2 rounded-full border border-edge px-3 py-1.5 text-xs text-muted",
         // The input is opacity-0, and opacity hides an element's own outline
         // and ring along with it — so keyboard focus is shown on the chip
         // instead, and only for keyboard focus, matching Button.

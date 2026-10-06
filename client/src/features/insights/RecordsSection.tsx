@@ -25,7 +25,7 @@ export function RecordsSection({ today }: { today: string }) {
       <div className="lbl">Records</div>
       {records.data && records.isError && (
         // A failed refresh keeps the last good list on screen (the Food page's pattern).
-        <p className="mt-2 text-xs text-dim">Couldn't refresh — showing saved data.</p>
+        <p className="mt-2 text-xs text-muted">Couldn't refresh — showing saved data.</p>
       )}
       {records.data ? (
         records.data.length === 0 ? (
@@ -36,7 +36,7 @@ export function RecordsSection({ today }: { today: string }) {
               {records.data.slice(0, shown).map((e) => (
                 // One record per exercise per date, so this key is unique.
                 <li key={`${e.date}-${e.exercise_name}`} className="text-sm">
-                  <span className="tnum text-xs text-dim">{dayMonth(e.date, today)}</span>{" "}
+                  <span className="tnum text-xs text-muted">{dayMonth(e.date, today)}</span>{" "}
                   <span className="font-semibold">{e.exercise_name}</span>
                   <div className="tnum text-xs text-muted">{beat(e)}</div>
                 </li>

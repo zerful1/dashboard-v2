@@ -6,7 +6,7 @@ function Cell({ label, value, sub }: { label: string; value: string; sub?: strin
     <div className="border-t border-raised py-3">
       <div className="lbl">{label}</div>
       <div className="figure mt-1 text-lg">{value}</div>
-      {sub && <div className="lbl mt-1 text-dim">{sub}</div>}
+      {sub && <div className="lbl mt-1 text-muted">{sub}</div>}
     </div>
   );
 }

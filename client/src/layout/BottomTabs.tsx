@@ -14,7 +14,7 @@ export function BottomTabs({ onMore }: { onMore: () => void }) {
           to={to}
           end={to === "/"}
           className={({ isActive }) =>
-            cn("flex flex-1 flex-col items-center gap-1 pt-2 pb-1.5", isActive ? "text-accent" : "text-dim")
+            cn("flex flex-1 flex-col items-center gap-1 pt-2 pb-1.5", isActive ? "text-accent" : "text-muted")
           }
         >
           {({ isActive }) => (
@@ -27,7 +27,7 @@ export function BottomTabs({ onMore }: { onMore: () => void }) {
           )}
         </NavLink>
       ))}
-      <button onClick={onMore} className="flex flex-1 flex-col items-center gap-1 pt-2 pb-1.5 text-dim">
+      <button onClick={onMore} className="flex flex-1 flex-col items-center gap-1 pt-2 pb-1.5 text-muted">
         <MoreHorizontal size={18} />
         <span className="text-label font-medium">More</span>
         <span aria-hidden className="h-1 w-1" />

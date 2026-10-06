@@ -121,7 +121,7 @@ export function GoalsSection({ today, historyNames }: { today: string; historyNa
             <GoalRow key={x.id} goal={x} projection={byGoal.get(x.id)} today={today} onRemove={() => g.remove.mutate(x.id)} />
           ))}
           {lifts.length >= MAX_LIFTS ? (
-            <p className="text-xs text-dim">
+            <p className="text-xs text-muted">
               {MAX_LIFTS} of {MAX_LIFTS} lift goals
             </p>
           ) : (
@@ -163,7 +163,7 @@ export function GoalsSection({ today, historyNames }: { today: string; historyNa
                       <button
                         type="button"
                         onClick={() => setLift(n)}
-                        className="rounded-full border border-raised px-3 py-1 text-xs text-muted hover:text-text"
+                        className="rounded-full border border-edge px-3 py-1 text-xs text-muted hover:text-text"
                       >
                         {n}
                       </button>

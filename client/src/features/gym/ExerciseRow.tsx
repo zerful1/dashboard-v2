@@ -105,7 +105,7 @@ export function ExerciseRow({
         <span className={cn("block text-sm", done ? "text-muted" : "text-text")}>
           {exercise.exercise_name}
         </span>
-        <span className="lbl mt-0.5 block normal-case tracking-normal text-dim">{meta}</span>
+        <span className="lbl mt-0.5 block text-muted">{meta}</span>
       </span>
       <ChevronRight size={14} className="shrink-0 text-dim" />
     </button>

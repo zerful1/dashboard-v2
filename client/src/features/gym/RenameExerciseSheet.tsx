@@ -79,12 +79,12 @@ export function RenameExerciseSheet({ oldName, dayType, onClose, onRename, isPen
           </p>
         )}
 
-        <p className="text-xs text-dim">
+        <p className="text-xs text-muted">
           Renames everywhere this exercise appears, including past sessions.
         </p>
 
         <div className="flex gap-2">
-          <Button variant="ghost" className="flex-1" onClick={onClose}>
+          <Button variant="subtle" className="flex-1" onClick={onClose}>
             Cancel
           </Button>
           <Button

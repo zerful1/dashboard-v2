@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { deriveWeightSummary } from "../src/features/weight/deriveWeight";
+import { deriveWeightSummary, goalPlacement } from "../src/features/weight/deriveWeight";
 import type { BodyWeightEntry } from "@dashboard/shared";
 
 const e = (date: string, kg: number): BodyWeightEntry => ({
@@ -94,5 +94,28 @@ describe("deriveWeightSummary", () => {
     expect(s.latestDate).toBe("2025-09-27");
     expect(s.points.map((p) => p.date)).toEqual(["2025-09-26", "2025-09-27"]);
     expect(s.deltaWeek).toBe(null);
+  });
+});
+
+// The chart's y-range is the data ± 1 kg. A goal far outside it used to stretch
+// the axis to reach it and squash the line flat (redesign review); now it is
+// drawn only inside the range, and named beside the chart otherwise.
+describe("goalPlacement", () => {
+  const pts = [{ date: "2026-09-01", kg: 84 }, { date: "2026-10-01", kg: 80.6 }];
+  const trend = [{ date: "2026-09-01", kg: 83.8 }, { date: "2026-10-01", kg: 80.8 }];
+
+  it("draws a goal that falls inside the chart's range", () => {
+    expect(goalPlacement(pts, trend, 80)).toBe("in");
+    expect(goalPlacement(pts, trend, 79.6)).toBe("in"); // the 1 kg margin counts
+  });
+  it("names a goal below the chart instead of stretching to it", () => {
+    expect(goalPlacement(pts, trend, 70)).toBe("below");
+  });
+  it("names a goal above the chart instead of stretching to it", () => {
+    expect(goalPlacement(pts, trend, 95)).toBe("above");
+  });
+  it("has nothing to place without a goal or without weigh-ins", () => {
+    expect(goalPlacement(pts, trend, null)).toBeNull();
+    expect(goalPlacement([], [], 80)).toBeNull();
   });
 });

@@ -79,7 +79,7 @@ export function GymPage() {
         <button
           onClick={() => setSplitOpen(true)}
           aria-label="Edit split"
-          className="shrink-0 rounded-lg p-2 text-muted"
+          className="shrink-0 rounded-full p-2 text-muted"
         >
           <SlidersHorizontal size={16} />
         </button>
