@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { deriveHome, DEFAULT_SPLIT, type SplitConfig } from '../src'
+import { deriveHome, DEFAULT_SPLIT, nextUp, workoutProgress, type SplitConfig } from '../src'
 import type { WorkoutSession } from '../src'
 
 // DEFAULT_SPLIT.week is [3,2,1,'rest',5,4,'rest'] Monday-first:
@@ -122,5 +122,50 @@ describe('deriveHome — last session', () => {
     const h = deriveHome(DEFAULT_SPLIT, [session('2026-08-26')], '2026-08-27')
     expect(h.today.isRest).toBe(true)
     expect(h.lastSession?.date).toBe('2026-08-26')
+  })
+})
+
+describe('workoutProgress', () => {
+  it('has not started before any set', () => {
+    expect(workoutProgress(['Squat', 'Lunge'], [])).toEqual({ total: 2, done: 0, sets: 0, started: false, finished: false })
+  })
+  it('counts exercises with a set, and every set', () => {
+    expect(workoutProgress(['Squat', 'Lunge'], ['Squat', 'Squat'])).toEqual({ total: 2, done: 1, sets: 2, started: true, finished: false })
+  })
+  it('is finished when every listed exercise has a set', () => {
+    expect(workoutProgress(['Squat', 'Lunge'], ['Lunge', 'Squat']).finished).toBe(true)
+  })
+  it('ignores sets of exercises not on the list', () => {
+    // A Push exercise logged on a Pull day counts as a set, not as progress.
+    expect(workoutProgress(['Squat'], ['Bench Press'])).toEqual({ total: 1, done: 0, sets: 1, started: true, finished: false })
+  })
+  // An empty list (production's was cleared on 2026-10-03 to refill): any set finishes it.
+  it('with an empty list, is finished by any set', () => {
+    expect(workoutProgress([], []).finished).toBe(false)
+    expect(workoutProgress([], ['Squat']).finished).toBe(true)
+  })
+})
+
+describe('nextUp', () => {
+  const unfinished = { finished: false }
+  const finished = { finished: true }
+  it('puts the weigh-in first until today has one', () => {
+    expect(nextUp({ weighedInToday: false, isRest: false, workout: unfinished })).toBe('weigh-in')
+  })
+  it('then the workout, until it is finished', () => {
+    expect(nextUp({ weighedInToday: true, isRest: false, workout: unfinished })).toBe('workout')
+  })
+  it('then food', () => {
+    expect(nextUp({ weighedInToday: true, isRest: false, workout: finished })).toBe('food')
+  })
+  it('skips the workout on a rest day', () => {
+    expect(nextUp({ weighedInToday: true, isRest: true, workout: null })).toBe('food')
+  })
+  // A source that failed is unknown, so it never claims the slot.
+  it('passes over weigh-ins that failed to load', () => {
+    expect(nextUp({ weighedInToday: null, isRest: false, workout: unfinished })).toBe('workout')
+  })
+  it('passes over a workout that failed to load', () => {
+    expect(nextUp({ weighedInToday: true, isRest: false, workout: null })).toBe('food')
   })
 })

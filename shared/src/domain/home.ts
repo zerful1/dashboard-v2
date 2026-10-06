@@ -82,3 +82,45 @@ export function deriveHome(
     lastSession: sessions[0] ?? null,
   }
 }
+
+export interface WorkoutProgress {
+  /** Exercises on today's list. */
+  total: number
+  /** Of those, how many have at least one set today. */
+  done: number
+  /** Sets logged today, on any exercise. */
+  sets: number
+  started: boolean
+  /** Every listed exercise has a set — or, with an empty list, any set at all. */
+  finished: boolean
+}
+
+/**
+ * How far through today's workout (redesign part 2, §3). `loggedNames` holds one
+ * entry per set logged today, its exercise_name, so its length is the set
+ * count. Names match exactly, as the Gym page's own done count does.
+ */
+export function workoutProgress(exerciseNames: string[], loggedNames: string[]): WorkoutProgress {
+  const logged = new Set(loggedNames)
+  const total = exerciseNames.length
+  const done = exerciseNames.filter((n) => logged.has(n)).length
+  const sets = loggedNames.length
+  return { total, done, sets, started: sets > 0, finished: total > 0 ? done === total : sets > 0 }
+}
+
+export type HomeTop = 'weigh-in' | 'workout' | 'food'
+
+/**
+ * What claims Home's top slot: the weigh-in until today has one, then the
+ * workout until it is finished, then food for the rest of the day. `null` is a
+ * source that failed to load — its state is unknown, so it never claims the slot.
+ */
+export function nextUp(input: {
+  weighedInToday: boolean | null
+  isRest: boolean
+  workout: { finished: boolean } | null
+}): HomeTop {
+  if (input.weighedInToday === false) return 'weigh-in'
+  if (!input.isRest && input.workout !== null && !input.workout.finished) return 'workout'
+  return 'food'
+}
