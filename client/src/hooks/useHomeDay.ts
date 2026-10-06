@@ -54,14 +54,19 @@ export function useHomeDay(today: string) {
     splitPending || sessions.isPending || weights.isPending || diary.isPending || targets.isPending ||
     goals.isPending || (training && (exercises.isPending || sets.isPending));
 
-  const workoutError = training && (exercises.isError || sets.isError);
+  // A source has failed only when it has nothing to show. A failed refetch keeps
+  // the last good data and still sets isError (CLAUDE.md), and a phone refetches
+  // on every focus: one flaky response must not move the slot or blank a section.
+  const weightsFailed = weights.isError && !weights.hasData;
+  const workoutError =
+    training && ((exercises.isError && !exercises.data) || (sets.isError && !sets.data));
   const progress: WorkoutProgress | null =
     training && exercises.data && sets.data
       ? workoutProgress(exercises.data.map((e) => e.exercise_name), sets.data.sets.map((s) => s.exercise_name))
       : null;
 
   const top: HomeTop = nextUp({
-    weighedInToday: weights.isError ? null : weights.entries.some((e) => e.date === today),
+    weighedInToday: weightsFailed ? null : weights.entries.some((e) => e.date === today),
     isRest: home.today.isRest,
     workout: workoutError || !progress ? null : { finished: progress.finished },
   });
@@ -73,11 +78,15 @@ export function useHomeDay(today: string) {
     isPending,
     top,
     workout: { label: home.today.label, isRest: home.today.isRest, progress, isError: workoutError },
-    food: { day, isError: diary.isError || targets.isError, addEntry: diary.addEntry },
+    food: {
+      day,
+      isError: (diary.isError && !diary.hasData) || (targets.isError && !targets.hasData),
+      addEntry: diary.addEntry,
+    },
     weight: {
       summary: weight,
       goalKg: goals.data?.find((g) => g.kind === "weight")?.target_kg ?? null,
-      isError: weights.isError,
+      isError: weightsFailed,
       saveWeight: weights.saveWeight,
     },
     week: home.week,

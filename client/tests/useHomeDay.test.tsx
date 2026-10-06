@@ -29,7 +29,12 @@ interface Data {
   weights?: () => unknown;
   exercises?: unknown[];
   sets?: () => unknown;
+  /** While `now` is true, today's own sources fail: a refetch after the data arrived. */
+  down?: { now: boolean };
 }
+
+/** The sources Home shows a failure for, which a flaky refetch can fail. */
+const REFETCHED = ["/api/weight", "/api/nutrition/diary", "/api/nutrition/targets", "/api/exercises", "/api/workouts/session?", "/api/workouts/sets"];
 
 /** By path, longest prefix first (CLAUDE.md). Returns every path asked for. */
 function mockApi(d: Data = {}) {
@@ -47,6 +52,7 @@ function mockApi(d: Data = {}) {
   ];
   vi.spyOn(apiModule, "api").mockImplementation(async (path: string) => {
     calls.push(path);
+    if (d.down?.now && REFETCHED.some((p) => path.startsWith(p))) throw new ApiError(500, "down");
     const hit = routes.find(([p]) => path.startsWith(p));
     if (!hit) throw new Error(`unexpected ${path}`);
     return (await hit[1]()) as never;
@@ -64,7 +70,7 @@ function client(): QueryClient {
 function run(today: string) {
   const qc = client();
   const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
-  return renderHook(() => useHomeDay(today), { wrapper });
+  return { ...renderHook(() => useHomeDay(today), { wrapper }), qc };
 }
 
 function freeze(iso: string) {
@@ -133,6 +139,36 @@ describe("useHomeDay (redesign part 2, §3)", () => {
       await new Promise((r) => setTimeout(r, 50));
     });
     expect(result.current.isPending).toBe(true);
+  });
+
+  // Final review, important 1. TanStack keeps the data when a refetch fails and
+  // still sets isError. A phone refetches on every focus, and one opened with no
+  // signal refetches everything, so a failure with the data in hand must not
+  // move the slot or turn the sections into "Couldn't load".
+  it("keeps the slot and the sections when a refetch fails with the data in hand", async () => {
+    freeze(WED);
+    const down = { now: false };
+    mockApi({ weights: () => [weighIn("2026-08-25")], down });
+    const { result, qc } = run(WED);
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+    expect(result.current.top).toBe("weigh-in");
+
+    down.now = true;
+    await act(async () => {
+      await qc.refetchQueries();
+      // Observers hear of it on a later tick; read the hook only after that.
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    // The positive complement: the refetches really did fail, data kept.
+    const failed = qc.getQueryCache().getAll().filter((q) => q.state.status === "error");
+    expect(failed).toHaveLength(5);
+    expect(failed.every((q) => q.state.data !== undefined)).toBe(true);
+
+    expect(result.current.top).toBe("weigh-in");
+    expect(result.current.weight.isError).toBe(false);
+    expect(result.current.food.isError).toBe(false);
+    expect(result.current.workout.isError).toBe(false);
+    expect(result.current.workout.progress).not.toBeNull();
   });
 
   it("stays pending while the split is still loading", async () => {

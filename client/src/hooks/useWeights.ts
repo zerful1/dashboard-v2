@@ -98,6 +98,7 @@ export function useWeights() {
     // conclusions drawn from an empty array. See useHomeDay.
     isPending: query.isPending,
     isError: query.isError,
+    hasData: query.data !== undefined,
     saveWeight,
     deleteWeight,
   };
