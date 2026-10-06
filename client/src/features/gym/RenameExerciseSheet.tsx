@@ -84,7 +84,7 @@ export function RenameExerciseSheet({ oldName, dayType, onClose, onRename, isPen
         </p>
 
         <div className="flex gap-2">
-          <Button variant="ghost" className="flex-1" onClick={onClose}>
+          <Button variant="subtle" className="flex-1" onClick={onClose}>
             Cancel
           </Button>
           <Button

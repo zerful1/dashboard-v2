@@ -163,7 +163,7 @@ export function GoalsSection({ today, historyNames }: { today: string; historyNa
                       <button
                         type="button"
                         onClick={() => setLift(n)}
-                        className="rounded-full border border-raised px-3 py-1 text-xs text-muted hover:text-text"
+                        className="rounded-full border border-edge px-3 py-1 text-xs text-muted hover:text-text"
                       >
                         {n}
                       </button>

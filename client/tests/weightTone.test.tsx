@@ -53,6 +53,7 @@ describe("weight trend tone (redesign spec §5.8)", () => {
       </MemoryRouter>,
     );
     expect(toneOf(shown(/0\.6 kg in 7 days/)[0]!)).toBe("good");
+    expect(shown(/0\.6 kg in 7 days/)[0]!.closest("[data-tone]")).toHaveClass("text-good");
   });
 
   it("leaves the Home tile neutral without a goal", () => {

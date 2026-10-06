@@ -49,7 +49,6 @@
      size; without that it reads as a colour and is dropped beside one. */
   --text-label: 0.625rem;
   --text-label--line-height: 1;
-  --tracking-label: 0em;
 
   /* Media only (the barcode camera). Grouping is hairlines, not rounded boxes. */
   --radius-card: 11px;

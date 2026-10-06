@@ -31,7 +31,12 @@ describe("navigation", () => {
     const current = screen.getByRole("link", { name: "Weight" });
     expect(current).toHaveAttribute("aria-current", "page");
     expect(current.querySelector('[data-part="dot"]')).toHaveClass("bg-accent");
-    expect(screen.getByRole("link", { name: "Home" }).querySelector('[data-part="dot"]')).not.toHaveClass("bg-accent");
+    // Accessible names ignore text-transform, so case is checked on the class.
+    expect(current.querySelector("span")).not.toHaveClass("uppercase");
+    const other = screen.getByRole("link", { name: "Home" });
+    expect(other.querySelector('[data-part="dot"]')).not.toHaveClass("bg-accent");
+    // Readable when inactive (6.1:1), not decoration-dim (user's call, 2026-10-06).
+    expect(other).toHaveClass("text-muted");
   });
 
   it("shows the trend-line mark beside the wordmark", () => {

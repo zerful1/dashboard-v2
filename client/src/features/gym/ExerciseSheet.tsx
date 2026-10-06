@@ -151,7 +151,7 @@ export function ExerciseSheet({
             className={cn(
               "flex-1 rounded-full py-2 text-xs font-medium",
               isBodyweight
-                ? "bg-accent/10 text-accent"
+                ? "border border-transparent bg-accent/10 text-accent"
                 : "border border-edge text-muted",
             )}
           >
@@ -165,7 +165,7 @@ export function ExerciseSheet({
             aria-pressed={sides}
             className={cn(
               "flex-1 rounded-full py-2 text-xs font-medium",
-              sides ? "bg-accent/10 text-accent" : "border border-edge text-muted",
+              sides ? "border border-transparent bg-accent/10 text-accent" : "border border-edge text-muted",
             )}
           >
             {sides ? "Left / right: on" : "Left / right"}

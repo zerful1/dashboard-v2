@@ -75,7 +75,7 @@ export function SplitEditorSheet({ open, onClose }: { open: boolean; onClose: ()
                     const slot: DayType = v === "rest" ? "rest" : Number(v);
                     setDraft((c) => setWeekSlot(c, i, slot));
                   }}
-                  className="flex-1 rounded-lg border border-raised bg-surface px-3 py-2 text-sm text-text focus:border-accent focus:outline-none"
+                  className="flex-1 rounded-xl border border-edge bg-surface px-3 py-2 text-sm text-text focus:border-accent focus:outline-none"
                 >
                   <option value="rest">Rest</option>
                   {draft.days.map((d) => (
@@ -92,7 +92,7 @@ export function SplitEditorSheet({ open, onClose }: { open: boolean; onClose: ()
         {!canSave && <p role="alert" className="text-xs text-negative">Every day needs a name</p>}
 
         <div className="flex gap-2">
-          <Button variant="ghost" className="flex-1" onClick={onClose}>
+          <Button variant="subtle" className="flex-1" onClick={onClose}>
             Cancel
           </Button>
           <Button

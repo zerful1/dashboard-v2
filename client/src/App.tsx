@@ -58,7 +58,7 @@ function ToastDot({ className, children }: { className: string; children: string
   return (
     <span
       aria-hidden
-      className={`flex h-[18px] w-[18px] items-center justify-center rounded-full text-[11px] font-bold text-bg ${className}`}
+      className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-bg ${className}`}
     >
       {children}
     </span>

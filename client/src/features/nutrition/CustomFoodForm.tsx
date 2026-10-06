@@ -98,7 +98,7 @@ export function CustomFoodForm({ onNext, barcode = null }: { onNext: (food: Food
         {num("carbs", "Carbs (g)")}
         {num("fat", "Fat (g)")}
       </div>
-      <details className="rounded-lg border border-raised px-3 py-2">
+      <details className="border-t border-raised pt-3">
         <summary className="cursor-pointer text-xs text-muted">Label nutrients (optional)</summary>
         <div className="mt-3 grid grid-cols-2 gap-3">
           {num("fibre", "Fibre (g)")}
