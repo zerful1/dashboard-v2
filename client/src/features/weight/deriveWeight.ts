@@ -85,3 +85,21 @@ export function deriveWeightSummary(
 }
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
+
+/**
+ * Where the weight goal sits against the chart's y-range — the plotted values
+ * ± 1 kg, as WeightChart's axis domain. Only a goal inside the range is drawn:
+ * stretching the axis to reach a distant goal squashed the line flat, so one
+ * outside it is named beside the chart instead. Null: no goal, or nothing yet.
+ */
+export function goalPlacement(
+  points: ChartPoint[],
+  trend: ChartPoint[],
+  goalKg: number | null,
+): "in" | "below" | "above" | null {
+  if (goalKg === null || points.length === 0) return null;
+  const plotted = [...points, ...trend].map((p) => p.kg);
+  if (goalKg < Math.min(...plotted) - 1) return "below";
+  if (goalKg > Math.max(...plotted) + 1) return "above";
+  return "in";
+}

@@ -13,12 +13,47 @@ function files(dir: string): string[] {
   });
 }
 
+/**
+ * Every way a page can fetch a font from another host: a CSS @import of a
+ * remote stylesheet, an @font-face whose src is a remote URL, or a <link> that
+ * loads a remote stylesheet or preloads a remote font. Any host, not just
+ * Google's — rsms.me serves Inter itself, and Bunny and Typekit exist.
+ */
+function externalFontRefs(text: string): string[] {
+  const patterns = [
+    /@import\s+(?:url\()?\s*["']?https?:\/\/[^\s"')]+/gi,
+    /@font-face\s*\{[^}]*url\(\s*["']?https?:\/\/[^\s"')]+/gi,
+    /<link\b[^>]*\brel=["']?(?:stylesheet|preload)\b[^>]*\bhref=["']?https?:\/\/[^\s"'>]+/gi,
+    /<link\b[^>]*\bhref=["']?https?:\/\/[^\s"'>]+[^>]*\brel=["']?(?:stylesheet|preload)\b/gi,
+  ];
+  return patterns.flatMap((p) => text.match(p) ?? []);
+}
+
 describe("fonts (redesign spec §4)", () => {
+  it("recognises a remote font however it is loaded, and not a bundled one", () => {
+    for (const remote of [
+      '@import url("https://rsms.me/inter/inter.css");',
+      "@font-face { font-family: X; src: url(https://fonts.bunny.net/x.woff2); }",
+      '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter">',
+      '<link href="https://use.typekit.net/abc.css" rel="stylesheet">',
+      '<link rel="preload" href="https://example.com/f.woff2" as="font">',
+    ]) {
+      expect(externalFontRefs(remote), remote).not.toEqual([]);
+    }
+    for (const local of [
+      'import "@fontsource-variable/inter";',
+      "@font-face { font-family: X; src: url(./files/x.woff2); }",
+      '<link rel="manifest" href="/manifest.webmanifest" />',
+    ]) {
+      expect(externalFontRefs(local), local).toEqual([]);
+    }
+  });
+
   // Offline first loads and no third-party requests: a font CDN breaks both.
-  it("never loads a font from a third-party host", () => {
-    const offenders = [...files(join(CLIENT, "src")), ...files(join(CLIENT, "public"))].filter((f) =>
-      /fonts\.(googleapis|gstatic)\.com/.test(readFileSync(f, "utf8")),
-    );
+  // The build config too: a plugin there could inject a <link> into the page.
+  it("never loads a font from another host", () => {
+    const sources = [...files(join(CLIENT, "src")), ...files(join(CLIENT, "public")), join(CLIENT, "rsbuild.config.ts")];
+    const offenders = sources.filter((f) => externalFontRefs(readFileSync(f, "utf8")).length > 0);
     expect(offenders).toEqual([]);
   });
 
