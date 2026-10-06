@@ -94,6 +94,32 @@ describe("sessions", () => {
     const res = await agent.get("/api/workouts/day-names").expect(200);
     expect(res.body).toEqual(["Legs", "Push"]);
   });
+
+  it("lists each session's lifts and sets, and 0 for a session without sets", async () => {
+    const { agent, id } = await idFor(alice);
+    const log = (exercise_name: string, set_number: number) =>
+      agent.post("/api/workouts/sets").send({
+        date: "2026-08-10", day_type: 1, exercise_name, set_number, weight_kg: 100, reps: 5, is_bodyweight: false,
+      }).expect(201);
+    await log("Squat", 1);
+    await log("Squat", 2);
+    await log("Lunge", 1);
+    await getOrCreateSession(id, "2026-08-11", 3, DEFAULT_SPLIT); // a cardio-only shape: no sets
+
+    const res = await agent.get("/api/workouts/sessions").expect(200);
+    expect(res.body.map((s: { date: string; lifts: number; sets: number }) => [s.date, s.lifts, s.sets])).toEqual([
+      ["2026-08-11", 0, 0],
+      ["2026-08-10", 2, 3],
+    ]);
+  });
+
+  it("keeps sessions on or after since", async () => {
+    const { agent, id } = await idFor(alice);
+    for (const d of ["2026-08-09", "2026-08-10", "2026-08-11"]) await getOrCreateSession(id, d, 1, DEFAULT_SPLIT);
+    const res = await agent.get("/api/workouts/sessions?since=2026-08-10").expect(200);
+    expect(res.body.map((s: { date: string }) => s.date)).toEqual(["2026-08-11", "2026-08-10"]);
+    await agent.get("/api/workouts/sessions?since=10-08-2026").expect(400);
+  });
 });
 
 describe("session ownership scoping", () => {

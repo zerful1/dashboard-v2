@@ -21,7 +21,7 @@ import { shiftISO } from "@dashboard/shared";
  *    from workout_sets rather than the template, so retired lifts stay
  *    reachable; against a template-shaped seed that difference is invisible.
  *  - One bodyweight-only lift, which drives the isBodyweightOnly branch of
- *    computeExerciseStats (top REPS rather than top weight, delta in reps).
+ *    the lift stats (valued by reps rather than an estimated 1RM).
  *  - A session reaching six sets on one exercise, and one with a hole punched in
  *    the middle of a row. The history table derives its column count and renders
  *    by set_number; both only show up against data shaped like this.
