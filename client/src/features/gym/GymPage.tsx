@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Pencil, Check, SlidersHorizontal } from "lucide-react";
 import { getDayName } from "@dashboard/shared";
@@ -9,6 +9,7 @@ import { useSplit } from "@/hooks/useSplit";
 import { useGymDay } from "@/hooks/useGymDay";
 import { useExercises } from "@/hooks/useExercises";
 import { useWorkoutDay } from "@/hooks/useWorkoutDay";
+import { useLastTimes } from "@/hooks/useLastTimes";
 import { useHistoryExerciseNames } from "@/hooks/useExerciseStats";
 import { DaySelector } from "./DaySelector";
 import { DateSelector } from "@/components/ui/DateSelector";
@@ -49,7 +50,13 @@ export function GymPage() {
   );
   const { exercises, addExercise, deleteExercise, reorder, renameExercise } =
     useExercises(dayType);
-  const { session, sets, lastSets, logSet, deleteSet } = useWorkoutDay(dayType, date);
+  const { session, sets, logSet, deleteSet } = useWorkoutDay(dayType, date);
+  const lastTimes = useLastTimes(exercises.map((e) => e.exercise_name), date);
+  // The list rows want the sets alone; the sheet wants the date as well (Task 5).
+  const lastSets = useMemo(
+    () => Object.fromEntries(Object.entries(lastTimes).map(([name, t]) => [name, t.sets])),
+    [lastTimes],
+  );
   const historyNames = useHistoryExerciseNames();
 
   const [tab, setTab] = useState<SubTab>("log");

@@ -7,9 +7,6 @@ import { invalidateSessionReaders } from "./invalidate";
 export const workoutDayKey = (userId: string, dayType: number, date: string) =>
   ["workoutDay", userId, dayType, date] as const;
 
-export const lastSessionKey = (userId: string, dayType: number, date: string) =>
-  ["lastSession", userId, dayType, date] as const;
-
 /**
  * One (day, date)'s session and its sets, shared by useWorkoutDay and Home. No
  * session yet is the normal state for a day you have not started — not an
@@ -25,7 +22,7 @@ export function workoutDayQueryOptions(userId: string, dayType: number, date: st
   });
 }
 
-/** Everything needed to log one (day, date): the session, its sets, and last time's. */
+/** Everything needed to log one (day, date): the session and its sets. Last time is per exercise, from useLastTimes. */
 export function useWorkoutDay(dayType: number, date: string) {
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -33,13 +30,6 @@ export function useWorkoutDay(dayType: number, date: string) {
   const key = workoutDayKey(userId, dayType, date);
 
   const session = useQuery({ ...workoutDayQueryOptions(userId, dayType, date), enabled: !!user });
-
-  const lastSession = useQuery({
-    queryKey: lastSessionKey(userId, dayType, date),
-    queryFn: () => gymApi.lastSession(dayType, date),
-    enabled: !!user,
-    staleTime: 5 * 60 * 1000,
-  });
 
   const logSet = useMutation({
     mutationFn: (input: SetFields) => gymApi.logSet({ ...input, date, day_type: dayType }),
@@ -109,7 +99,6 @@ export function useWorkoutDay(dayType: number, date: string) {
   return {
     session: session.data?.session ?? null,
     sets: session.data?.sets ?? [],
-    lastSets: lastSession.data ?? {},
     isLoading: session.isLoading,
     logSet,
     deleteSet,

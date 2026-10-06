@@ -46,16 +46,13 @@ const fresh = () =>
 /**
  * Mocks by PATH, not by call order.
  *
- * useWorkoutDay runs two queries in parallel: `session` makes two sequential
- * api calls (getSession then listSets) while `lastSession` makes one. Chained
- * mockResolvedValueOnce hands values out in call order, so lastSession
- * intercepts the value meant for listSets and the sets array arrives as {}.
- * Parallel queries cannot be described by a sequence.
+ * useWorkoutDay's session query makes two sequential api calls (getSession then
+ * listSets); a parallel query would intercept a value meant for one of them, so
+ * paths, not order, decide.
  */
 function mockApi(routes: {
   session?: unknown;
   sets?: unknown;
-  lastSession?: unknown;
   logSet?: () => Promise<unknown>;
   deleteSet?: () => Promise<unknown>;
 }) {
@@ -64,7 +61,6 @@ function mockApi(routes: {
     .mockImplementation(async (path: string, options?: RequestInit) => {
       const method = options?.method ?? "GET";
       if (path.startsWith("/api/workouts/session?")) return routes.session ?? null;
-      if (path.startsWith("/api/workouts/last-session")) return routes.lastSession ?? {};
       if (path.startsWith("/api/workouts/sets?")) return routes.sets ?? [];
       if (path === "/api/workouts/sets" && method === "POST") {
         return routes.logSet ? routes.logSet() : {};

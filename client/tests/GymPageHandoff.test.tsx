@@ -26,7 +26,7 @@ const ROUTES: [string, unknown][] = [
   ["/api/workouts/sessions", [OLD_SESSION()]],
   ["/api/workouts/session", null],
   ["/api/workouts/sets", []],
-  ["/api/workouts/last-session", {}],
+  ["/api/workouts/last-times", {}],
   ["/api/workouts/day-names", ["Push"]],
   ["/api/workouts/exercise-names", []],
   ["/api/cardio", []],

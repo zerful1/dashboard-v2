@@ -29,7 +29,7 @@ export function invalidateInsightsReaders(qc: QueryClient): void {
  */
 export const SESSION_READERS = [
   "workoutDay",
-  "lastSession",
+  "lastTimes",
   "coaching",
   "homeSessions",
   "workoutHistory",

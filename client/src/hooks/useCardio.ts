@@ -1,17 +1,25 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CardioEntry } from "@dashboard/shared";
 import { useAuth } from "@/auth/AuthProvider";
 import { gymApi, type CardioInput } from "@/api/gym";
 import { invalidateSessionReaders } from "./invalidate";
 
+/** One session's cardio, shared by the Gym page and Home (redesign part 3a, §5). */
+export function cardioQueryOptions(userId: string, sessionId: string | null) {
+  return queryOptions({
+    queryKey: ["cardio", userId, sessionId] as const,
+    queryFn: () => gymApi.listCardio(sessionId!),
+  });
+}
+
 export function useCardio(sessionId: string | null, date: string, dayType: number) {
   const qc = useQueryClient();
   const { user } = useAuth();
-  const key = ["cardio", user?.id ?? "anon", sessionId] as const;
+  const userId = user?.id ?? "anon";
+  const key = cardioQueryOptions(userId, sessionId).queryKey;
 
   const query = useQuery({
-    queryKey: key,
-    queryFn: () => gymApi.listCardio(sessionId!),
+    ...cardioQueryOptions(userId, sessionId),
     // No session means no cardio yet — do not fetch with a null id.
     enabled: !!user && !!sessionId,
   });
