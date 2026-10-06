@@ -200,6 +200,13 @@ template was empty (cleared on 2026-10-03 for the user to refill), while the
 history spanned 84 distinct names. Anything listing exercises for *stats* must
 read `DISTINCT exercise_name` from `workout_sets`, not the template.
 
+**"Last time" is per exercise, across day types.** The set sheet and the list
+rows compare against the newest earlier session holding that exercise on any
+day (`/api/workouts/last-times`), not the last session of the same `day_type`.
+The same-day rule compared against another split era's day whenever `day_type`
+was reused, and showed nothing whenever the last same-day session skipped the
+exercise.
+
 ---
 
 ## TanStack Query: `isPending`, not `isLoading`
