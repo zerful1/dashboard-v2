@@ -12,6 +12,7 @@ export * from "./domain/splitRotation";
 export * from "./domain/home";
 export * from "./domain/setSheet";
 export * from "./domain/liftProgress";
+export * from "./domain/trainingGrid";
 export * from "./domain/splitEditor";
 export * from "./domain/overloadCoaching";
 export * from "./domain/workoutStats";

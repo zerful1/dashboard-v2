@@ -79,6 +79,14 @@ export interface WorkoutSession {
   created_at: string;
 }
 
+/** A session as the history list shows it (redesign part 3b, §6). */
+export interface SessionSummary extends WorkoutSession {
+  /** Distinct exercises with sets. */
+  lifts: number;
+  /** Sets logged. A cardio-only session has 0 and 0. */
+  sets: number;
+}
+
 /** A target the Insights page projects toward (006_goals). */
 export interface Goal {
   id: string;
