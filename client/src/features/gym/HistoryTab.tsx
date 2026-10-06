@@ -24,9 +24,9 @@ export function HistoryTab({ onEditInLog }: { onEditInLog: (s: WorkoutSession) =
 
   const chipClass = (activeChip: boolean) =>
     cn(
-      "shrink-0 rounded-md px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em]",
+      "shrink-0 rounded-full px-3 py-1.5 text-xs font-medium",
       // Tinted, not filled: a filter is a selection within a set.
-      activeChip ? "bg-accent/10 text-accent" : "border border-raised bg-surface text-muted",
+      activeChip ? "bg-accent/10 text-accent" : "border border-edge text-muted",
     );
 
   return (

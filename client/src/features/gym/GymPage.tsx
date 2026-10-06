@@ -87,7 +87,7 @@ export function GymPage() {
           onClick={() => setEditMode((v) => !v)}
           aria-label={editMode ? "Done editing" : "Edit exercises"}
           className={cn(
-            "shrink-0 rounded-lg p-2",
+            "shrink-0 rounded-full p-2",
             editMode ? "bg-accent/10 text-accent" : "text-muted",
           )}
         >
@@ -115,7 +115,7 @@ export function GymPage() {
             onClick={() => setTab(t.key)}
             aria-pressed={tab === t.key}
             className={cn(
-              "flex-1 rounded-md py-1.5 font-mono text-[10px] uppercase tracking-[0.12em]",
+              "flex-1 rounded-full py-1.5 text-xs font-medium",
               // Tinted — a selection, not the screen's action.
               tab === t.key ? "bg-accent/10 text-accent" : "text-muted",
             )}
