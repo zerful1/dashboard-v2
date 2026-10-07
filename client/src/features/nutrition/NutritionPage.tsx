@@ -69,7 +69,7 @@ export function NutritionPage() {
 
   return (
     <div className="space-y-4">
-      <FoodHeader date={open} onDate={pickDate} onTargets={() => setTargeting(true)} />
+      <FoodHeader date={open} today={today} onDate={pickDate} onTargets={() => setTargeting(true)} />
 
       <WeekStrip
         end={end}

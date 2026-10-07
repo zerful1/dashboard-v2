@@ -273,6 +273,23 @@ describe("NutritionPage, the last 7 days (redesign part 4)", () => {
     expect(screen.getByRole("button", { name: "Next week" })).toBeDisabled();
   });
 
+  // Browser pass: the eyebrow read its own clock, so for up to a minute after
+  // midnight Back to today asked for a day the page still called tomorrow, and
+  // the future-date guard ignored it.
+  it("goes back to today even before the page has noticed midnight", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 8, 23, 23, 59, 30));
+    mockApi();
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: /^Tuesday 22 September/ }));
+    // No visibility event or minute tick yet: the page's today is still the 23rd.
+    vi.setSystemTime(new Date(2026, 8, 24, 0, 0, 10));
+    // Any re-render after midnight, as the browser pass had: the eyebrow reads the 24th.
+    await userEvent.click(bar(/^Monday 21 September/));
+    await userEvent.click(screen.getByRole("button", { name: "Back to today" }));
+    await waitFor(() => expect(bar(/^Wednesday 23 September/)).toHaveAttribute("aria-pressed", "true"));
+  });
+
   // Spec §3: back on today, with the strip ending today, IS following the clock.
   it("keeps following the clock after Back to today", async () => {
     freeze("2026-09-23");

@@ -7,9 +7,20 @@ import { cn } from "@/lib/cn";
 /**
  * A page's date as its eyebrow, and the control that changes it (Gym, Food).
  * "Back to today" sits beside it whenever the date is not today.
+ *
+ * A page that keeps its own today (useToday) passes it in. Read here instead,
+ * it runs ahead of the page's for up to a minute after midnight, and "today"
+ * is then a day the page still calls tomorrow.
  */
-export function DateEyebrow({ date, onDate }: { date: string; onDate: (d: string) => void }) {
-  const today = toLocalISO();
+export function DateEyebrow({
+  date,
+  onDate,
+  today = toLocalISO(),
+}: {
+  date: string;
+  onDate: (d: string) => void;
+  today?: string;
+}) {
   return (
     <div className="flex items-center gap-3">
       {/* The input IS the control, transparent over the text: on iOS only a
