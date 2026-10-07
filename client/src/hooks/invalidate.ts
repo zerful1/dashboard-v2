@@ -54,7 +54,7 @@ export function invalidateSessionReaders(qc: QueryClient): void {
  * Recent list and the TDEE hint's intake, so it invalidates all of them - the
  * lesson of SESSION_READERS above, applied before rather than after.
  */
-export const NUTRITION_READERS = ["diary", "recents", "tdeeHint", ...INSIGHTS_READERS] as const;
+export const NUTRITION_READERS = ["diary", "recents", "tdeeHint", "foodDays", ...INSIGHTS_READERS] as const;
 
 export function invalidateNutritionReaders(qc: QueryClient): void {
   for (const prefix of NUTRITION_READERS) {
