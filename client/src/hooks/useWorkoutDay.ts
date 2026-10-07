@@ -99,7 +99,9 @@ export function useWorkoutDay(dayType: number, date: string) {
   return {
     session: session.data?.session ?? null,
     sets: session.data?.sets ?? [],
-    isLoading: session.isLoading,
+    // isPending, not isLoading (CLAUDE.md): until the sets are in, the next set
+    // number is unknown, and a guess of 1 overwrites the real set 1 on the server.
+    isPending: session.isPending,
     logSet,
     deleteSet,
   };

@@ -293,6 +293,32 @@ describe("ExerciseSheet, last time (redesign part 3a, §3)", () => {
   });
 });
 
+// Deferred from #32: opened before today's sets arrived, the sheet numbered the
+// next set 1, and the server's upsert then overwrote the real set 1.
+describe("ExerciseSheet, before today's sets load", () => {
+  it("won't log a set, or number it, until today's sets are in", async () => {
+    mockCoaching(null);
+    const { onLogSet, update } = renderSheet({ todayPending: true });
+    await userEvent.type(weight(), "90");
+    await userEvent.type(reps(), "6{Enter}");
+    expect(onLogSet).not.toHaveBeenCalled();
+    expect(screen.getByRole("group", { name: "Next set" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add set" })).toBeDisabled();
+    // The positive complement: once they are, it logs after the real set 1.
+    update({ todayPending: false, todaySets: [aSet(1)] });
+    await userEvent.click(screen.getByRole("button", { name: "Add set 2" }));
+    expect(onLogSet).toHaveBeenCalledWith(90, 6, false, 2);
+  });
+
+  it("fills the weight in from today's sets when they arrive after opening", () => {
+    mockCoaching(null);
+    const { update } = renderSheet({ todayPending: true });
+    expect(weight()).toHaveValue(null);
+    update({ todayPending: false, todaySets: [aSet(1, { weight_kg: 82.5 })] });
+    expect(weight()).toHaveValue(82.5);
+  });
+});
+
 describe("ExerciseSheet, left / right", () => {
   const sidedSet = (over: Partial<WorkoutSet> = {}) => aSet(1, { reps: 7, reps_left: 7, reps_right: 8, ...over });
 

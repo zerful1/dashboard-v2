@@ -106,6 +106,23 @@ describe("Gym's header (redesign part 3a, §2)", () => {
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Training day" })).toBeNull());
   });
 
+  // Deferred from #32: Add before today's sets loaded overwrote set 1.
+  it("won't log a set while today's sets are still loading", async () => {
+    freeze();
+    vi.spyOn(apiModule, "api").mockImplementation(async (path: string) => {
+      if (path.startsWith("/api/workouts/session?")) return new Promise(() => {}) as never;
+      const hit = ROUTES.find(([p]) => path.startsWith(p));
+      if (!hit) throw new Error(`unmocked path: ${path}`);
+      return hit[1] as never;
+    });
+    renderPage();
+    await userEvent.click(await screen.findByText("Row & Press"));
+    const sheet = within(await screen.findByRole("dialog", { name: "Row & Press" }));
+    await userEvent.type(sheet.getByLabelText(/weight/i), "90");
+    await userEvent.type(sheet.getByLabelText(/reps/i), "6");
+    expect(sheet.getByRole("button", { name: "Add set" })).toBeDisabled();
+  });
+
   // Review focus 3: logging on a past date compares against the days before IT.
   it("asks for last time before the date being logged", async () => {
     freeze();
