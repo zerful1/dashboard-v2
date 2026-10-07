@@ -19,7 +19,7 @@ const ALLOWED: Record<string, string> = {
   "features/habits/TodayHabitsCard.tsx": "habit ticks",
   "features/habits/HabitRow.tsx": "habit ticks on the week strip",
   "layout/BottomTabs.tsx": "the active tab's dot: identity chrome",
-  "features/nutrition/SummaryCard.tsx": "the macro bars' fill: data, inside its track",
+  "features/nutrition/DayFigure.tsx": "the macro bars' fill: data, inside its track",
 };
 
 /**

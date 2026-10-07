@@ -10,7 +10,7 @@ import { useDiary } from "@/hooks/useDiary";
 import { useTargets } from "@/hooks/useTargets";
 import { useToday } from "@/hooks/useToday";
 import { deriveDay } from "./deriveDay";
-import { SummaryCard } from "./SummaryCard";
+import { DayFigure } from "./DayFigure";
 import { DiaryList } from "./DiaryList";
 import { LabelStrip } from "./LabelStrip";
 import { AddFoodSheet } from "./AddFoodSheet";
@@ -96,7 +96,7 @@ export function NutritionPage() {
       ) : (
         <>
           {stale && <p className="text-xs text-muted">Couldn't refresh — showing saved data.</p>}
-          <SummaryCard summary={summary} onSetTargets={() => setTargeting(true)} />
+          <DayFigure summary={summary} onSetTargets={() => setTargeting(true)} />
           <div className="flex gap-2">
             {/* The one filled action on this screen. */}
             <Button className="flex-1" onClick={() => setAdding(true)}>

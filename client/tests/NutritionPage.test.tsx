@@ -68,6 +68,11 @@ function renderPage(client = new QueryClient({ defaultOptions: { queries: { retr
   );
 }
 
+/** The day's figure, e.g. "762 kcal left". */
+async function findFigure(text: string) {
+  await waitFor(() => expect(screen.getByText(/^kcal (left|over|eaten)$/).parentElement).toHaveTextContent(text));
+}
+
 /** What a phone does on waking an app left open: the clock has moved, and the page becomes visible. */
 function wakeAt(date: Date) {
   vi.setSystemTime(date);
@@ -104,7 +109,7 @@ describe("NutritionPage", () => {
     freeze("2026-09-23");
     mockApi({ diary: () => [e({})] });
     renderPage();
-    expect(await screen.findByText("762 left")).toBeInTheDocument();
+    await findFigure("762 kcal left");
   });
 
   // Review focus 2.
@@ -113,7 +118,7 @@ describe("NutritionPage", () => {
     mockApi({ diary: () => [e({}), e({ id: "e2" })] });
     renderPage();
     // Two 1640 kcal entries against 2402: the card reads "878 over" once loaded.
-    await screen.findByText("878 over");
+    await findFigure("878 kcal over");
     expect(screen.getAllByText("—")).toHaveLength(4);
   });
 
@@ -204,7 +209,7 @@ describe("NutritionPage errors", () => {
 
     fail = false;
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
-    expect(await screen.findByText("762 left")).toBeInTheDocument();
+    await findFigure("762 kcal left");
   });
 
   // A refetch that fails must not take away a day that is already on screen.
@@ -219,12 +224,12 @@ describe("NutritionPage errors", () => {
     });
     const client = realClient();
     renderPage(client);
-    await screen.findByText("762 left");
+    await findFigure("762 kcal left");
 
     fail = true;
     await act(() => client.refetchQueries({ queryKey: ["diary"] }));
     expect(await screen.findByText(/Couldn't refresh/)).toBeInTheDocument();
-    expect(screen.getByText("762 left")).toBeInTheDocument();
+    await findFigure("762 kcal left");
     expect(screen.queryByText("Could not load")).not.toBeInTheDocument();
   });
 });
