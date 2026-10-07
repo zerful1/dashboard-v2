@@ -55,6 +55,13 @@ the user's `profiles.timezone` explicitly. Using `toLocalISO()` on the server is
 correct in local development and wrong in production, which is the worst way for
 it to be wrong.
 
+**One clock per page.** A page that keeps `useToday()` hands that today to its
+children rather than letting them call `toLocalISO()` again. `useToday` catches
+up on focus or once a minute, so a second clock runs ahead of it for up to a
+minute after midnight, and "today" from one reads as tomorrow to the other.
+Food's Back to today did nothing in that minute until `DateEyebrow` took the
+page's today.
+
 ---
 
 ## Ownership scoping replaces RLS
@@ -240,8 +247,11 @@ answer.
 nothing cached, so it pauses and reports `isPending` until the network returns.
 Where yesterday's answer is still worth showing (Stats, History's grid),
 `placeholderData` from `newestCached` stands in, scoped by the user id in the
-key prefix. Home's diary and workout are keyed by today too, and yesterday's
-answer is wrong there, so Home still waits behind its spinner: a known gap.
+key prefix. Food's 7-day strip borrows **yesterday's exact window** instead,
+never the newest: it reads a date missing from its data as "nothing logged", so
+any other window would invent empty days. Home's diary and workout are keyed by
+today too, and yesterday's answer is wrong there, so Home still waits behind its
+spinner: a known gap.
 
 **Query options are shared, not re-declared.** `goalsQueryOptions`,
 `exercisesQueryOptions` and `workoutDayQueryOptions` are the one definition of
