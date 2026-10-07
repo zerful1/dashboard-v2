@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { onlineManager, QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import type { LiftProgress, LiftSetRow } from "@dashboard/shared";
 import { StatsTab } from "../src/features/gym/StatsTab";
 import { createQueryClient } from "../src/lib/queryClient";
@@ -44,11 +44,15 @@ function freeze() {
   vi.setSystemTime(new Date(2026, 9, 6, 12)); // Tue 2026-10-06
 }
 
-/** Inside a <main>, the app's scroll container (AppLayout), whose scrollTop is recorded. */
-function renderTab() {
+/**
+ * Inside a <main>, the app's scroll container (AppLayout), whose scrollTop is
+ * recorded. `seed` fills the cache first, as a restored one would be.
+ */
+function renderTab(seed?: (qc: QueryClient) => void) {
   const qc = createQueryClient();
   const def = qc.getDefaultOptions();
   qc.setDefaultOptions({ ...def, queries: { ...def.queries, retry: false } });
+  seed?.(qc);
   const { container } = render(
     <main>
       <QueryClientProvider client={qc}>
@@ -235,5 +239,33 @@ describe("Stats, a lift's detail (redesign part 3b, §4)", () => {
     renderTab();
     await userEvent.click(await screen.findByRole("button", { name: /Lat Pulldown/ }));
     await waitFor(() => expect(screen.getByText("Couldn't load this lift.")).toBeInTheDocument());
+  });
+});
+
+// Deferred from #33: the overview is keyed by today, so a new day is a key with
+// nothing cached, and offline it waited for the network with a spinner.
+describe("Stats, offline on a new day", () => {
+  afterEach(() => onlineManager.setOnline(true));
+
+  it("shows yesterday's overview until today's arrives", async () => {
+    freeze();
+    mockApi({ "/api/workouts/progress": [lift("Chest Fly", { status: "new" })] });
+    onlineManager.setOnline(false);
+    renderTab((qc) => qc.setQueryData(["liftProgress", "u1", "2026-10-05"], LIFTS));
+    expect(await screen.findByRole("region", { name: "Moving" })).toBeInTheDocument();
+    expect(screen.getByText("Lat Pulldown")).toBeInTheDocument();
+    // The positive complement: back online, today's replaces it.
+    act(() => onlineManager.setOnline(true));
+    await waitFor(() => expect(screen.queryByText("Lat Pulldown")).toBeNull());
+    expect(screen.getByText("Chest Fly")).toBeInTheDocument();
+  });
+
+  it("never stands in another account's overview", async () => {
+    freeze();
+    mockApi({ "/api/workouts/progress": [] });
+    onlineManager.setOnline(false);
+    renderTab((qc) => qc.setQueryData(["liftProgress", "u2", "2026-10-05"], LIFTS));
+    expect(await screen.findByLabelText(/loading your lifts/i)).toBeInTheDocument();
+    expect(screen.queryByText("Lat Pulldown")).toBeNull();
   });
 });

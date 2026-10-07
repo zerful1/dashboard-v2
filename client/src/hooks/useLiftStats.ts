@@ -1,16 +1,21 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { liftDetail, type LiftDetail, type LiftProgress } from "@dashboard/shared";
 import { useAuth } from "@/auth/AuthProvider";
 import { gymApi } from "@/api/gym";
+import { newestCached } from "@/lib/newestCached";
 
 /** The Stats overview (redesign part 3b, §3): every lift's status as of `today`, worked out on the server. */
 export function useLiftProgress(today: string): { lifts: LiftProgress[] | undefined; isPending: boolean; isError: boolean } {
+  const qc = useQueryClient();
   const { user } = useAuth();
+  const userId = user?.id ?? "anon";
   const query = useQuery({
-    queryKey: ["liftProgress", user?.id ?? "anon", today],
+    queryKey: ["liftProgress", userId, today],
     queryFn: () => gymApi.progress(today),
     enabled: !!user,
+    // Keyed by day: offline on a new day, yesterday's overview stands in.
+    placeholderData: () => newestCached<LiftProgress[]>(qc, ["liftProgress", userId]),
     // The tab says so itself when it fails.
     meta: { errorToast: false },
   });

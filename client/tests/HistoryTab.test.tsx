@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { onlineManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HistoryTab } from "../src/features/gym/HistoryTab";
-import { DEFAULT_SPLIT } from "@dashboard/shared";
+import { DEFAULT_SPLIT, gridSince } from "@dashboard/shared";
 import { prettyDate } from "../src/lib/dates";
 import * as apiModule from "../src/lib/api";
 
@@ -43,8 +43,10 @@ function freeze() {
   vi.setSystemTime(new Date(2026, 7, 26, 12)); // Wed 2026-08-26
 }
 
-function renderTab(onEdit = vi.fn()) {
+/** `seed` fills the cache first, as a restored one would be. */
+function renderTab(onEdit = vi.fn(), seed?: (qc: QueryClient) => void) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  seed?.(qc);
   render(
     <QueryClientProvider client={qc}>
       <HistoryTab onEditInLog={onEdit} />
@@ -173,5 +175,21 @@ describe("History, the session sheet", () => {
     await userEvent.click(await screen.findByText(prettyDate("2026-08-16")));
     const row = (await screen.findByText("Squat")).closest("tr")!;
     expect([...row.querySelectorAll("td")].map((c) => c.textContent)).toEqual(["Squat", "100 × 1", "—", "100 × 3"]);
+  });
+});
+
+// Deferred from #33: the grid is keyed by the day it starts on, which moves every
+// day, so offline on a new day it waited for the network with a spinner.
+describe("History, offline on a new day", () => {
+  afterEach(() => onlineManager.setOnline(true));
+
+  it("shows the last 12 weeks from yesterday's answer", async () => {
+    freeze();
+    mockByPath({ grid: [] });
+    onlineManager.setOnline(false);
+    const yesterday = [session("a", "2026-08-24", "Legs"), session("b", "2026-08-25", "Pull")];
+    renderTab(vi.fn(), (qc) => qc.setQueryData(["trainingGrid", "u1", gridSince("2026-08-25")], yesterday));
+    expect(await screen.findByRole("region", { name: "Last 12 weeks" })).toBeInTheDocument();
+    expect(screen.queryByLabelText(/loading your training/i)).toBeNull();
   });
 });
