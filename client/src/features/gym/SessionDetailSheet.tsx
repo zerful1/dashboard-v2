@@ -1,4 +1,6 @@
-import { setShort, cardioLine } from "@dashboard/shared";
+import { setCell, cardioLine } from "@dashboard/shared";
+import { listDate } from "@/lib/dates";
+import { useToday } from "@/hooks/useToday";
 import type { WorkoutSession } from "@dashboard/shared";
 import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
@@ -13,6 +15,7 @@ export function SessionDetailSheet({
   onClose: () => void;
   onEditInLog: (s: WorkoutSession) => void;
 }) {
+  const today = useToday();
   const { data, isLoading, isError } = useSessionDetail(session?.id ?? null);
   const sets = data?.sets ?? [];
   const cardio = data?.cardio ?? [];
@@ -28,7 +31,7 @@ export function SessionDetailSheet({
     <Sheet
       open={!!session}
       onClose={onClose}
-      title={session ? `${session.date} — ${session.day_name}` : ""}
+      title={session ? `${listDate(session.date, today)} · ${session.day_name}` : ""}
     >
       <div className="max-h-[60vh] overflow-auto">
         {isLoading && <p className="py-4 text-center text-xs text-muted">Loading…</p>}
@@ -61,8 +64,9 @@ export function SessionDetailSheet({
                   {columns.map((n) => {
                     const s = sets.find((x) => x.exercise_name === name && x.set_number === n);
                     return (
-                      <td key={n} className="tnum px-2 py-1.5 text-center text-muted">
-                        {s ? setShort(s) : "—"}
+                      // nowrap: "100 × 8" must not break in a narrow column; a long session scrolls sideways instead.
+                      <td key={n} className="tnum whitespace-nowrap px-2 py-1.5 text-center text-muted">
+                        {s ? setCell(s) : "—"}
                       </td>
                     );
                   })}

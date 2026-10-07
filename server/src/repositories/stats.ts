@@ -1,46 +1,24 @@
 import { pool } from "../db/pool";
 import { T } from "../config";
-import type { StatSetRow, WorkoutSet, CardioEntry } from "@dashboard/shared";
-
-export interface StatsPayload {
-  sets: StatSetRow[];
-  /** session_id -> YYYY-MM-DD. An object, not a Map — JSON has no Map. */
-  sessionDates: Record<string, string>;
-}
+import type { LiftSetRow, WorkoutSet, CardioEntry } from "@dashboard/shared";
 
 /**
- * Every set of one exercise, with the date of each owning session.
- *
- * computeExerciseStats needs both halves and groups by date itself, so this
- * deliberately does no aggregation — all the interpretation lives in shared,
- * where it is already tested.
+ * Every set, or one exercise's, with its session's date, oldest first: what the
+ * lift stats read (redesign part 3b, §6). No aggregation here; the rule lives
+ * in shared, where it is tested.
  */
-export async function exerciseStatRows(
-  userId: string,
-  exerciseName: string,
-): Promise<StatsPayload> {
-  const { rows } = await pool.query<StatSetRow & { date: string }>(
-    `SELECT s.session_id, s.weight_kg::float8 AS weight_kg, s.reps, s.is_bodyweight,
-            ws.date::text AS date
+export async function liftRows(userId: string, exerciseName?: string): Promise<LiftSetRow[]> {
+  const { rows } = await pool.query<LiftSetRow>(
+    `SELECT s.session_id, ws.date::text AS date, s.exercise_name, s.set_number,
+            s.weight_kg::float8 AS weight_kg, s.reps, s.reps_left, s.reps_right, s.is_bodyweight
        FROM ${T.workoutSets} s
        JOIN ${T.workoutSessions} ws ON ws.id = s.session_id
-      WHERE s.user_id = $1 AND s.exercise_name = $2
+      WHERE s.user_id = $1 AND ws.user_id = $1
+        AND ($2::text IS NULL OR s.exercise_name = $2)
       ORDER BY ws.date ASC, s.set_number ASC`,
-    [userId, exerciseName],
+    [userId, exerciseName ?? null],
   );
-
-  const sessionDates: Record<string, string> = {};
-  for (const r of rows) sessionDates[r.session_id] = r.date;
-
-  return {
-    sets: rows.map(({ session_id, weight_kg, reps, is_bodyweight }) => ({
-      session_id,
-      weight_kg,
-      reps,
-      is_bodyweight,
-    })),
-    sessionDates,
-  };
+  return rows;
 }
 
 export interface SessionDetail {

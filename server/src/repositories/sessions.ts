@@ -1,7 +1,7 @@
 import { pool } from "../db/pool";
 import { T } from "../config";
 import { getDayName } from "@dashboard/shared";
-import type { SplitConfig, WorkoutSession } from "@dashboard/shared";
+import type { SessionSummary, SplitConfig, WorkoutSession } from "@dashboard/shared";
 
 const COLS = `id, user_id, date::text AS date, day_type, day_name, notes, created_at`;
 
@@ -55,18 +55,35 @@ export interface SessionListOptions {
   offset: number;
   /** Filters on the snapshotted name, so retired split names still match. */
   dayName?: string;
+  /** Only sessions on or after this date (History's grid). */
+  since?: string;
 }
 
+/**
+ * Newest first, each with its distinct exercises and its set count for the
+ * history list (redesign part 3b, §6). COUNT is a bigint, which pg hands back
+ * as a string, hence the casts.
+ */
 export async function listSessions(
   userId: string,
   opts: SessionListOptions,
-): Promise<WorkoutSession[]> {
-  const { rows } = await pool.query<WorkoutSession>(
-    `SELECT ${COLS} FROM ${T.workoutSessions}
-      WHERE user_id = $1 AND ($2::text IS NULL OR day_name = $2)
-      ORDER BY date DESC
+): Promise<SessionSummary[]> {
+  const { rows } = await pool.query<SessionSummary>(
+    `SELECT ws.id, ws.user_id, ws.date::text AS date, ws.day_type, ws.day_name, ws.notes, ws.created_at,
+            COALESCE(c.lifts, 0)::int AS lifts, COALESCE(c.sets, 0)::int AS sets
+       FROM ${T.workoutSessions} ws
+       LEFT JOIN (
+         SELECT session_id, COUNT(DISTINCT exercise_name) AS lifts, COUNT(*) AS sets
+           FROM ${T.workoutSets}
+          WHERE user_id = $1
+          GROUP BY session_id
+       ) c ON c.session_id = ws.id
+      WHERE ws.user_id = $1
+        AND ($2::text IS NULL OR ws.day_name = $2)
+        AND ($5::date IS NULL OR ws.date >= $5)
+      ORDER BY ws.date DESC
       LIMIT $3 OFFSET $4`,
-    [userId, opts.dayName ?? null, opts.limit, opts.offset],
+    [userId, opts.dayName ?? null, opts.limit, opts.offset, opts.since ?? null],
   );
   return rows;
 }

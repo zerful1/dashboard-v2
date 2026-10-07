@@ -6,6 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import { GymPage } from "../src/features/gym/GymPage";
 import { DEFAULT_SPLIT } from "@dashboard/shared";
 import * as apiModule from "../src/lib/api";
+import { prettyDate } from "../src/lib/dates";
 
 vi.mock("@/auth/AuthProvider", () => ({
   useAuth: () => ({ user: { id: "u1", email: "a@b.com" }, loading: false }),
@@ -28,6 +29,7 @@ const ROUTES: [string, unknown][] = [
   ["/api/workouts/session", null],
   ["/api/workouts/sets", []],
   ["/api/workouts/last-times", {}],
+  ["/api/workouts/progress", []],
   ["/api/workouts/day-names", ["Push"]],
   ["/api/workouts/exercise-names", []],
   ["/api/cardio", []],
@@ -44,6 +46,8 @@ function OLD_SESSION() {
     day_name: "Push",
     notes: null,
     created_at: "",
+    lifts: 3,
+    sets: 9,
   };
 }
 
@@ -95,7 +99,7 @@ describe("GymPage sub-tabs and hand-off", () => {
     const { selectedDate } = renderPage();
 
     await userEvent.click(await screen.findByRole("button", { name: "History" }));
-    await userEvent.click(await screen.findByText("2026-05-20"));
+    await userEvent.click(await screen.findByText(prettyDate("2026-05-20")));
     await userEvent.click(await screen.findByRole("button", { name: /edit in log/i }));
 
     // Heading follows day_type 3 -> Push, and the date follows the session's
@@ -126,7 +130,7 @@ describe("GymPage sub-tabs and hand-off", () => {
 
     renderPage();
     await userEvent.click(await screen.findByRole("button", { name: "History" }));
-    await userEvent.click(await screen.findByText("2026-05-20"));
+    await userEvent.click(await screen.findByText(prettyDate("2026-05-20")));
     await userEvent.click(await screen.findByRole("button", { name: /edit in log/i }));
     await waitFor(() =>
       expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Push"),

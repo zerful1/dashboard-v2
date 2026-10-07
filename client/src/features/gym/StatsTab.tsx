@@ -1,62 +1,48 @@
-import { useEffect, useState } from "react";
-import { useExerciseStats, useHistoryExerciseNames } from "@/hooks/useExerciseStats";
-import { StatCards } from "./StatCards";
-import { ProgressionChart } from "./ProgressionChart";
-import { Spinner } from "@/components/ui/Spinner";
+import { useLayoutEffect, useRef, useState } from "react";
+import { useToday } from "@/hooks/useToday";
+import { LiftsOverview } from "./stats/LiftsOverview";
+import { LiftDetailView } from "./stats/LiftDetailView";
 
+/**
+ * Gym's Stats (redesign part 3b): every lift by trend, and one lift in detail
+ * within the tab. The search, the Not lately fold and the list's scroll
+ * position live here, so coming back from a lift returns you to your place.
+ */
 export function StatsTab() {
-  const { data: names = [], isLoading: namesLoading } = useHistoryExerciseNames();
+  const today = useToday();
   const [selected, setSelected] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [unfolded, setUnfolded] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  // AppLayout's <main> is the page's scroll container.
+  const scroller = () => root.current?.closest("main") ?? null;
+  const listTop = useRef(0);
 
-  // Default to the first name once they arrive, but never overwrite a choice.
-  useEffect(() => {
-    if (!selected && names.length > 0) setSelected(names[0]!);
-  }, [names, selected]);
+  // After the switch has rendered: a lift opens at its top, and Back returns
+  // to where the list was.
+  useLayoutEffect(() => {
+    const main = scroller();
+    if (main) main.scrollTop = selected === null ? listTop.current : 0;
+  }, [selected]);
 
-  const { stats, isLoading } = useExerciseStats(selected);
-
-  if (namesLoading) return <Spinner label="Loading exercises" />;
-
-  if (names.length === 0) {
-    return (
-      <div className="py-6 text-center text-sm text-muted">
-        Log some sets and your stats will appear here.
-      </div>
-    );
-  }
+  const open = (name: string) => {
+    listTop.current = scroller()?.scrollTop ?? 0;
+    setSelected(name);
+  };
 
   return (
-    <div className="space-y-3">
-      <div>
-        <label htmlFor="stats-exercise" className="lbl">
-          Exercise
-        </label>
-        <select
-          id="stats-exercise"
-          value={selected ?? ""}
-          onChange={(e) => setSelected(e.target.value)}
-          className="mt-1.5 w-full rounded-xl border border-edge bg-surface px-3 py-2 text-sm text-text focus:border-accent focus:outline-none"
-        >
-          {/* From history, not the template — exercises you have stopped doing
-              stay reachable, and they are often the interesting ones. */}
-          {names.map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {isLoading || !stats ? (
-        <Spinner label="Loading stats" />
+    <div ref={root}>
+      {selected === null ? (
+        <LiftsOverview
+          today={today}
+          search={search}
+          onSearch={setSearch}
+          unfolded={unfolded}
+          onUnfold={setUnfolded}
+          onOpen={open}
+        />
       ) : (
-        <>
-          <StatCards stats={stats} />
-          <ProgressionChart
-            chartData={stats.chartData}
-            bodyweightOnly={stats.isBodyweightOnly}
-          />
-        </>
+        <LiftDetailView name={selected} today={today} onBack={() => setSelected(null)} />
       )}
     </div>
   );

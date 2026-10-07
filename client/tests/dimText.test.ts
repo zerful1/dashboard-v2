@@ -15,7 +15,6 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
   "components/ui/Input.tsx": { count: 1, why: "placeholder: the label carries the meaning" },
   "features/gym/ExerciseRow.tsx": { count: 1, why: "the row's chevron icon" },
   "layout/AppLayout.tsx": { count: 1, why: "the More sheet's chevrons" },
-  "features/gym/StatCards.tsx": { count: 1, why: "the — shown when there is no 30-day change" },
   "features/weight/WeightStats.tsx": { count: 1, why: "the — shown when there is no change" },
 };
 

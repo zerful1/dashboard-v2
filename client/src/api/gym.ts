@@ -2,7 +2,9 @@ import { api } from "@/lib/api";
 import type {
   Exercise,
   ExerciseNameRow,
-  StatSetRow,
+  LiftProgress,
+  LiftSetRow,
+  SessionSummary,
   WorkoutSession,
   WorkoutSet,
   LastTime,
@@ -23,12 +25,6 @@ export type SetFields = {
 } & SetReps;
 
 export type SetInput = { date: string; day_type: number } & SetFields;
-
-export interface StatsPayload {
-  sets: StatSetRow[];
-  /** session_id -> YYYY-MM-DD. An object, not a Map — JSON has no Map. */
-  sessionDates: Record<string, string>;
-}
 
 export interface CardioInput {
   exercise: string;
@@ -69,12 +65,13 @@ export const gymApi = {
 
   getSession: (date: string, dayType: number) =>
     api<WorkoutSession | null>(`/api/workouts/session?date=${date}&day_type=${dayType}`),
-  getSessions: (opts: { limit?: number; offset?: number; day_name?: string } = {}) => {
+  getSessions: (opts: { limit?: number; offset?: number; day_name?: string; since?: string } = {}) => {
     const p = new URLSearchParams();
     if (opts.limit != null) p.set("limit", String(opts.limit));
     if (opts.offset != null) p.set("offset", String(opts.offset));
     if (opts.day_name) p.set("day_name", opts.day_name);
-    return api<WorkoutSession[]>(`/api/workouts/sessions?${p}`);
+    if (opts.since) p.set("since", opts.since);
+    return api<SessionSummary[]>(`/api/workouts/sessions?${p}`);
   },
   listSets: (sessionId: string) => api<WorkoutSet[]>(`/api/workouts/sets?session_id=${sessionId}`),
   logSet: (input: SetInput) =>
@@ -90,7 +87,8 @@ export const gymApi = {
     ),
 
   stats: (exerciseName: string) =>
-    api<StatsPayload>(`/api/workouts/stats?exercise_name=${encodeURIComponent(exerciseName)}`),
+    api<LiftSetRow[]>(`/api/workouts/stats?exercise_name=${encodeURIComponent(exerciseName)}`),
+  progress: (today: string) => api<LiftProgress[]>(`/api/workouts/progress?today=${today}`),
   sessionDetail: (sessionId: string) =>
     api<{ sets: WorkoutSet[]; cardio: CardioEntry[] }>(
       `/api/workouts/session-detail?session_id=${sessionId}`,

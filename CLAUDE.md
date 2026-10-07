@@ -207,6 +207,11 @@ The same-day rule compared against another split era's day whenever `day_type`
 was reused, and showed nothing whenever the last same-day session skipped the
 exercise.
 
+**Stats trends look back 32 weeks, not all time** (`liftProgress` in shared):
+the last 6 weeks against the 26 before them. Migrated history reaches back to
+v1, so against all-time bests a lift being rebuilt after a layoff would read
+"Going back" for months while it climbed.
+
 ---
 
 ## TanStack Query: `isPending`, not `isLoading`
@@ -340,14 +345,12 @@ the way they should read.
 
 **`raised` is borders and gridlines only.** Never data.
 
-**Only `client/src/features/weight/WeightChart.tsx` was meant to import a
-charting library.** Its component comment calls it "THE swappable boundary".
-The rule broke silently, exactly as it warns: `client/src/features/gym/ProgressionChart.tsx`
-imports Recharts too. It was added on 2026-08-17, before the rule was written
-down on 2026-08-31, and nobody noticed until 2026-10-04. Treat those two files
-as the only import sites, and allow no third. A new chart is a new export from
-`WeightChart.tsx`. Moving `ProgressionChart` behind it would make the rule true
-again.
+**Only `client/src/features/weight/WeightChart.tsx` imports a charting
+library.** Its component comment calls it "THE swappable boundary". The rule
+broke once, silently: `ProgressionChart.tsx` imported Recharts from 2026-08-17
+until the Stats redesign (part 3b) moved Gym's chart in as `LiftChart` and
+deleted it. A new chart is a new export from `WeightChart.tsx`, never a second
+import site.
 
 **The barcode scanner's decoder is served by this app.** On a phone without a
 native `BarcodeDetector` (every iPhone), `barcodeDetector.ts` loads the

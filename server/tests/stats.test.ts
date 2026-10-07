@@ -1,8 +1,7 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
-import { computeExerciseStats } from "@dashboard/shared";
-import { exerciseStatRows, historyExerciseNames } from "../src/repositories/stats";
+import { liftRows, historyExerciseNames } from "../src/repositories/stats";
 import { findUserByEmail } from "../src/repositories/users";
 
 const app = createApp();
@@ -45,7 +44,7 @@ describe("stats endpoint", () => {
   });
 
   // The user's call: progress counts the weaker side.
-  it("counts the weaker side of a single-sided set", async () => {
+  it("counts the weaker side of a single-sided set, and returns both", async () => {
     const agent = await signedIn(alice);
     await agent
       .post("/api/workouts/sets")
@@ -53,57 +52,27 @@ describe("stats endpoint", () => {
               weight_kg: 12, reps_left: 9, reps_right: 6, is_bodyweight: false })
       .expect(201);
     const res = await agent.get("/api/workouts/stats?exercise_name=Unilateral%20Curl").expect(200);
-    expect(res.body.sets[0].reps).toBe(6);
+    expect(res.body[0]).toMatchObject({ reps: 6, reps_left: 9, reps_right: 6 });
   });
 
-  it("returns sets plus a session_id to date map", async () => {
+  it("returns each set with its date and number, oldest first", async () => {
     const agent = await signedIn(alice);
+    await logSets(agent, "2026-08-16", [{ w: 82.5, r: 6 }, { w: 80, r: 8 }]);
     await logSets(agent, "2026-08-09", [{ w: 80, r: 8 }]);
-    await logSets(agent, "2026-08-16", [{ w: 82.5, r: 6 }]);
 
     const res = await agent.get("/api/workouts/stats?exercise_name=Bench%20Press").expect(200);
-    expect(res.body.sets).toHaveLength(2);
-    expect(Object.values(res.body.sessionDates).sort()).toEqual(["2026-08-09", "2026-08-16"]);
-  });
-
-  it("feeds computeExerciseStats correctly end to end", async () => {
-    const agent = await signedIn(alice);
-    await logSets(agent, "2026-08-09", [
-      { w: 80, r: 8 },
-      { w: 80, r: 6 },
+    expect(res.body.map((s: { date: string; set_number: number }) => [s.date, s.set_number])).toEqual([
+      ["2026-08-09", 1],
+      ["2026-08-16", 1],
+      ["2026-08-16", 2],
     ]);
-    await logSets(agent, "2026-08-16", [{ w: 85, r: 5 }]);
-
-    const res = await agent.get("/api/workouts/stats?exercise_name=Bench%20Press").expect(200);
-    const stats = computeExerciseStats(
-      res.body.sets,
-      new Map(Object.entries(res.body.sessionDates)),
-    );
-
-    expect(stats.heaviestSet?.weight_kg).toBe(85);
-    expect(stats.sessionCount).toBe(2);
-    expect(stats.lastTrainedDate).toBe("2026-08-16");
-    expect(stats.isBodyweightOnly).toBe(false);
-    expect(stats.chartData.map((p) => p.date)).toEqual(["2026-08-09", "2026-08-16"]);
-  });
-
-  it("marks a bodyweight-only exercise", async () => {
-    const agent = await signedIn(alice);
-    await logSets(agent, "2026-08-16", [{ w: 0, r: 9, bw: true }], "Pull Up");
-
-    const res = await agent.get("/api/workouts/stats?exercise_name=Pull%20Up").expect(200);
-    const stats = computeExerciseStats(
-      res.body.sets,
-      new Map(Object.entries(res.body.sessionDates)),
-    );
-    expect(stats.isBodyweightOnly).toBe(true);
-    expect(stats.chartData[0]!.topReps).toBe(9);
+    expect(res.body[0]).toMatchObject({ exercise_name: "Bench Press", weight_kg: 80, is_bodyweight: false });
   });
 
   it("returns empty for an unknown exercise", async () => {
     const agent = await signedIn(alice);
     const res = await agent.get("/api/workouts/stats?exercise_name=Nothing").expect(200);
-    expect(res.body.sets).toEqual([]);
+    expect(res.body).toEqual([]);
   });
 
   it("keeps dates as strings", async () => {
@@ -111,7 +80,33 @@ describe("stats endpoint", () => {
     // September is BST — a Date round trip would render this as the 25th.
     await logSets(agent, "2025-09-26", [{ w: 80, r: 8 }]);
     const res = await agent.get("/api/workouts/stats?exercise_name=Bench%20Press").expect(200);
-    expect(Object.values(res.body.sessionDates)[0]).toBe("2025-09-26");
+    expect(res.body[0].date).toBe("2025-09-26");
+  });
+});
+
+describe("progress endpoint", () => {
+  it("requires a session", async () => {
+    await request(app).get("/api/workouts/progress?today=2026-08-16").expect(401);
+  });
+
+  it("needs a today", async () => {
+    const agent = await signedIn(alice);
+    await agent.get("/api/workouts/progress").expect(400);
+    await agent.get("/api/workouts/progress?today=16-08-2026").expect(400);
+  });
+
+  it("reads every lift against the today it is given, not the server's clock", async () => {
+    const agent = await signedIn(alice);
+    await logSets(agent, "2026-06-01", [{ w: 80, r: 8 }]);
+    await logSets(agent, "2026-08-10", [{ w: 85, r: 8 }]);
+    await logSets(agent, "2026-05-01", [{ w: 100, r: 5 }], "Squat");
+
+    const res = await agent.get("/api/workouts/progress?today=2026-08-16").expect(200);
+    const byName = Object.fromEntries(res.body.map((p: { name: string; status: string }) => [p.name, p.status]));
+    expect(byName).toEqual({ "Bench Press": "moving", Squat: "old" });
+
+    const later = await agent.get("/api/workouts/progress?today=2026-10-30").expect(200);
+    expect(later.body.find((p: { name: string }) => p.name === "Bench Press").status).toBe("old");
   });
 });
 
@@ -190,9 +185,7 @@ describe("stats ownership scoping", () => {
     const bobAgent = await signedIn(bob);
     await logSets(aliceAgent, "2026-08-16", [{ w: 80, r: 8 }]);
 
-    expect((await bobAgent.get("/api/workouts/stats?exercise_name=Bench%20Press")).body.sets).toEqual(
-      [],
-    );
+    expect((await bobAgent.get("/api/workouts/stats?exercise_name=Bench%20Press")).body).toEqual([]);
     expect((await bobAgent.get("/api/workouts/exercise-names")).body).toEqual([]);
 
     const aliceSession = (await aliceAgent.get("/api/workouts/session?date=2026-08-16&day_type=3"))
@@ -205,6 +198,8 @@ describe("stats ownership scoping", () => {
 
     const aliceId = (await findUserByEmail(alice.email))!.id;
     expect(await historyExerciseNames(aliceId)).toEqual(["Bench Press"]);
-    expect((await exerciseStatRows(aliceId, "Bench Press")).sets).toHaveLength(1);
+    expect(await liftRows(aliceId, "Bench Press")).toHaveLength(1);
+    expect((await bobAgent.get("/api/workouts/progress?today=2026-08-20")).body).toEqual([]);
+    expect(await liftRows(aliceId)).toHaveLength(1);
   });
 });

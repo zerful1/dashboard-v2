@@ -10,9 +10,9 @@ import {
 } from "../repositories/sessions";
 import { getSplit } from "../repositories/split";
 import { listSets, upsertSet, deleteSet, lastTimes } from "../repositories/sets";
-import { computeRecommendation } from "@dashboard/shared";
+import { computeRecommendation, liftProgress } from "@dashboard/shared";
 import { recentSessionGroups } from "../repositories/coaching";
-import { exerciseStatRows, sessionDetail, historyExerciseNames } from "../repositories/stats";
+import { liftRows, sessionDetail, historyExerciseNames } from "../repositories/stats";
 import { NotFound } from "../errors";
 
 export const workoutsRouter = Router();
@@ -44,16 +44,18 @@ workoutsRouter.get(
       limit: z.coerce.number().int().min(1).max(100).default(20),
       offset: z.coerce.number().int().min(0).default(0),
       day_name: z.string().max(60).optional(),
+      since: isoDate.optional(),
     }),
   }),
   async (req, res, next) => {
     try {
-      const q = req.query as unknown as { limit: number; offset: number; day_name?: string };
+      const q = req.query as unknown as { limit: number; offset: number; day_name?: string; since?: string };
       res.json(
         await listSessions(req.userId, {
           limit: q.limit,
           offset: q.offset,
           dayName: q.day_name,
+          since: q.since,
         }),
       );
     } catch (err) {
@@ -200,7 +202,21 @@ workoutsRouter.get(
   async (req, res, next) => {
     try {
       const { exercise_name } = req.query as unknown as { exercise_name: string };
-      res.json(await exerciseStatRows(req.userId, exercise_name));
+      res.json(await liftRows(req.userId, exercise_name));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+/** The Stats overview (redesign part 3b, §2): every lift's status as of the client's today. The server is UTC. */
+workoutsRouter.get(
+  "/progress",
+  validate({ query: z.object({ today: isoDate }) }),
+  async (req, res, next) => {
+    try {
+      const { today } = req.query as unknown as { today: string };
+      res.json(liftProgress(await liftRows(req.userId), today));
     } catch (err) {
       next(err);
     }
