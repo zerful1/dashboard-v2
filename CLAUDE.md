@@ -231,7 +231,17 @@ real, wrong day name. Measured on a real account: its Monday is `day_type 3` =
 number, different label.
 
 `useSplit` therefore exposes `isPending` and deliberately does **not** expose
-`isLoading`.
+`isLoading`. A split that *failed* with nothing cached is the same trap, so it
+also exposes `failed`: Gym and Home show that failure, and Gym decides no day
+while it stands, because the rest-day fallback would latch on the default's
+answer.
+
+**A query keyed by today is a new key every day.** Offline on a new day it has
+nothing cached, so it pauses and reports `isPending` until the network returns.
+Where yesterday's answer is still worth showing (Stats, History's grid),
+`placeholderData` from `newestCached` stands in, scoped by the user id in the
+key prefix. Home's diary and workout are keyed by today too, and yesterday's
+answer is wrong there, so Home still waits behind its spinner: a known gap.
 
 **Query options are shared, not re-declared.** `goalsQueryOptions`,
 `exercisesQueryOptions` and `workoutDayQueryOptions` are the one definition of
