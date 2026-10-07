@@ -123,13 +123,30 @@ describe('liftDetail', () => {
       ['2026-09-22', true],
     ])
     expect(d.points[0]!.value).toBe(88.7)
+    expect(d.chartAll).toBe(false)
+  })
+
+  // Final review: most production lifts are v1-era, with nothing in the span.
+  it('charts the whole history of a lift with nothing in the span', () => {
+    const d = liftDetail('Row', [
+      set('Row', '2025-03-14', 100, 5),
+      set('Row', '2025-04-01', 90, 5),
+      set('Row', '2025-05-01', 105, 5),
+    ], TODAY)!
+    expect(d.chartAll).toBe(true)
+    expect(d.points.map((p) => [p.date, p.isBest])).toEqual([
+      ['2025-03-14', true],
+      ['2025-04-01', false],
+      ['2025-05-01', true],
+    ])
   })
 
   // Review focus 3.
   it('keeps the higher of two sessions on one date as its point, and lists both sessions', () => {
+    // The higher session first: a last-wins point would keep 70 kg and fail.
     const d = liftDetail('Row', [
-      set('Row', '2026-09-01', 70, 8, { session_id: 'a' }),
       set('Row', '2026-09-01', 80, 8, { session_id: 'b' }),
+      set('Row', '2026-09-01', 70, 8, { session_id: 'a' }),
     ], TODAY)!
     expect(d.points).toHaveLength(1)
     expect(d.points[0]!.value).toBeCloseTo(101.3, 1)

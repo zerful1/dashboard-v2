@@ -44,15 +44,23 @@ function freeze() {
   vi.setSystemTime(new Date(2026, 9, 6, 12)); // Tue 2026-10-06
 }
 
+/** Inside a <main>, the app's scroll container (AppLayout), whose scrollTop is recorded. */
 function renderTab() {
   const qc = createQueryClient();
   const def = qc.getDefaultOptions();
   qc.setDefaultOptions({ ...def, queries: { ...def.queries, retry: false } });
-  render(
-    <QueryClientProvider client={qc}>
-      <StatsTab />
-    </QueryClientProvider>,
+  const { container } = render(
+    <main>
+      <QueryClientProvider client={qc}>
+        <StatsTab />
+      </QueryClientProvider>
+    </main>,
   );
+  const main = container.querySelector("main")!;
+  // jsdom does no layout, so scrollTop is recorded rather than computed.
+  let top = 0;
+  Object.defineProperty(main, "scrollTop", { get: () => top, set: (v: number) => { top = v; }, configurable: true });
+  return { main };
 }
 
 const group = (name: string) => within(screen.getByRole("region", { name }));
@@ -190,6 +198,35 @@ describe("Stats, a lift's detail (redesign part 3b, §4)", () => {
     renderTab();
     await userEvent.click(await screen.findByRole("button", { name: /Lat Pulldown/ }));
     expect(within(await screen.findByRole("region", { name: "Best" })).getByText("BW × 11")).toBeInTheDocument();
+  });
+
+  // Final review: Back re-folded Not lately and dropped you near the top.
+  it("keeps Not lately open, and your place in the list, coming back from a lift", async () => {
+    freeze();
+    mockApi({ "/api/workouts/progress": LIFTS, "/api/workouts/stats": [row("2025-03-01", 60, 8)] });
+    const { main } = renderTab();
+    await userEvent.click(await screen.findByRole("button", { name: /Not lately/ }));
+    main.scrollTop = 420;
+    await userEvent.click(screen.getByRole("button", { name: /Seated Row \(old\)/ }));
+    await screen.findByRole("heading", { name: "Seated Row (old)" });
+    expect(main.scrollTop).toBe(0);
+    await userEvent.click(screen.getByRole("button", { name: /All lifts/ }));
+    expect(await screen.findByRole("button", { name: /Not lately/ })).toHaveAttribute("aria-expanded", "true");
+    expect(main.scrollTop).toBe(420);
+  });
+
+  // Final review: v1-era lifts have nothing in the span, and once said "Not enough sessions".
+  it("charts an old lift's whole history", async () => {
+    freeze();
+    mockApi({
+      "/api/workouts/progress": LIFTS,
+      "/api/workouts/stats": [row("2025-03-01", 60, 8), row("2025-03-08", 62.5, 8), row("2025-03-15", 65, 8)],
+    });
+    renderTab();
+    await userEvent.click(await screen.findByRole("button", { name: /Not lately/ }));
+    await userEvent.click(screen.getByRole("button", { name: /Seated Row \(old\)/ }));
+    expect(await screen.findByRole("img", { name: /all history/i })).toBeInTheDocument();
+    expect(screen.queryByText(/Not enough sessions/)).toBeNull();
   });
 
   it("says so when the lift fails to load", async () => {

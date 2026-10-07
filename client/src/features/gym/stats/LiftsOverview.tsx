@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { setCell, type LiftProgress, type LiftStatus } from "@dashboard/shared";
 import { Input } from "@/components/ui/Input";
@@ -33,14 +32,16 @@ function LiftRow({ lift, today, onOpen }: { lift: LiftProgress; today: string; o
 }
 
 /** Every lift by trend (redesign part 3b, §3), with search; lifts not trained lately fold away. */
-export function LiftsOverview({ today, search, onSearch, onOpen }: {
+export function LiftsOverview({ today, search, onSearch, unfolded, onUnfold, onOpen }: {
   today: string;
   search: string;
   onSearch: (s: string) => void;
+  /** Kept by the tab, so Back from a lift finds Not lately as it was left. */
+  unfolded: boolean;
+  onUnfold: (open: boolean) => void;
   onOpen: (name: string) => void;
 }) {
   const { lifts, isPending } = useLiftProgress(today);
-  const [unfolded, setUnfolded] = useState(false);
 
   // A conclusion: nothing until it has loaded (CLAUDE.md, isPending).
   if (isPending) return <Spinner label="Loading your lifts" />;
@@ -76,7 +77,7 @@ export function LiftsOverview({ today, search, onSearch, onOpen }: {
           <button
             type="button"
             aria-expanded={open}
-            onClick={() => setUnfolded((v) => !v)}
+            onClick={() => onUnfold(!unfolded)}
             className="flex w-full items-center justify-between py-2"
           >
             <span className="lbl">Not lately · {old.length}</span>
