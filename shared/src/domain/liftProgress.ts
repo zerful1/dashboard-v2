@@ -66,6 +66,8 @@ export interface LiftDetail {
   /** The all-time best, only when it beats the span's (or the span has none). */
   allTime: DatedSet | null
   points: LiftChartPoint[]
+  /** The span held no session, so the chart is the lift's whole history (the user's call, 2026-10-07). */
+  chartAll: boolean
   /** Every session of the lift, newest first, its sets in order. */
   sessions: LiftSession[]
 }
@@ -171,9 +173,11 @@ export function liftDetail(name: string, sets: LiftSetRow[], today: string): Lif
   const allBest = highest(bests)
   const allTime = allBest && (!spanBest || allBest.value > spanBest.value) ? allBest.best : null
 
+  // A lift with nothing in the span (most v1-era lifts) charts its whole history instead.
+  const chartAll = span.length === 0
   // One point per date: two sessions of one lift on a day (two day types) are one day trained.
   const byDate = new Map<string, number>()
-  for (const s of span) byDate.set(s.date, Math.max(byDate.get(s.date) ?? -Infinity, s.value))
+  for (const s of chartAll ? bests : span) byDate.set(s.date, Math.max(byDate.get(s.date) ?? -Infinity, s.value))
   let running = -Infinity
   const points = [...byDate.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
@@ -191,5 +195,5 @@ export function liftDetail(name: string, sets: LiftSetRow[], today: string): Lif
     }))
     .sort((a, b) => b.date.localeCompare(a.date))
 
-  return { progress, bodyweightOnly, allTime, points, sessions }
+  return { progress, bodyweightOnly, allTime, points, chartAll, sessions }
 }

@@ -211,13 +211,26 @@ export function WeightSparkline({ points }: { points: ChartPoint[] }) {
   );
 }
 
+/** Tick text for LiftChart: muted, because axis labels are words to read (CLAUDE.md). */
+export const LIFT_TICK = { fontSize: 10, fill: "var(--color-muted)" };
+
+/**
+ * Whole-number ends two below and above the data. A fixed "dataMin - 2" gave
+ * decimal ticks such as 128.7, whose leading digit the margin clipped.
+ */
+export function liftDomain(values: number[]): [number, number] {
+  return [Math.floor(Math.min(...values) - 2), Math.ceil(Math.max(...values) + 2)];
+}
+
+export const liftTick = (v: number) => String(Math.round(v));
+
 /**
  * One lift over the trend span (redesign part 3b, §4): each session's best as
  * an estimated 1RM (or reps), new bests white and the rest dim, with a dashed
  * fitted line that never reads as measurement. It lives here because this file
  * is the one charting boundary; ProgressionChart broke that rule and is gone.
  */
-export function LiftChart({ points, unit }: { points: LiftChartPoint[]; unit: "kg" | "reps" }) {
+export function LiftChart({ points, unit, allHistory = false }: { points: LiftChartPoint[]; unit: "kg" | "reps"; allHistory?: boolean }) {
   const data = useMemo(() => {
     if (points.length < 2) return [];
     // linearTrend takes {x,y}[] and trendPoint is (x, line): both compile the wrong way round.
@@ -233,12 +246,24 @@ export function LiftChart({ points, unit }: { points: LiftChartPoint[]; unit: "k
   }
 
   return (
-    <div className="h-48" role="img" aria-label={`${unit === "kg" ? "Estimated 1RM" : "Reps"} per session, ${points.length} sessions`}>
+    <div
+      className="h-48"
+      role="img"
+      aria-label={`${unit === "kg" ? "Estimated 1RM" : "Reps"} per session, ${points.length} sessions${allHistory ? ", all history" : ""}`}
+    >
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -18 }}>
+        <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -12 }}>
           <CartesianGrid stroke="var(--color-raised)" vertical={false} />
-          <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={28} />
-          <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={44} domain={["dataMin - 2", "dataMax + 2"]} />
+          <XAxis dataKey="date" tick={LIFT_TICK} tickLine={false} axisLine={false} minTickGap={28} />
+          <YAxis
+            tick={LIFT_TICK}
+            tickFormatter={liftTick}
+            tickLine={false}
+            axisLine={false}
+            width={44}
+            domain={liftDomain(points.map((p) => p.value))}
+            allowDecimals={false}
+          />
           <Line
             type="monotone"
             dataKey="value"
