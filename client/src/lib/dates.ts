@@ -34,3 +34,39 @@ export function shortDate(iso: string, today: string): string {
     iso.slice(0, 4) === today.slice(0, 4) ? { day: "numeric", month: "short" } : { day: "numeric", month: "short", year: "numeric" };
   return new Date(y!, m! - 1, d!).toLocaleDateString(undefined, opts);
 }
+
+// Fixed English names, not the locale's: en-GB's short September is "Sept",
+// and a screen reader's label should not change with the device.
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS_LONG = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+/** A local Date only to read the weekday off it (CLAUDE.md: dates are strings). */
+function weekday(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return WEEKDAYS[new Date(y!, m! - 1, d!).getDay()]!;
+}
+
+/** "24–30 Sep", "28 Sep – 4 Oct", "29 Dec 2025 – 4 Jan": a span of days, with the year only outside today's. */
+export function rangeLabel(from: string, to: string, today: string): string {
+  const [fy, fm, fd] = from.split("-").map(Number);
+  const [ty, tm, td] = to.split("-").map(Number);
+  const year = (y: number) => (y === Number(today.slice(0, 4)) ? "" : ` ${y}`);
+  if (fy !== ty) return `${fd} ${MONTHS[fm! - 1]} ${fy} – ${td} ${MONTHS[tm! - 1]}${year(ty!)}`;
+  if (fm !== tm) return `${fd} ${MONTHS[fm! - 1]} – ${td} ${MONTHS[tm! - 1]}${year(ty!)}`;
+  return `${fd}–${td} ${MONTHS[tm! - 1]}${year(ty!)}`;
+}
+
+/** "Tuesday 6 October": a date for a screen reader. */
+export function spokenDate(iso: string): string {
+  const [, m, d] = iso.split("-").map(Number);
+  return `${weekday(iso)} ${d} ${MONTHS_LONG[m! - 1]}`;
+}
+
+/** "T": a weekday's initial, over a column. */
+export function weekdayInitial(iso: string): string {
+  return weekday(iso)[0]!;
+}

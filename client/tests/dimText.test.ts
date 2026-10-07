@@ -16,6 +16,7 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
   "features/gym/ExerciseRow.tsx": { count: 1, why: "the row's chevron icon" },
   "layout/AppLayout.tsx": { count: 1, why: "the More sheet's chevrons" },
   "features/weight/WeightStats.tsx": { count: 1, why: "the — shown when there is no change" },
+  "features/nutrition/WeekStrip.tsx": { count: 1, why: "the — under a day with nothing logged" },
 };
 
 function files(dir: string): string[] {
