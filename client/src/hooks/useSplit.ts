@@ -15,6 +15,8 @@ export function useSplit() {
     queryFn: gymApi.getSplit,
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
+    // Gym and Home each say so themselves when it fails.
+    meta: { errorToast: false },
   });
 
   const saveSplit = useMutation({
@@ -41,5 +43,14 @@ export function useSplit() {
   // disabled query reports isLoading false, and a persisted-hydrated one
   // reports isPending false while still disabled - only isPending answers
   // "is there data yet" in both cases.
-  return { split: query.data ?? DEFAULT_SPLIT, isPending: query.isPending, saveSplit };
+  //
+  // `failed` is the same trap after a failure: the default stands in for a split
+  // that never arrived, and reads as real. Failed with nothing to show, that is:
+  // a failed refetch keeps the last good split, which is still the user's own.
+  return {
+    split: query.data ?? DEFAULT_SPLIT,
+    isPending: query.isPending,
+    failed: query.isError && query.data === undefined,
+    saveSplit,
+  };
 }

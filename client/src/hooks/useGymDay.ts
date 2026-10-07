@@ -11,6 +11,13 @@ export interface GymDay {
   jumpTo: (dayType: number, date: string) => void;
 }
 
+/**
+ * Away this long, the page starts over on the new day. A phone locked between
+ * sets is gone for minutes, one left on Gym overnight for hours: only the second
+ * may move the date, so a workout that runs past midnight stays one session.
+ */
+const LONG_BREAK_MS = 3 * 60 * 60 * 1000;
+
 function initialDay(split: SplitConfig): number {
   const t = getTodayDayType(split);
   return t === "rest" ? (split.days[0]?.day_type ?? 1) : t;
@@ -43,6 +50,34 @@ export function useGymDay(
    * under them mid-log.
    */
   const userHasChosen = useRef(false);
+  /** False once a date other than today is picked. That date stays put. */
+  const onToday = useRef(true);
+  const shownDate = useRef(date);
+  useEffect(() => {
+    shownDate.current = date;
+  }, [date]);
+
+  // Back from a long break on a new day, start it as a fresh open would. The
+  // date read once at mount otherwise logs the morning's sets onto yesterday.
+  useEffect(() => {
+    let hiddenAt: number | null = null;
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        hiddenAt = Date.now();
+        return;
+      }
+      const away = hiddenAt === null ? 0 : Date.now() - hiddenAt;
+      hiddenAt = null;
+      const today = toLocalISO();
+      if (away < LONG_BREAK_MS || !onToday.current || today === shownDate.current) return;
+      // Unlatched only when the date really moves: the effect below re-decides
+      // the day on that change, and on no other would anything re-latch it.
+      userHasChosen.current = false;
+      setDate(today);
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
 
   useEffect(() => {
     if (userHasChosen.current) return;
@@ -63,7 +98,7 @@ export function useGymDay(
       setDayType(lastLoggedDayType);
       userHasChosen.current = true;
     }
-  }, [split, splitPending, lastLoggedDayType]);
+  }, [split, splitPending, lastLoggedDayType, date]);
 
   const selectDay = (d: number) => {
     userHasChosen.current = true;
@@ -71,10 +106,12 @@ export function useGymDay(
   };
   const selectDate = (d: string) => {
     userHasChosen.current = true;
+    onToday.current = d === toLocalISO();
     setDate(d);
   };
   const jumpTo = (d: number, dt: string) => {
     userHasChosen.current = true;
+    onToday.current = dt === toLocalISO();
     setDayType(d);
     setDate(dt);
   };

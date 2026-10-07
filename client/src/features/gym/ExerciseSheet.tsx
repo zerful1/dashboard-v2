@@ -18,6 +18,13 @@ interface Props {
   last: LastTime | null;
   /** Last time is still loading: claim nothing about it until it has. */
   lastPending?: boolean;
+  /**
+   * Today's sets are still loading. The next set's number comes from them, and
+   * the server upserts on it, so nothing is logged until they are in.
+   */
+  todayPending?: boolean;
+  /** Today's sets failed to load: still unknown, and the sheet says why it waits. */
+  todayFailed?: boolean;
   onClose: () => void;
   onLogSet: (
     weightKg: number,
@@ -34,7 +41,10 @@ const NO_SETS: WorkoutSet[] = [];
  * Logging one exercise (redesign part 3a, §3): today against last time, set by
  * set, with the set being logged as a highlighted block between them.
  */
-export function ExerciseSheet({ exercise, todaySets, last, lastPending = false, onClose, onLogSet, onDeleteSet }: Props) {
+export function ExerciseSheet({
+  exercise, todaySets, last, lastPending = false, todayPending = false, todayFailed = false,
+  onClose, onLogSet, onDeleteSet,
+}: Props) {
   const lastSets = last?.sets ?? NO_SETS;
   const rows = lastTimeRows(todaySets, lastSets);
   const defaults = sheetDefaults(todaySets, lastSets, rows.next);
@@ -48,6 +58,7 @@ export function ExerciseSheet({ exercise, todaySets, last, lastPending = false, 
   // Once the user flips a switch, data arriving later does not overrule them.
   const sidesTouched = useRef(false);
   const bodyweightTouched = useRef(false);
+  const weightTouched = useRef(false);
   const nextBlock = useRef<HTMLDivElement>(null);
   const nextId = useId();
 
@@ -63,18 +74,24 @@ export function ExerciseSheet({ exercise, todaySets, last, lastPending = false, 
       todaySets.some((s) => s.reps_left !== null));
 
   // Reset on open, not on close: clearing during the exit animation makes the
-  // fields visibly blank as the sheet slides away. Only on open, because
-  // `defaults` moves with every set logged and must never overwrite typing.
+  // fields visibly blank as the sheet slides away.
   useEffect(() => {
     if (exercise) {
-      setWeight(defaults.weight);
       setReps("");
       setLeft("");
       setRight("");
       sidesTouched.current = false;
       bodyweightTouched.current = false;
+      weightTouched.current = false;
     }
   }, [exercise]);
+
+  // The weight starts from today's previous set, which can arrive after the
+  // sheet opens: so on open, and again once today's sets are in, unless typed.
+  // Not on every change: deleting a set to redo it would move the weight.
+  useEffect(() => {
+    if (exercise && !weightTouched.current) setWeight(defaults.weight);
+  }, [exercise, todayPending]);
 
   // Separate from the reset: last time can arrive after the sheet opens, and
   // the switches follow it until touched.
@@ -102,9 +119,11 @@ export function ExerciseSheet({ exercise, todaySets, last, lastPending = false, 
   const w = Number.parseFloat(weight);
   const weightOk = isBodyweight || (Number.isFinite(w) && w > 0);
   const valid = weightOk && (sides ? l !== null && rt !== null : r !== null);
+  // Enter in the reps field reaches submit without the button, so it checks too.
+  const canLog = valid && !todayPending;
 
   const submit = () => {
-    if (!valid || !exercise) return;
+    if (!canLog || !exercise) return;
     onLogSet(isBodyweight ? 0 : w, sides ? { left: l!, right: rt! } : r!, isBodyweight, rows.next);
     // The weight stays for the next set. The reps clear, so a stray tap cannot
     // log this set twice: Add set waits for new ones.
@@ -134,10 +153,10 @@ export function ExerciseSheet({ exercise, todaySets, last, lastPending = false, 
     <div ref={nextBlock} role="group" aria-labelledby={nextId} className="rounded-xl bg-accent/5 p-3">
       <div className="flex items-baseline justify-between gap-2">
         <span id={nextId} className="text-sm font-semibold">
-          Set {rows.next}
+          {todayPending ? "Next set" : `Set ${rows.next}`}
         </span>
         <span className="tnum text-xs text-muted">
-          {rows.nextLast ? (
+          {todayPending ? null : rows.nextLast ? (
             <>
               Last time <span className="font-semibold text-text">{setCell(rows.nextLast)}</span>
             </>
@@ -164,6 +183,7 @@ export function ExerciseSheet({ exercise, todaySets, last, lastPending = false, 
                 // Typing a weight is a choice: a bodyweight last time that
                 // arrives late must not blank and disable it.
                 bodyweightTouched.current = true;
+                weightTouched.current = true;
                 setWeight(e.target.value);
               }}
             />
@@ -207,6 +227,7 @@ export function ExerciseSheet({ exercise, todaySets, last, lastPending = false, 
         {/* The block keeps one place in the tree whatever loads around it, so
             last time arriving never rebuilds the inputs under a thumb. */}
         <div className="space-y-2">
+          {todayFailed && <p className="text-xs text-muted">Couldn't load today's sets.</p>}
           {first && <p className="text-xs text-muted">First time on this one. Nothing to compare yet.</p>}
           {showHeader && (
             <table className="w-full table-fixed border-collapse text-[13px]">
@@ -305,8 +326,8 @@ export function ExerciseSheet({ exercise, todaySets, last, lastPending = false, 
         </div>
 
         {/* The one white action in this sheet. */}
-        <Button onClick={submit} disabled={!valid} className="w-full">
-          {isBodyweight ? `Add BW set ${rows.next}` : `Add set ${rows.next}`}
+        <Button onClick={submit} disabled={!canLog} className="w-full">
+          {`${isBodyweight ? "Add BW set" : "Add set"}${todayPending ? "" : ` ${rows.next}`}`}
         </Button>
       </div>
     </Sheet>

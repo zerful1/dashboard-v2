@@ -137,3 +137,76 @@ describe("useGymDay", () => {
     expect(result.current.dayType).toBe(5);
   });
 });
+
+// Deferred from #32: a page left on Gym overnight logged the next session onto
+// yesterday. Only a long break moves it on, so a workout past midnight stays one.
+describe("useGymDay across midnight", () => {
+  const A_MONDAY_NIGHT = new Date(2026, 7, 10, 22, 0); // Push (3)
+
+  /** jsdom is always "visible"; this is the phone locking and unlocking. */
+  function setVisibility(state: "hidden" | "visible") {
+    Object.defineProperty(document, "visibilityState", { configurable: true, get: () => state });
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+  }
+
+  afterEach(() => {
+    delete (document as { visibilityState?: unknown }).visibilityState;
+  });
+
+  it("comes back to a new day after a long break, on that day's slot", () => {
+    freeze(A_MONDAY_NIGHT);
+    const { result } = renderHook(() => useGymDay(DEFAULT_SPLIT, false, null));
+    act(() => result.current.selectDay(5)); // swapped Monday for Upper
+    setVisibility("hidden");
+    vi.setSystemTime(new Date(2026, 7, 11, 18, 0));
+    setVisibility("visible");
+    expect(result.current.date).toBe("2026-08-11");
+    expect(result.current.dayType).toBe(2); // Tuesday = Pull, as a fresh open would
+  });
+
+  it("keeps the session's day through a short break across midnight", () => {
+    freeze(new Date(2026, 7, 10, 23, 50));
+    const { result } = renderHook(() => useGymDay(DEFAULT_SPLIT, false, null));
+    setVisibility("hidden");
+    vi.setSystemTime(new Date(2026, 7, 11, 0, 20));
+    setVisibility("visible");
+    expect(result.current.date).toBe("2026-08-10");
+    expect(result.current.dayType).toBe(3);
+  });
+
+  it("leaves a date you picked where it is", () => {
+    freeze(A_MONDAY_NIGHT);
+    const { result } = renderHook(() => useGymDay(DEFAULT_SPLIT, false, null));
+    act(() => result.current.selectDate("2026-08-05"));
+    setVisibility("hidden");
+    vi.setSystemTime(new Date(2026, 7, 11, 18, 0));
+    setVisibility("visible");
+    expect(result.current.date).toBe("2026-08-05");
+  });
+
+  // Final review: History's "Edit in log" on a past date goes through jumpTo.
+  it("leaves a past day History sent you to where it is", () => {
+    freeze(A_MONDAY_NIGHT);
+    const { result } = renderHook(() => useGymDay(DEFAULT_SPLIT, false, null));
+    act(() => result.current.jumpTo(1, "2026-08-05"));
+    setVisibility("hidden");
+    vi.setSystemTime(new Date(2026, 7, 11, 18, 0));
+    setVisibility("visible");
+    expect(result.current.date).toBe("2026-08-05");
+  });
+
+  it("keeps a day you picked after a long break on the same day", () => {
+    freeze(new Date(2026, 7, 10, 9, 0));
+    const { result, rerender } = renderHook(({ last }) => useGymDay(DEFAULT_SPLIT, false, last), {
+      initialProps: { last: null as number | null },
+    });
+    act(() => result.current.selectDay(5));
+    setVisibility("hidden");
+    vi.setSystemTime(new Date(2026, 7, 10, 18, 0));
+    setVisibility("visible");
+    rerender({ last: 4 }); // a refetch landing afterwards must not pull it back
+    expect(result.current.dayType).toBe(5);
+  });
+});

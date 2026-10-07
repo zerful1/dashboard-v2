@@ -103,7 +103,7 @@ describe("useWorkoutDay", () => {
   it("sends both sides of a single-sided set, and counts the weaker one straight away", async () => {
     const spy = mockApi({ session, sets: [], logSet: pending });
     const { result } = renderHook(() => useWorkoutDay(1, "2026-08-16"), { wrapper: wrapper(fresh()) });
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => expect(result.current.isPending).toBe(false));
 
     act(() => {
       result.current.logSet.mutate({
@@ -123,7 +123,7 @@ describe("useWorkoutDay", () => {
   it("gives a plain set no sides on the optimistic row", async () => {
     mockApi({ session, sets: [], logSet: pending });
     const { result } = renderHook(() => useWorkoutDay(1, "2026-08-16"), { wrapper: wrapper(fresh()) });
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => expect(result.current.isPending).toBe(false));
     act(() => {
       result.current.logSet.mutate({ exercise_name: "Squat", set_number: 1, weight_kg: 100, reps: 5, is_bodyweight: false });
     });
@@ -137,7 +137,7 @@ describe("useWorkoutDay", () => {
       wrapper: wrapper(fresh()),
     });
 
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => expect(result.current.isPending).toBe(false));
     expect(result.current.session).toBeNull();
     expect(result.current.sets).toEqual([]);
   });
@@ -183,7 +183,7 @@ describe("useWorkoutDay", () => {
     const { result } = renderHook(() => useWorkoutDay(1, "2026-08-16"), {
       wrapper: wrapper(fresh()),
     });
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => expect(result.current.isPending).toBe(false));
 
     act(() => {
       result.current.logSet.mutate({
@@ -244,7 +244,7 @@ describe("useWorkoutDay", () => {
     const { result } = renderHook(() => useWorkoutDay(1, "2026-08-16"), {
       wrapper: wrapper(qc),
     });
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => expect(result.current.isPending).toBe(false));
 
     await act(async () => {
       await result.current.logSet.mutateAsync({

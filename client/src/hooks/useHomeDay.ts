@@ -32,7 +32,7 @@ const RECENT_LIMIT = 20;
 export function useHomeDay(today: string) {
   const { user } = useAuth();
   const userId = user?.id ?? "anon";
-  const { split, isPending: splitPending } = useSplit();
+  const { split, isPending: splitPending, failed: splitFailed } = useSplit();
   const weights = useWeights();
   // Home renders its own failure line for these, so no toast as well.
   const diary = useDiary(today, { errorToast: false });
@@ -60,7 +60,9 @@ export function useHomeDay(today: string) {
   const dayType = workoutToday?.dayType ?? null;
   // Only once the real split says what today is: a rest day with nothing
   // logged reads none of these.
-  const training = !!user && !splitPending && dayType !== null;
+  // Nor from a split that failed: the default in its place names a real but
+  // wrong day, so the workout says it couldn't load instead.
+  const training = !!user && !splitPending && !splitFailed && dayType !== null;
   const exercises = useQuery({ ...exercisesQueryOptions(userId, dayType ?? 0), enabled: training });
   const sets = useQuery({ ...workoutDayQueryOptions(userId, dayType ?? 0, today), enabled: training });
   // Cardio decides a cardio-only day. It can exist only once today's session does.
@@ -77,10 +79,11 @@ export function useHomeDay(today: string) {
   // on every focus: one flaky response must not move the slot or blank a section.
   const weightsFailed = weights.isError && !weights.hasData;
   const workoutError =
-    training &&
-    ((exercises.isError && !exercises.data) ||
-      (sets.isError && !sets.data) ||
-      (withCardio && cardio.isError && !cardio.data));
+    splitFailed ||
+    (training &&
+      ((exercises.isError && !exercises.data) ||
+        (sets.isError && !sets.data) ||
+        (withCardio && cardio.isError && !cardio.data)));
   const progress: WorkoutProgress | null =
     training && exercises.data && sets.data && (!withCardio || cardio.data)
       ? workoutProgress(
@@ -120,6 +123,7 @@ export function useHomeDay(today: string) {
       isError: weightsFailed,
       saveWeight: weights.saveWeight,
     },
-    week: home.week,
+    // The target is the split's: the default's would be a guess.
+    week: { ...home.week, target: splitFailed ? null : home.week.target },
   };
 }
