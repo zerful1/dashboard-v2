@@ -17,7 +17,7 @@ export function WeightPage() {
   // disabled query reports isLoading false - so the page would paint "No
   // entries yet" over a history that simply had not arrived. Same defect as
   // the one fixed in useHomeDay, in the smaller of the two places.
-  const { entries, isPending, isError, saveWeight, deleteWeight } = useWeights();
+  const { entries, isPending, isError, hasData, saveWeight, deleteWeight } = useWeights();
   const goalKg = useWeightGoalKg();
   const [editing, setEditing] = useState<BodyWeightEntry | null>(null);
 
@@ -28,8 +28,9 @@ export function WeightPage() {
 
   // Distinguished from empty: a failed fetch must not read as "no data yet".
   // Someone with ten months of history seeing "No entries" would reasonably
-  // conclude it had been lost.
-  if (isError) {
+  // conclude it had been lost. Only when there is nothing to show, though: a
+  // failed refresh keeps the last good history, and the toast says it failed.
+  if (isError && !hasData) {
     return (
       <Card>
         <div className="lbl text-negative">Could not load</div>
