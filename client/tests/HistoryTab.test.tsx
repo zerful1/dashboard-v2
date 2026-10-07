@@ -85,6 +85,15 @@ describe("History, the list (redesign part 3b, §5)", () => {
   });
 });
 
+describe("History, dates", () => {
+  // Final review: Load more reaches last year, and a date without its year reads as this one.
+  it("shows the year on a session from another year", async () => {
+    mockByPath({ list: [session("a", "2025-11-03", "Legs")] });
+    renderTab();
+    expect(await screen.findByText(/2025/)).toBeInTheDocument();
+  });
+});
+
 describe("History, the 12-week grid (redesign part 3b, §5)", () => {
   it("shows the weekly average against the split's aim", async () => {
     freeze();
@@ -143,6 +152,17 @@ describe("History, the session sheet", () => {
     await waitFor(() =>
       expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: "a", date: "2026-08-16", day_type: 1 })),
     );
+  });
+
+  // Final review: "100 × 8" broke onto two lines in narrow columns; spec §5.5
+  // says a long session scrolls sideways inside the sheet instead.
+  it("keeps every set cell on one line", async () => {
+    mockByPath({ list: [session("a", "2026-08-16", "Legs")], detail: { sets: [1, 2, 3, 4, 5, 6].map((n) => aSet(n)), cardio: [] } });
+    renderTab();
+    await userEvent.click(await screen.findByText(prettyDate("2026-08-16")));
+    const cells = (await screen.findAllByRole("cell")).filter((c) => c.closest("tbody"));
+    expect(cells.length).toBeGreaterThan(0);
+    for (const c of cells) expect(c).toHaveClass("whitespace-nowrap");
   });
 
   it("leaves a gap where a set number is missing rather than shifting later sets left", async () => {

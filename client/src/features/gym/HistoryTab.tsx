@@ -7,7 +7,7 @@ import { useHistoryDayNames, useWorkoutHistory } from "@/hooks/useWorkoutHistory
 import { useTrainingGrid } from "@/hooks/useTrainingGrid";
 import { List } from "@/components/ui/List";
 import { Spinner } from "@/components/ui/Spinner";
-import { prettyDate } from "@/lib/dates";
+import { listDate } from "@/lib/dates";
 import { cn } from "@/lib/cn";
 import { TrainingGrid } from "./TrainingGrid";
 import { SessionDetailSheet } from "./SessionDetailSheet";
@@ -61,7 +61,7 @@ export function HistoryTab({ onEditInLog }: { onEditInLog: (s: WorkoutSession) =
             </div>
             <span className="lbl">last 12 weeks · aim {aim}</span>
           </div>
-          <TrainingGrid grid={grid} onOpen={openDay} />
+          <TrainingGrid grid={grid} today={today} onOpen={openDay} />
         </section>
       ) : (
         <p className="text-sm text-muted">Couldn't load your training.</p>
@@ -69,8 +69,8 @@ export function HistoryTab({ onEditInLog }: { onEditInLog: (s: WorkoutSession) =
 
       <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
         {onDay ? (
-          <button type="button" onClick={() => setOnDay(null)} aria-label={`Show every day, not just ${prettyDate(onDay.date)}`} className={cn(chipClass(true), "inline-flex items-center gap-1")}>
-            {prettyDate(onDay.date)}
+          <button type="button" onClick={() => setOnDay(null)} aria-label={`Show every day, not just ${listDate(onDay.date, today)}`} className={cn(chipClass(true), "inline-flex items-center gap-1")}>
+            {listDate(onDay.date, today)}
             <X size={12} aria-hidden="true" />
           </button>
         ) : (
@@ -101,7 +101,7 @@ export function HistoryTab({ onEditInLog }: { onEditInLog: (s: WorkoutSession) =
               className="flex w-full items-center justify-between gap-3 py-3 text-left hover:bg-accent/5"
             >
               <span className="min-w-0 truncate text-sm">
-                <span className="tnum">{prettyDate(s.date)}</span>
+                <span className="tnum">{listDate(s.date, today)}</span>
                 <span className="text-muted"> · {s.day_name}</span>
               </span>
               <span className="tnum flex shrink-0 items-center gap-1 text-xs text-muted">
