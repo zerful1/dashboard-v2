@@ -310,6 +310,17 @@ describe("ExerciseSheet, before today's sets load", () => {
     expect(onLogSet).toHaveBeenCalledWith(90, 6, false, 2);
   });
 
+  // Final review: following today's sets past their arrival moved the weight
+  // when a set was deleted to redo it, and the redo logged the wrong one.
+  it("keeps the weight when a set is deleted to redo it", () => {
+    mockCoaching(null);
+    const sets = [aSet(1, { weight_kg: 80 }), aSet(2, { weight_kg: 80 }), aSet(3, { weight_kg: 85 })];
+    const { update } = renderSheet({ todaySets: sets });
+    expect(weight()).toHaveValue(85);
+    update({ todaySets: sets.slice(0, 2) });
+    expect(weight()).toHaveValue(85);
+  });
+
   it("fills the weight in from today's sets when they arrive after opening", () => {
     mockCoaching(null);
     const { update } = renderSheet({ todayPending: true });

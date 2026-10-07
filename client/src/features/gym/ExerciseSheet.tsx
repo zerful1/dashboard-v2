@@ -23,6 +23,8 @@ interface Props {
    * the server upserts on it, so nothing is logged until they are in.
    */
   todayPending?: boolean;
+  /** Today's sets failed to load: still unknown, and the sheet says why it waits. */
+  todayFailed?: boolean;
   onClose: () => void;
   onLogSet: (
     weightKg: number,
@@ -40,7 +42,8 @@ const NO_SETS: WorkoutSet[] = [];
  * set, with the set being logged as a highlighted block between them.
  */
 export function ExerciseSheet({
-  exercise, todaySets, last, lastPending = false, todayPending = false, onClose, onLogSet, onDeleteSet,
+  exercise, todaySets, last, lastPending = false, todayPending = false, todayFailed = false,
+  onClose, onLogSet, onDeleteSet,
 }: Props) {
   const lastSets = last?.sets ?? NO_SETS;
   const rows = lastTimeRows(todaySets, lastSets);
@@ -84,11 +87,11 @@ export function ExerciseSheet({
   }, [exercise]);
 
   // The weight starts from today's previous set, which can arrive after the
-  // sheet opens, and follows it until typed in. `defaults` moves with every set
-  // logged, but only to the weight just logged, so it never overwrites typing.
+  // sheet opens: so on open, and again once today's sets are in, unless typed.
+  // Not on every change: deleting a set to redo it would move the weight.
   useEffect(() => {
     if (exercise && !weightTouched.current) setWeight(defaults.weight);
-  }, [exercise, defaults.weight]);
+  }, [exercise, todayPending]);
 
   // Separate from the reset: last time can arrive after the sheet opens, and
   // the switches follow it until touched.
@@ -224,6 +227,7 @@ export function ExerciseSheet({
         {/* The block keeps one place in the tree whatever loads around it, so
             last time arriving never rebuilds the inputs under a thumb. */}
         <div className="space-y-2">
+          {todayFailed && <p className="text-xs text-muted">Couldn't load today's sets.</p>}
           {first && <p className="text-xs text-muted">First time on this one. Nothing to compare yet.</p>}
           {showHeader && (
             <table className="w-full table-fixed border-collapse text-[13px]">

@@ -126,6 +126,25 @@ describe("Gym's header (redesign part 3a, §2)", () => {
     expect(sheet.getByRole("button", { name: "Add set" })).toBeDisabled();
   });
 
+  // Final review, important 1: a FAILED load left the sheet sure there were no
+  // sets, so Add set 1 was back, and sent once the signal returned.
+  it("won't log a set when today's sets failed to load, and says why", async () => {
+    freeze();
+    vi.spyOn(apiModule, "api").mockImplementation(async (path: string) => {
+      if (path.startsWith("/api/workouts/session?")) throw new ApiError(500, "boom");
+      const hit = ROUTES.find(([p]) => path.startsWith(p));
+      if (!hit) throw new Error(`unmocked path: ${path}`);
+      return hit[1] as never;
+    });
+    renderPage();
+    await userEvent.click(await screen.findByText("Row & Press"));
+    const sheet = within(await screen.findByRole("dialog", { name: "Row & Press" }));
+    expect(await sheet.findByText("Couldn't load today's sets.")).toBeInTheDocument();
+    await userEvent.type(sheet.getByLabelText(/weight/i), "90");
+    await userEvent.type(sheet.getByLabelText(/reps/i), "6");
+    expect(sheet.getByRole("button", { name: "Add set" })).toBeDisabled();
+  });
+
   // Review focus 3: logging on a past date compares against the days before IT.
   it("asks for last time before the date being logged", async () => {
     freeze();

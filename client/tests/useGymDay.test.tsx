@@ -186,6 +186,17 @@ describe("useGymDay across midnight", () => {
     expect(result.current.date).toBe("2026-08-05");
   });
 
+  // Final review: History's "Edit in log" on a past date goes through jumpTo.
+  it("leaves a past day History sent you to where it is", () => {
+    freeze(A_MONDAY_NIGHT);
+    const { result } = renderHook(() => useGymDay(DEFAULT_SPLIT, false, null));
+    act(() => result.current.jumpTo(1, "2026-08-05"));
+    setVisibility("hidden");
+    vi.setSystemTime(new Date(2026, 7, 11, 18, 0));
+    setVisibility("visible");
+    expect(result.current.date).toBe("2026-08-05");
+  });
+
   it("keeps a day you picked after a long break on the same day", () => {
     freeze(new Date(2026, 7, 10, 9, 0));
     const { result, rerender } = renderHook(({ last }) => useGymDay(DEFAULT_SPLIT, false, last), {

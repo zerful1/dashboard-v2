@@ -102,6 +102,8 @@ export function useWorkoutDay(dayType: number, date: string) {
     // isPending, not isLoading (CLAUDE.md): until the sets are in, the next set
     // number is unknown, and a guess of 1 overwrites the real set 1 on the server.
     isPending: session.isPending,
+    // Failed with nothing to show is no better: `sets` is then [] as well.
+    failed: session.isError && session.data === undefined,
     logSet,
     deleteSet,
   };
