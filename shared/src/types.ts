@@ -360,6 +360,13 @@ export interface TdeeHint {
   days_logged: number;
 }
 
+/** GET /api/nutrition/days: one day's totals, for a day with entries. */
+export interface DayTotal {
+  date: string; // 'YYYY-MM-DD'
+  calories: number;
+  protein_g: number;
+}
+
 // ---------------------------------------------------------------------------
 // Media
 // ---------------------------------------------------------------------------
