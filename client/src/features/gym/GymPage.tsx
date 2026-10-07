@@ -33,7 +33,7 @@ const SUB_TABS: { key: SubTab; label: string }[] = [
 
 export function GymPage() {
   const { user } = useAuth();
-  const { split, isPending: splitPending } = useSplit();
+  const { split, isPending: splitPending, failed: splitFailed } = useSplit();
 
   // The most recently logged day, for the rest-day fallback in useGymDay.
   const { data: lastLogged } = useQuery({
@@ -43,7 +43,9 @@ export function GymPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { dayType, date, selectDay, selectDate, jumpTo } = useGymDay(split, splitPending, lastLogged);
+  // A failed split is not loaded either: decided from the default, the rest-day
+  // fallback would latch, and the real split arriving later could not undo it.
+  const { dayType, date, selectDay, selectDate, jumpTo } = useGymDay(split, splitPending || splitFailed, lastLogged);
 
   // Home's Start/Continue names the day it shows, which on a swapped day is not
   // the scheduled one, and sends it here. Applied once, on arrival; jumpTo
@@ -82,6 +84,8 @@ export function GymPage() {
   // rendering now would name the default split's day and fire the exercises
   // query for it, then again for the real one.
   if (splitPending) return <Spinner label="Loading your split" />;
+  // Not the default split in its place: that names the wrong day, and logs to it.
+  if (splitFailed) return <p className="py-6 text-center text-sm text-muted">Couldn't load your split.</p>;
 
   return (
     <div className="space-y-3">

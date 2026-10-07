@@ -60,6 +60,7 @@ function renderPage() {
 
 interface Overrides {
   splitNeverResolves?: boolean;
+  splitFails?: boolean;
   sessions?: WorkoutSession[];
   weights?: unknown[] | Error;
   exercises?: unknown[];
@@ -82,7 +83,10 @@ function mockApi(o: Overrides = {}) {
   const routes: [string, (body?: { date: string; weight_kg: number }) => unknown][] = [
     ["GET /api/auth/me", () => ({ id: "1", email: "you@example.com" })],
     ["GET /api/profile", () => ({ user_id: "1", display_name: "", units: "kg", timezone: "Europe/London" })],
-    ["GET /api/split", () => (o.splitNeverResolves ? new Promise(() => {}) : DEFAULT_SPLIT)],
+    ["GET /api/split", () => {
+      if (o.splitFails) throw new ApiError(500, "boom");
+      return o.splitNeverResolves ? new Promise(() => {}) : DEFAULT_SPLIT;
+    }],
     ["GET /api/workouts/sessions", () => o.sessions ?? []],
     ["GET /api/workouts/session?", () => session(WED, 1, "Legs", "s1")],
     ["GET /api/workouts/sets", () => o.sets ?? []],
@@ -219,6 +223,16 @@ describe("HomePage, today at a glance", () => {
     renderPage();
     expect(await screen.findByRole("link", { name: /start workout/i })).toBeInTheDocument();
     expect(screen.getByText("Couldn't load your weight.")).toBeInTheDocument();
+  });
+
+  // Deferred from #31: the default split named today's workout when the real one failed.
+  it("names no workout and no weekly target when the split fails to load", async () => {
+    freeze(WED);
+    mockApi({ splitFails: true, weights: [weighIn(WED)], sessions: [session("2026-08-24", 3, "Push")] });
+    renderPage();
+    expect(await screen.findByText("Couldn't load your workout.")).toBeInTheDocument();
+    expect(screen.getByText(/This week · 1 session$/)).toBeInTheDocument();
+    expect(screen.queryByText("Legs")).toBeNull();
   });
 
   it("counts the week", async () => {

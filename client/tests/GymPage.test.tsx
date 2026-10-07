@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, waitFor, within, fireEvent } from "@testing-library/react";
+import { act, render, screen, waitFor, within, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
@@ -7,6 +7,8 @@ import { DEFAULT_SPLIT } from "@dashboard/shared";
 import { GymPage } from "../src/features/gym/GymPage";
 import { createQueryClient } from "../src/lib/queryClient";
 import * as apiModule from "../src/lib/api";
+import { ApiError } from "../src/lib/api";
+import { toast } from "sonner";
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
 vi.mock("@/auth/AuthProvider", () => ({
@@ -57,6 +59,7 @@ function renderPage(gymDay?: number) {
       </QueryClientProvider>
     </MemoryRouter>,
   );
+  return qc;
 }
 
 afterEach(() => {
@@ -132,5 +135,49 @@ describe("Gym's header (redesign part 3a, §2)", () => {
     expect(calls).toContain(`/api/workouts/last-times?before=${TUE}&name=Row%20%26%20Press`);
     fireEvent.change(screen.getByLabelText(/change date/i), { target: { value: "2026-05-20" } });
     await waitFor(() => expect(calls).toContain("/api/workouts/last-times?before=2026-05-20&name=Row%20%26%20Press"));
+  });
+});
+
+// Deferred from #31: useSplit falls back to DEFAULT_SPLIT, so a split that failed
+// with nothing cached named the default split's day, and logged against it.
+describe("Gym, when the split fails to load", () => {
+  /** ROUTES, with the split and the last logged day answered by the test. */
+  function mockSplit(split: () => unknown, sessions: unknown[] = []) {
+    vi.spyOn(apiModule, "api").mockImplementation(async (path: string) => {
+      if (path.startsWith("/api/split")) return split() as never;
+      if (path.startsWith("/api/workouts/sessions")) return sessions as never;
+      const hit = ROUTES.find(([p]) => path.startsWith(p));
+      if (!hit) throw new Error(`unmocked path: ${path}`);
+      return hit[1] as never;
+    });
+  }
+
+  it("says so, and names no day", async () => {
+    freeze();
+    vi.mocked(toast.error).mockClear();
+    mockSplit(() => { throw new ApiError(500, "boom"); });
+    renderPage();
+    expect(await screen.findByText("Couldn't load your split.")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+    // One failure, one message: the page's line, not a toast as well.
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  // Thursday is DEFAULT_SPLIT's rest day, where falling back to the last logged
+  // day latches: decided from the default, the real split could not undo it.
+  it("decides the day from the real split when it arrives after a failure", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 7, 27, 12)); // Thu
+    const thursdayIsPush = { ...DEFAULT_SPLIT, week: [3, 2, 1, 3, 5, 4, "rest"] };
+    let down = true;
+    mockSplit(
+      () => { if (down) throw new ApiError(500, "boom"); return thursdayIsPush; },
+      [{ id: "s0", user_id: "u1", date: "2026-08-24", day_type: 5, day_name: "Upper", notes: null, created_at: "", lifts: 1, sets: 1 }],
+    );
+    const qc = renderPage();
+    await screen.findByText("Couldn't load your split.");
+    down = false;
+    await act(() => qc.refetchQueries({ queryKey: ["split"] }));
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("Push");
   });
 });

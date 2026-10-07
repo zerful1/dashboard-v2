@@ -29,6 +29,7 @@ const treadmill = { id: "c1", user_id: "u1", session_id: "s1", exercise: "Treadm
 const NEVER = () => new Promise(() => {});
 
 interface Data {
+  split?: () => unknown;
   sessions?: unknown[];
   cardio?: () => unknown;
   weights?: () => unknown;
@@ -47,7 +48,7 @@ const REFETCHED = ["/api/weight", "/api/nutrition/diary", "/api/nutrition/target
 function mockApi(d: Data = {}) {
   const calls: string[] = [];
   const routes: [string, () => unknown][] = [
-    ["/api/split", () => DEFAULT_SPLIT],
+    ["/api/split", d.split ?? (() => DEFAULT_SPLIT)],
     ["/api/workouts/sessions", () => d.sessions ?? []],
     ["/api/workouts/session?", () => ({ id: "s1", user_id: "u1", date: WED, day_type: 1, day_name: "Legs", notes: null, created_at: "" })],
     ["/api/workouts/sets", d.sets ?? (() => [])],
@@ -230,5 +231,20 @@ describe("useHomeDay (redesign part 2, §3)", () => {
     await waitFor(() => expect(result.current.isPending).toBe(false));
     expect(result.current.workout).toMatchObject({ isRest: false, label: "Pull" });
     expect(result.current.top).toBe("workout");
+  });
+});
+
+// Deferred from #31: useSplit falls back to DEFAULT_SPLIT, so a split that failed
+// with nothing cached named the default split's day as if it were today's.
+describe("useHomeDay, when the split fails to load", () => {
+  it("says the workout couldn't load, and claims no day or target", async () => {
+    freeze(WED);
+    const calls = mockApi({ weights: () => [weighIn(WED)], split: () => { throw new ApiError(500, "boom"); } });
+    const { result } = run(WED);
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+    expect(result.current.workout.isError).toBe(true);
+    expect(result.current.week.target).toBeNull();
+    // Nothing is fetched for the default split's day.
+    expect(calls.some((p) => p.startsWith("/api/exercises"))).toBe(false);
   });
 });
