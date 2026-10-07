@@ -243,6 +243,20 @@ describe("NutritionPage, the last 7 days (redesign part 4)", () => {
     expect(bar(/^Wednesday 23 September/)).toHaveAttribute("aria-pressed", "true");
   });
 
+  // Final review: "10000-…" passed the future-date guard ("1" < "2" as strings)
+  // and crashed the strip's render; "0002-…" opened a strip in 1902.
+  it("ignores a typed date that isn't a real date with a four-digit year", async () => {
+    freeze("2026-09-23");
+    const calls = mockApi();
+    renderPage();
+    const input = await screen.findByLabelText(/change date/i);
+    fireEvent.change(input, { target: { value: "10000-09-20" } });
+    fireEvent.change(input, { target: { value: "0002-09-20" } });
+    await new Promise((r) => setTimeout(r, 50));
+    expect(bar(/^Wednesday 23 September/)).toHaveAttribute("aria-pressed", "true");
+    expect(calls.some((c) => /1902|0002|10000/.test(c.key))).toBe(false);
+  });
+
   it("keeps the day working when the week fails, with one message", async () => {
     freeze("2026-09-23");
     mockApi({

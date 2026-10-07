@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Copy, Plus } from "lucide-react";
-import { shiftISO, weekStrip } from "@dashboard/shared";
+import { isRealDate, shiftISO, weekStrip } from "@dashboard/shared";
 import type { FoodLogEntry } from "@dashboard/shared";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -38,8 +38,10 @@ export function NutritionPage() {
   // Today open, with the strip ending today, IS following the clock (spec §3).
   const choose = (next: Picked) => setPicked(next.end === today && next.open === today ? null : next);
   const pickDate = (d: string) => {
-    // The picker is capped at today, but a typed date is not.
-    if (d > today) return;
+    // The picker is capped at today, but a typed date is not. And a typed year
+    // can be anything: "10000-…" sorts before today as a string, and crashes
+    // the strip; "0002-…" lands in 1902.
+    if (!isRealDate(d) || d > today) return;
     choose({ end: d >= from && d <= end ? end : d, open: d });
   };
   const moveWeek = (days: number) => {

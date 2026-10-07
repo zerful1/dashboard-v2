@@ -100,6 +100,32 @@ describe("useFoodDays", () => {
     expect(result.current.days).toBeUndefined();
   });
 
+  // Final review: opened with no signal, TanStack thinks it is online until an
+  // offline event, so the fetch FAILS rather than pausing, and the placeholder goes.
+  it("shows yesterday's seven days when today's fetch fails with nothing to show", async () => {
+    mockDays(() => {
+      throw new TypeError("Failed to fetch");
+    });
+    const qc = client();
+    qc.setQueryData(foodDaysKey("u1", "2026-09-30", TUE), [TUESDAY]);
+    const { result } = renderHook(() => useFoodDays("2026-10-01", WED, WED), { wrapper: wrapper(qc) });
+    await waitFor(() => expect(qc.getQueryState(foodDaysKey("u1", "2026-10-01", WED))?.status).toBe("error"));
+    expect(result.current.days).toEqual([TUESDAY]);
+    expect(result.current.isPlaceholder).toBe(true);
+    expect(result.current.failed).toBe(false);
+  });
+
+  it("lets a past week's failure stand, with no stand-in", async () => {
+    mockDays(() => {
+      throw new TypeError("Failed to fetch");
+    });
+    const qc = client();
+    qc.setQueryData(foodDaysKey("u1", "2026-09-23", "2026-09-29"), [{ date: "2026-09-29", calories: 2000, protein_g: 150 }]);
+    const { result } = renderHook(() => useFoodDays("2026-09-24", "2026-09-30", WED), { wrapper: wrapper(qc) });
+    await waitFor(() => expect(result.current.failed).toBe(true));
+    expect(result.current.days).toBeUndefined();
+  });
+
   it("reports a failure with nothing to show, without a toast", async () => {
     mockDays(() => {
       throw new ApiError(500, "boom");

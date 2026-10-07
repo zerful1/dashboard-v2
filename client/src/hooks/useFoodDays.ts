@@ -19,22 +19,25 @@ export function useFoodDays(from: string, to: string, today: string) {
   const qc = useQueryClient();
   const { user } = useAuth();
   const userId = user?.id ?? "anon";
+  const yesterday =
+    to === today ? qc.getQueryData<DayTotal[]>(foodDaysKey(userId, shiftISO(from, -1), shiftISO(to, -1))) : undefined;
   const query = useQuery({
     queryKey: foodDaysKey(userId, from, to),
     queryFn: () => nutritionApi.days(from, to),
     enabled: !!user,
-    placeholderData:
-      to === today
-        ? () => qc.getQueryData<DayTotal[]>(foodDaysKey(userId, shiftISO(from, -1), shiftISO(to, -1)))
-        : undefined,
+    placeholderData: yesterday ? () => yesterday : undefined,
     // The strip says so itself when it fails.
     meta: { errorToast: false },
   });
+  // Opened with no signal, TanStack thinks it is online until an offline event,
+  // so the fetch FAILS rather than pausing, and placeholderData (pending only)
+  // goes with it. Yesterday's window stands in for that failure too.
+  const standIn = query.isError && query.data === undefined ? yesterday : undefined;
   return {
-    days: query.data,
+    days: query.data ?? standIn,
     isPending: query.isPending,
-    isPlaceholder: query.isPlaceholderData,
+    isPlaceholder: query.isPlaceholderData || standIn !== undefined,
     // Failed with nothing to show: a failed refresh keeps the last good days.
-    failed: query.isError && query.data === undefined,
+    failed: query.isError && query.data === undefined && standIn === undefined,
   };
 }
