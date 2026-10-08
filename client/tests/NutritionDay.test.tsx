@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SummaryCard } from "../src/features/nutrition/SummaryCard";
+import { DayFigure } from "../src/features/nutrition/DayFigure";
 import { DiaryList, timeOf } from "../src/features/nutrition/DiaryList";
 import { LabelStrip } from "../src/features/nutrition/LabelStrip";
 import { deriveDay } from "../src/features/nutrition/deriveDay";
@@ -17,17 +17,28 @@ const entry = (over: Partial<FoodLogEntry>): FoodLogEntry => ({
   fibre_g: null, sugar_g: null, sat_fat_g: null, salt_g: null, ...over,
 });
 
-describe("SummaryCard", () => {
-  it("shows kcal left against the target", () => {
-    render(<SummaryCard summary={deriveDay([entry({ calories: 1640 })], [cut], "2026-09-23")} onSetTargets={() => {}} />);
-    expect(screen.getByText("762 left")).toBeInTheDocument();
+/** The figure and its unit, e.g. "762 kcal left". */
+const figure = () => screen.getByText(/^kcal (left|over|eaten)$/).parentElement!;
+
+describe("DayFigure (redesign part 4, §4)", () => {
+  it("shows kcal left against the target, and what was eaten", () => {
+    render(<DayFigure summary={deriveDay([entry({ calories: 1640 })], [cut], "2026-09-23")} onSetTargets={() => {}} />);
+    expect(figure()).toHaveTextContent("762 kcal left");
+    expect(figure()).not.toHaveClass("text-caution");
+    expect(screen.getByText("1,640 of 2,402 eaten")).toBeInTheDocument();
+  });
+
+  it("turns amber past the target", () => {
+    render(<DayFigure summary={deriveDay([entry({ calories: 2522 })], [cut], "2026-09-23")} onSetTargets={() => {}} />);
+    expect(figure()).toHaveTextContent("120 kcal over");
+    expect(figure()).toHaveClass("text-caution");
   });
 
   // Over target, the part past the goal is amber stripes after a notch
   // (redesign spec §5.7); protein is never "over".
   it("draws the excess past a macro's target as stripes, and never for protein", () => {
     const summary = deriveDay([entry({ protein_g: 200, carbs_g: 230 })], [cut], "2026-09-23");
-    render(<SummaryCard summary={summary} onSetTargets={() => {}} />);
+    render(<DayFigure summary={summary} onSetTargets={() => {}} />);
     expect(screen.getByRole("progressbar", { name: "Carbs" }).querySelector('[data-part="over"]')).toHaveClass("bar-over");
     expect(screen.getByRole("progressbar", { name: "Protein" }).querySelector('[data-part="over"]')).toBeNull();
   });
@@ -35,15 +46,16 @@ describe("SummaryCard", () => {
   // The positive complement: under target there is a fill and no stripes.
   it("draws an under-target macro as a plain white fill", () => {
     const summary = deriveDay([entry({ protein_g: 20, carbs_g: 20 })], [cut], "2026-09-23");
-    render(<SummaryCard summary={summary} onSetTargets={() => {}} />);
+    render(<DayFigure summary={summary} onSetTargets={() => {}} />);
     const carbs = screen.getByRole("progressbar", { name: "Carbs" });
     expect(carbs.querySelector('[data-part="fill"]')).toHaveClass("bg-accent");
     expect(carbs.querySelector('[data-part="over"]')).toBeNull();
   });
 
-  it("offers to set targets when there are none", async () => {
+  it("shows kcal eaten, and offers to set targets, when there are none", async () => {
     const onSetTargets = vi.fn();
-    render(<SummaryCard summary={deriveDay([entry({})], [], "2026-09-23")} onSetTargets={onSetTargets} />);
+    render(<DayFigure summary={deriveDay([entry({})], [], "2026-09-23")} onSetTargets={onSetTargets} />);
+    expect(figure()).toHaveTextContent("225 kcal eaten");
     await userEvent.click(screen.getByRole("button", { name: "Set targets" }));
     expect(onSetTargets).toHaveBeenCalled();
     expect(screen.queryByText(/left/)).not.toBeInTheDocument();

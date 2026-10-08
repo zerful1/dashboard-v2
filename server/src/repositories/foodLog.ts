@@ -1,7 +1,7 @@
 import { pool, withTransaction } from "../db/pool";
 import { T } from "../config";
 import { dedupRecents } from "@dashboard/shared";
-import type { DiaryEntryInput, FoodLogEntry, RecentFood } from "@dashboard/shared";
+import type { DayTotal, DiaryEntryInput, FoodLogEntry, RecentFood } from "@dashboard/shared";
 import { listFoodItemsByIds, ownsFoodItem, upsertFoodItem } from "./foodItems";
 
 const NUMERIC = ["quantity", "calories", "protein_g", "fat_g", "carbs_g", "fibre_g", "sugar_g", "sat_fat_g", "salt_g"] as const;
@@ -140,6 +140,19 @@ export async function listEntryCalories(
     `SELECT date::text AS date, calories::float8 AS calories
        FROM ${T.foodLogEntries}
       WHERE user_id = $1 AND date BETWEEN $2 AND $3`,
+    [userId, from, to],
+  );
+  return rows;
+}
+
+/** Each day's kcal and protein between two dates inclusive: Food's 7-day strip. Days with entries only. */
+export async function dayTotals(userId: string, from: string, to: string): Promise<DayTotal[]> {
+  const { rows } = await pool.query<DayTotal>(
+    `SELECT date::text AS date, sum(calories)::float8 AS calories, sum(protein_g)::float8 AS protein_g
+       FROM ${T.foodLogEntries}
+      WHERE user_id = $1 AND date BETWEEN $2 AND $3
+      GROUP BY date
+      ORDER BY date`,
     [userId, from, to],
   );
   return rows;

@@ -1,10 +1,7 @@
 import { Check, ChevronDown, Pencil, SlidersHorizontal } from "lucide-react";
-import { toLocalISO } from "@dashboard/shared";
-import { longDate } from "@/lib/dates";
 import { cn } from "@/lib/cn";
-
-const FOCUS =
-  "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
+import { FOCUS } from "@/lib/focus";
+import { DateEyebrow } from "@/components/ui/DateEyebrow";
 
 /**
  * Gym's header (redesign part 3a, layout B): the date as the eyebrow and the
@@ -27,42 +24,11 @@ export function GymHeader({
   onToggleEdit: () => void;
   onEditSplit: () => void;
 }) {
-  const today = toLocalISO();
-
   return (
     <div className="flex items-start justify-between gap-2">
       <div className="min-w-0">
-        <div className="flex items-center gap-3">
-          {/* The input IS the control, transparent over the text: on iOS only a
-              direct tap opens the picker (DateSelector explains). */}
-          <span className="relative inline-flex items-center gap-1 rounded-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-bg">
-            <span aria-hidden="true" className="lbl text-accent">
-              {longDate(date)}
-            </span>
-            <ChevronDown size={12} aria-hidden="true" className="text-muted" />
-            <input
-              type="date"
-              value={date}
-              max={today}
-              aria-label={`Change date — currently ${date === today ? "today" : longDate(date)}`}
-              onChange={(e) => {
-                // A cleared picker fires a change with "". Ignore it.
-                if (e.target.value) onDate(e.target.value);
-              }}
-              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-            />
-          </span>
-          {/* The warning that sets will land on another day. */}
-          {date !== today && (
-            <button
-              type="button"
-              onClick={() => onDate(today)}
-              className={cn("lbl text-muted underline underline-offset-4 hover:text-text", FOCUS)}
-            >
-              Back to today
-            </button>
-          )}
-        </div>
+        {/* Back to today, beside the date, is the warning that sets will land on another day. */}
+        <DateEyebrow date={date} onDate={onDate} />
         <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">
           <button
             type="button"

@@ -55,6 +55,13 @@ the user's `profiles.timezone` explicitly. Using `toLocalISO()` on the server is
 correct in local development and wrong in production, which is the worst way for
 it to be wrong.
 
+**One clock per page.** A page that keeps `useToday()` hands that today to its
+children rather than letting them call `toLocalISO()` again. `useToday` catches
+up on focus or once a minute, so a second clock runs ahead of it for up to a
+minute after midnight, and "today" from one reads as tomorrow to the other.
+Food's Back to today did nothing in that minute until `DateEyebrow` took the
+page's today.
+
 ---
 
 ## Ownership scoping replaces RLS
@@ -237,11 +244,18 @@ while it stands, because the rest-day fallback would latch on the default's
 answer.
 
 **A query keyed by today is a new key every day.** Offline on a new day it has
-nothing cached, so it pauses and reports `isPending` until the network returns.
-Where yesterday's answer is still worth showing (Stats, History's grid),
-`placeholderData` from `newestCached` stands in, scoped by the user id in the
-key prefix. Home's diary and workout are keyed by today too, and yesterday's
-answer is wrong there, so Home still waits behind its spinner: a known gap.
+nothing cached. After an `offline` event it pauses and reports `isPending`.
+Opened cold with no signal, it **fails** instead: TanStack's `onlineManager`
+starts online and nothing here sets it from `navigator.onLine`, so the fetch runs
+and errors. `placeholderData` only covers the pending case.
+- **Stats and History's grid** show yesterday's answer as `placeholderData` from
+  `newestCached`, scoped by the user id in the key prefix. They cover only the
+  paused case.
+- **Food's 7-day strip** borrows **yesterday's exact window**, never the newest:
+  it reads a date missing from its data as "nothing logged", so any other window
+  would invent empty days. It stands in for the failed fetch as well (`useFoodDays`).
+- **Home's diary and workout** are keyed by today too, and yesterday's answer is
+  wrong there, so Home still waits behind its spinner: a known gap.
 
 **Query options are shared, not re-declared.** `goalsQueryOptions`,
 `exercisesQueryOptions` and `workoutDayQueryOptions` are the one definition of

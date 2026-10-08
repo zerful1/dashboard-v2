@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 import type {
-  BarcodeResult, DiaryEntryInput, FoodLogEntry, FoodSearchResult, NutritionTarget, RecentFood, TargetInput, TdeeHint,
+  BarcodeResult, DayTotal, DiaryEntryInput, FoodLogEntry, FoodSearchResult, NutritionTarget, RecentFood, TargetInput, TdeeHint,
 } from "@dashboard/shared";
 
 const json = (method: string, body: unknown): RequestInit => ({ method, body: JSON.stringify(body) });
@@ -10,6 +10,7 @@ export const nutritionApi = {
   targets: () => api<NutritionTarget[]>("/api/nutrition/targets"),
   addTarget: (input: TargetInput) => api<NutritionTarget>("/api/nutrition/targets", json("POST", input)),
   diary: (date: string) => api<FoodLogEntry[]>(`/api/nutrition/diary?date=${date}`),
+  days: (from: string, to: string) => api<DayTotal[]>(`/api/nutrition/days?from=${from}&to=${to}`),
   addEntry: (input: DiaryEntryInput) => api<FoodLogEntry>("/api/nutrition/diary", json("POST", input)),
   rescaleEntry: (id: string, quantity: number) =>
     api<FoodLogEntry>(`/api/nutrition/diary/${id}`, json("PATCH", { quantity })),
