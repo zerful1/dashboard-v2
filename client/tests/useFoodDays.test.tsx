@@ -100,8 +100,8 @@ describe("useFoodDays", () => {
     expect(result.current.days).toBeUndefined();
   });
 
-  // Final review: opened with no signal, TanStack thinks it is online until an
-  // offline event, so the fetch FAILS rather than pausing, and the placeholder goes.
+  // #35's final review: a fetch that FAILS rather than pauses takes the placeholder
+  // with it. Since #36 that is a device reporting online with no internet.
   it("shows yesterday's seven days when today's fetch fails with nothing to show", async () => {
     mockDays(() => {
       throw new TypeError("Failed to fetch");

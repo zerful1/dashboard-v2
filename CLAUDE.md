@@ -244,10 +244,16 @@ while it stands, because the rest-day fallback would latch on the default's
 answer.
 
 **A query keyed by today is a new key every day.** Offline on a new day it has
-nothing cached. After an `offline` event it pauses and reports `isPending`.
-Opened cold with no signal, it **fails** instead: TanStack's `onlineManager`
-starts online and nothing here sets it from `navigator.onLine`, so the fetch runs
-and errors. `placeholderData` only covers the pending case.
+nothing cached, so it pauses and reports `isPending`.
+
+TanStack's `onlineManager` starts online and changes only on an `online` or
+`offline` event. So `createQueryClient` starts it offline when `navigator.onLine`
+is false (#36), and an app opened with no signal pauses rather than fetching.
+
+A device that says it's online with no internet (dead wifi, a captive portal)
+still runs the fetch, and the fetch **fails**. `placeholderData` covers only the
+pending case.
+
 - **Stats and History's grid** show yesterday's answer as `placeholderData` from
   `newestCached`, scoped by the user id in the key prefix. They cover only the
   paused case.

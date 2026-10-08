@@ -29,9 +29,9 @@ export function useFoodDays(from: string, to: string, today: string) {
     // The strip says so itself when it fails.
     meta: { errorToast: false },
   });
-  // Opened with no signal, TanStack thinks it is online until an offline event,
-  // so the fetch FAILS rather than pausing, and placeholderData (pending only)
-  // goes with it. Yesterday's window stands in for that failure too.
+  // A device that reports online with no internet (dead wifi, a captive portal)
+  // still fetches, and the fetch FAILS rather than pausing; placeholderData
+  // (pending only) goes with it. Yesterday's window stands in for that too.
   const standIn = query.isError && query.data === undefined ? yesterday : undefined;
   return {
     days: query.data ?? standIn,
