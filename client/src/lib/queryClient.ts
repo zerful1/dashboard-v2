@@ -26,14 +26,21 @@ import { MAX_AGE } from "@/lib/persister";
  */
 function writeFailureMessage(err: unknown): string {
   if (err instanceof ApiError) return err.message;
-  // onlineManager starts online and changes only on an online/offline event, so
-  // an app opened with no signal still reads as online. navigator.onLine false
+  // onlineManager changes only on an online/offline event, and createQueryClient
+  // syncs it only at startup, so navigator.onLine false is checked here too: it
   // is trustworthy, as useOnline treats it.
   if (!onlineManager.isOnline() || navigator.onLine === false) return "You're offline — not saved";
   return "Something went wrong";
 }
 
 export function createQueryClient(): QueryClient {
+  // TanStack's onlineManager starts online and changes only on an online/offline
+  // event, so an app opened with no signal fetched anyway: every query failed,
+  // and toasted over the data it had saved. navigator.onLine is trustworthy when
+  // false (useOnline), so start offline then: queries pause on their saved data,
+  // and the "online" event resumes them. In the factory, so the app's one client
+  // and the tests take the same path.
+  if (navigator.onLine === false) onlineManager.setOnline(false);
   return new QueryClient({
     queryCache: new QueryCache({
       // Query rejections have no other outlet. v5 removed per-query `onError`

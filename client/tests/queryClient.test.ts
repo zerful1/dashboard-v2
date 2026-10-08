@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { MutationObserver, onlineManager } from "@tanstack/react-query";
+import { MutationObserver, QueryObserver, onlineManager } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { createQueryClient } from "../src/lib/queryClient";
 import { ApiError } from "../src/lib/api";
@@ -99,5 +99,46 @@ describe("writes made offline", () => {
     });
     await observer.mutate(undefined).catch(() => {});
     expect(toast.error).toHaveBeenCalledWith("Something went wrong");
+  });
+});
+
+// #35's final review: TanStack's onlineManager starts online and changes only on
+// an online/offline event, so an app opened with no signal fetched anyway, and
+// every query failed and toasted over the data it had saved.
+describe("an app opened with no signal", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    onlineManager.setOnline(true);
+  });
+
+  it("starts offline when the device says it is", () => {
+    vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+    createQueryClient();
+    expect(onlineManager.isOnline()).toBe(false);
+  });
+
+  // The complement: navigator.onLine true only means "there is a network
+  // interface" (useOnline), so it proves nothing and changes nothing.
+  it("leaves TanStack's own state alone when the device says it's online", () => {
+    vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
+    createQueryClient();
+    expect(onlineManager.isOnline()).toBe(true);
+  });
+
+  it("pauses a query over its saved data instead of failing it", async () => {
+    vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+    const qc = createQueryClient();
+    qc.setQueryData(["saved"], "yesterday's");
+    const fetcher = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
+    const observer = new QueryObserver(qc, { queryKey: ["saved"], queryFn: fetcher, staleTime: 0, retry: false });
+    const unsubscribe = observer.subscribe(() => {});
+    try {
+      await new Promise((r) => setTimeout(r, 20));
+      expect(observer.getCurrentResult()).toMatchObject({ data: "yesterday's", fetchStatus: "paused", isError: false });
+      expect(fetcher).not.toHaveBeenCalled();
+      expect(toast.error).not.toHaveBeenCalled();
+    } finally {
+      unsubscribe();
+    }
   });
 });
