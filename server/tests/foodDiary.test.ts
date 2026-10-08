@@ -3,7 +3,7 @@ import request from "supertest";
 import { createApp } from "../src/app";
 import { pool } from "../src/db/pool";
 import { T } from "../src/config";
-import { addEntry, listDiary, rescaleEntry, deleteEntry } from "../src/repositories/foodLog";
+import { addEntry, dayTotals, listDiary, rescaleEntry, deleteEntry } from "../src/repositories/foodLog";
 import { findUserByEmail } from "../src/repositories/users";
 
 const app = createApp();
@@ -178,6 +178,44 @@ describe("food diary", () => {
   });
 });
 
+// Food's 7-day strip (redesign part 4, §5).
+describe("food diary, day totals", () => {
+  it("requires a session", async () => {
+    await request(app).get("/api/nutrition/days?from=2026-09-15&to=2026-09-21").expect(401);
+  });
+
+  it("sums calories and protein per day, ascending, inside the range only", async () => {
+    const { agent } = await signedIn(alice);
+    const log = (date: string, calories: number, protein_g: number) =>
+      agent.post("/api/nutrition/diary").send(entry({ date, calories, protein_g })).expect(201);
+    await log("2026-09-21", 300, 10.5);
+    await log("2026-09-21", 200.5, 20);
+    await log("2026-09-15", 100, 5);
+    await log("2026-09-14", 999, 99);
+    await log("2026-09-22", 999, 99);
+
+    const res = await agent.get("/api/nutrition/days?from=2026-09-15&to=2026-09-21").expect(200);
+    expect(res.body).toEqual([
+      { date: "2026-09-15", calories: 100, protein_g: 5 },
+      { date: "2026-09-21", calories: 500.5, protein_g: 30.5 },
+    ]);
+  });
+
+  it("refuses a backwards range or one over 31 days, and allows exactly 31", async () => {
+    const { agent } = await signedIn(alice);
+    await agent.get("/api/nutrition/days?from=2026-09-21&to=2026-09-15").expect(400);
+    await agent.get("/api/nutrition/days?from=2026-09-01&to=2026-10-02").expect(400);
+    await agent.get("/api/nutrition/days?from=2026-09-01&to=2026-10-01").expect(200);
+  });
+
+  // Review focus 2: shiftISO throws on a malformed date, and zod refines dirty input.
+  it("answers a malformed date with 400, not 500", async () => {
+    const { agent } = await signedIn(alice);
+    await agent.get("/api/nutrition/days?from=21/09/2026&to=2026-09-21").expect(400);
+    await agent.get("/api/nutrition/days?from=2026-09-15&to=yesterday").expect(400);
+  });
+});
+
 describe("food diary ownership scoping", () => {
   it("never lists, changes, deletes or copies another user's entries", async () => {
     const { id: aliceId } = await signedIn(alice);
@@ -204,5 +242,16 @@ describe("food diary ownership scoping", () => {
 
     await bobAgent.post("/api/nutrition/diary").send(entry({ food_item_id: aliceFood })).expect(404);
     expect(await count(T.foodLogEntries)).toBe(1);
+  });
+
+  it("never counts another user's entries in the day totals", async () => {
+    const { id: aliceId } = await signedIn(alice);
+    const { agent: bobAgent, id: bobId } = await signedIn(bob);
+    await addEntry(aliceId, entry() as never);
+
+    expect((await bobAgent.get("/api/nutrition/days?from=2026-09-15&to=2026-09-21").expect(200)).body).toEqual([]);
+    // At the repository too: the scoping is in the SQL, not the route.
+    expect(await dayTotals(bobId, "2026-09-15", "2026-09-21")).toEqual([]);
+    expect(await dayTotals(aliceId, "2026-09-15", "2026-09-21")).toHaveLength(1);
   });
 });

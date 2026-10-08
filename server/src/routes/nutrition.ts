@@ -5,7 +5,7 @@ import { validate } from "../middleware/validate";
 import { listTargets, insertTarget } from "../repositories/nutritionTargets";
 import { NotFound } from "../errors";
 import {
-  addEntry, copyDay, deleteEntry, listDiary, listEntryCalories, listRecents, rescaleEntry,
+  addEntry, copyDay, dayTotals, deleteEntry, listDiary, listEntryCalories, listRecents, rescaleEntry,
 } from "../repositories/foodLog";
 import type { DiaryEntryInput } from "@dashboard/shared";
 import {
@@ -112,6 +112,25 @@ const copyBody = z
 nutritionRouter.get("/diary", validate({ query: z.object({ date: isoDate }) }), async (req, res, next) => {
   try {
     res.json(await listDiary(req.userId, (req.query as { date: string }).date));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Food's 7-day strip (redesign part 4, §5). Bounded, so a query string can't
+// ask for years. The refinements check the shape first: zod runs them even
+// when a field has already failed its regex, and shiftISO throws on a
+// malformed date, which would turn a 400 into a 500.
+const ISO = /^\d{4}-\d{2}-\d{2}$/;
+const daysQuery = z
+  .object({ from: isoDate, to: isoDate })
+  .refine((q) => !ISO.test(q.from) || !ISO.test(q.to) || q.from <= q.to, { message: "from must not be after to" })
+  .refine((q) => !ISO.test(q.from) || !ISO.test(q.to) || q.to <= shiftISO(q.from, 30), { message: "At most 31 days" });
+
+nutritionRouter.get("/days", validate({ query: daysQuery }), async (req, res, next) => {
+  try {
+    const { from, to } = req.query as { from: string; to: string };
+    res.json(await dayTotals(req.userId, from, to));
   } catch (err) {
     next(err);
   }

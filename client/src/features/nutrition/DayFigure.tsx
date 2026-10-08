@@ -1,29 +1,36 @@
 import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import type { DaySummary, MacroBar } from "./deriveDay";
 
-export function SummaryCard({ summary, onSetTargets }: { summary: DaySummary; onSetTargets: () => void }) {
+/**
+ * The open day (redesign part 4, §4): what's left, or eaten with no target, in
+ * Home's figure, over the macro bars.
+ */
+export function DayFigure({ summary, onSetTargets }: { summary: DaySummary; onSetTargets: () => void }) {
   const { kcal, target, left, bars } = summary;
+  const over = left !== null && left < 0;
+  const figure = target === null || left === null ? kcal : Math.abs(left);
+  const unit = target === null ? "kcal eaten" : over ? "kcal over" : "kcal left";
   return (
     <Card>
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="text-sm">
-          <span className="figure text-4xl">{kcal.toLocaleString()}</span>
-          <span className="text-muted">
-            {target ? ` / ${target.calories.toLocaleString()} kcal` : " kcal eaten"}
-          </span>
-        </p>
-        {target && left !== null ? (
-          <p className={cn("tnum text-sm font-semibold", left < 0 ? "text-caution" : "text-muted")}>
-            {left < 0 ? `${Math.abs(left).toLocaleString()} over` : `${left.toLocaleString()} left`}
-          </p>
-        ) : (
-          <Button variant="ghost" onClick={onSetTargets}>
-            Set targets
-          </Button>
-        )}
+      {/* Amber only past the target: the signal colour's one job. */}
+      <div className={cn("figure text-5xl", over && "text-caution")}>
+        {figure.toLocaleString("en-GB")}{" "}
+        <span className="text-sm font-normal tracking-normal text-muted">{unit}</span>
       </div>
+      {target ? (
+        <p className="tnum mt-1.5 text-xs text-muted">
+          {kcal.toLocaleString("en-GB")} of {target.calories.toLocaleString("en-GB")} eaten
+        </p>
+      ) : (
+        <button
+          type="button"
+          onClick={onSetTargets}
+          className="mt-2 text-sm text-muted underline underline-offset-4 hover:text-text"
+        >
+          Set targets
+        </button>
+      )}
       {bars.length > 0 && (
         <div className="mt-4 space-y-2.5">
           {bars.map((b) => (

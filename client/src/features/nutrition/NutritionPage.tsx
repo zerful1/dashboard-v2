@@ -1,16 +1,18 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Copy, Plus } from "lucide-react";
-import { shiftISO } from "@dashboard/shared";
+import { Copy, Plus } from "lucide-react";
+import { isRealDate, shiftISO, weekStrip } from "@dashboard/shared";
 import type { FoodLogEntry } from "@dashboard/shared";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { DateSelector } from "@/components/ui/DateSelector";
 import { Spinner } from "@/components/ui/Spinner";
 import { useDiary } from "@/hooks/useDiary";
+import { useFoodDays } from "@/hooks/useFoodDays";
 import { useTargets } from "@/hooks/useTargets";
 import { useToday } from "@/hooks/useToday";
 import { deriveDay } from "./deriveDay";
-import { SummaryCard } from "./SummaryCard";
+import { FoodHeader } from "./FoodHeader";
+import { WeekStrip } from "./WeekStrip";
+import { DayFigure } from "./DayFigure";
 import { DiaryList } from "./DiaryList";
 import { LabelStrip } from "./LabelStrip";
 import { AddFoodSheet } from "./AddFoodSheet";
@@ -18,16 +20,40 @@ import { EditEntrySheet } from "./EditEntrySheet";
 import { CopyDaySheet } from "./CopyDaySheet";
 import { TargetsSheet } from "./TargetsSheet";
 
+/** The strip's last day and the open day, once the user has picked either. */
+interface Picked {
+  end: string;
+  open: string;
+}
+
 export function NutritionPage() {
   const today = useToday();
-  // Only a day the user picked is state. Until then the page follows the clock,
-  // so an app left open overnight wakes on the new day, not yesterday.
-  const [picked, setPicked] = useState<string | null>(null);
-  const date = picked ?? today;
-  const setDate = (d: string) => setPicked(d === today ? null : d);
-  // The page renders its own failure below, so these two do not also toast.
-  const diary = useDiary(date, { errorToast: false });
+  // Only what the user picked is state. Until then the strip ends today and
+  // today is open, both following the clock, so an app left open overnight
+  // wakes on the new day, not yesterday.
+  const [picked, setPicked] = useState<Picked | null>(null);
+  const end = picked?.end ?? today;
+  const open = picked?.open ?? today;
+  const from = shiftISO(end, -6);
+  // Today open, with the strip ending today, IS following the clock (spec §3).
+  const choose = (next: Picked) => setPicked(next.end === today && next.open === today ? null : next);
+  const pickDate = (d: string) => {
+    // The picker is capped at today, but a typed date is not. And a typed year
+    // can be anything: "10000-…" sorts before today as a string, and crashes
+    // the strip; "0002-…" lands in 1902.
+    if (!isRealDate(d) || d > today) return;
+    choose({ end: d >= from && d <= end ? end : d, open: d });
+  };
+  const moveWeek = (days: number) => {
+    const moved = shiftISO(end, days);
+    const next = moved > today ? today : moved;
+    choose({ end: next, open: next });
+  };
+
+  // The page renders its own failure below, so these do not also toast.
+  const diary = useDiary(open, { errorToast: false });
   const targets = useTargets({ errorToast: false });
+  const week = useFoodDays(from, end, today);
   const failed = (diary.isError && !diary.hasData) || (targets.isError && !targets.hasData);
   const stale = !failed && (diary.isError || targets.isError);
 
@@ -36,41 +62,28 @@ export function NutritionPage() {
   const [copying, setCopying] = useState(false);
   const [targeting, setTargeting] = useState(false);
 
-  const summary = useMemo(
-    () => deriveDay(diary.entries, targets.targets, date),
-    [diary.entries, targets.targets, date],
+  const summary = useMemo(() => deriveDay(diary.entries, targets.targets, open), [diary.entries, targets.targets, open]);
+  // A conclusion, so it waits for the targets as well as the days (CLAUDE.md, isPending).
+  const strip = useMemo(
+    () => (week.days && targets.hasData ? weekStrip(week.days, targets.targets, end, today) : null),
+    [week.days, targets.hasData, targets.targets, end, today],
   );
 
   return (
     <div className="space-y-4">
-      <div>
-        <div className="lbl text-accent">Food</div>
-        <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">Nutrition</h1>
-      </div>
+      <FoodHeader date={open} today={today} onDate={pickDate} onTargets={() => setTargeting(true)} />
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1">
-          <button
-            aria-label="Previous day"
-            onClick={() => setDate(shiftISO(date, -1))}
-            className="rounded-full p-1.5 text-muted hover:text-text"
-          >
-            <ChevronLeft size={16} />
-          </button>
-          <DateSelector value={date} onChange={setDate} />
-          <button
-            aria-label="Next day"
-            disabled={date >= today}
-            onClick={() => setDate(shiftISO(date, 1))}
-            className="rounded-full p-1.5 text-muted hover:text-text disabled:opacity-30"
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
-        <Button variant="ghost" onClick={() => setTargeting(true)}>
-          Targets
-        </Button>
-      </div>
+      <WeekStrip
+        end={end}
+        today={today}
+        open={open}
+        strip={strip}
+        failed={week.failed || (targets.isError && !targets.hasData)}
+        todayUnknown={week.isPlaceholder}
+        onOpen={(d) => choose({ end, open: d })}
+        onPrev={() => moveWeek(-7)}
+        onNext={() => moveWeek(7)}
+      />
 
       {failed ? (
         // Distinct from an empty day: a failed fetch must not read as "nothing eaten".
@@ -96,7 +109,7 @@ export function NutritionPage() {
       ) : (
         <>
           {stale && <p className="text-xs text-muted">Couldn't refresh — showing saved data.</p>}
-          <SummaryCard summary={summary} onSetTargets={() => setTargeting(true)} />
+          <DayFigure summary={summary} onSetTargets={() => setTargeting(true)} />
           <div className="flex gap-2">
             {/* The one filled action on this screen. */}
             <Button className="flex-1" onClick={() => setAdding(true)}>
@@ -111,14 +124,14 @@ export function NutritionPage() {
         </>
       )}
 
-      <AddFoodSheet open={adding} onClose={() => setAdding(false)} date={date} addEntry={diary.addEntry} />
+      <AddFoodSheet open={adding} onClose={() => setAdding(false)} date={open} addEntry={diary.addEntry} />
       <EditEntrySheet
         entry={editing}
         onClose={() => setEditing(null)}
         rescale={diary.rescaleEntry}
         remove={diary.removeEntry}
       />
-      <CopyDaySheet open={copying} onClose={() => setCopying(false)} to={date} copy={diary.copyDay} />
+      <CopyDaySheet open={copying} onClose={() => setCopying(false)} to={open} copy={diary.copyDay} />
       <TargetsSheet
         open={targeting}
         onClose={() => setTargeting(false)}

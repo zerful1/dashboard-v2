@@ -27,3 +27,4 @@ export * from "./domain/nutrition/tdeeInputs";
 export * from "./domain/nutrition/adherence";
 export * from "./domain/nutrition/barcode";
 export * from "./domain/nutrition/composition";
+export * from "./domain/nutrition/weekStrip";
