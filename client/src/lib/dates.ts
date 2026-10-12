@@ -70,3 +70,24 @@ export function spokenDate(iso: string): string {
 export function weekdayInitial(iso: string): string {
   return weekday(iso)[0]!;
 }
+
+/** "October", or "Sep 2025" outside today's year: a month in Weight's list (redesign part 5). */
+export function monthLabel(iso: string, today: string): string {
+  const m = Number(iso.slice(5, 7)) - 1;
+  return iso.slice(0, 4) === today.slice(0, 4) ? MONTHS_LONG[m]! : `${MONTHS[m]} ${iso.slice(0, 4)}`;
+}
+
+/** "Feb – Apr", or "Nov 2025 – Feb 2026" when either end is outside today's year; one month is monthLabel. */
+export function monthRangeLabel(from: string, to: string, today: string): string {
+  if (from.slice(0, 7) === to.slice(0, 7)) return monthLabel(from, today);
+  const year = today.slice(0, 4);
+  const withYear = from.slice(0, 4) !== year || to.slice(0, 4) !== year;
+  const name = (iso: string) => `${MONTHS[Number(iso.slice(5, 7)) - 1]}${withYear ? ` ${iso.slice(0, 4)}` : ""}`;
+  return `${name(from)} – ${name(to)}`;
+}
+
+/** "Oct", with January carrying its year ("Jan 2026"): a month tick on a time axis. */
+export function monthTick(iso: string): string {
+  const m = Number(iso.slice(5, 7)) - 1;
+  return m === 0 ? `Jan ${iso.slice(0, 4)}` : MONTHS[m]!;
+}
