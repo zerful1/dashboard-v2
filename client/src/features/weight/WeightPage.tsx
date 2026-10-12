@@ -1,35 +1,64 @@
 import { useMemo, useState } from "react";
-import { toLocalISO } from "@dashboard/shared";
-import type { BodyWeightEntry } from "@dashboard/shared";
+import { useQuery } from "@tanstack/react-query";
+import { periodRows } from "@dashboard/shared";
+import { useAuth } from "@/auth/AuthProvider";
 import { useWeights } from "@/hooks/useWeights";
-import { useWeightGoalKg } from "@/hooks/useGoals";
-import { deriveWeightSummary } from "./deriveWeight";
-import { WeightChart } from "./WeightChart";
-import { WeightStats } from "./WeightStats";
-import { WeightList } from "./WeightList";
-import { LogWeightCard } from "./LogWeightCard";
-import { EditWeightSheet } from "./EditWeightSheet";
+import { goalsQueryOptions } from "@/hooks/useGoals";
+import { useToday } from "@/hooks/useToday";
 import { Spinner } from "@/components/ui/Spinner";
 import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { deriveWeightSummary, RANGES, rangeStart, type RangeId } from "./deriveWeight";
+import { WeightHeadline } from "./WeightHeadline";
+import { WeightChart } from "./WeightChart";
+import { PeriodList } from "./PeriodList";
+import { WeighInSheet, type WeighInTarget } from "./WeighInSheet";
+
+/** 1M to All: a set, so the chosen one is tinted and the rest subtle (as Cut / Maintain / Bulk). */
+function RangePicker({ value, onChange }: { value: RangeId; onChange: (id: RangeId) => void }) {
+  return (
+    <div role="group" aria-label="Range" className="flex gap-1">
+      {RANGES.map((r) => (
+        <Button
+          key={r.id}
+          variant={r.id === value ? "selected" : "subtle"}
+          aria-pressed={r.id === value}
+          className="flex-1 px-0 py-1.5 text-xs"
+          onClick={() => onChange(r.id)}
+        >
+          {r.id}
+        </Button>
+      ))}
+    </div>
+  );
+}
 
 export function WeightPage() {
-  // isPending, not isLoading: while auth resolves the query is DISABLED, and a
-  // disabled query reports isLoading false - so the page would paint "No
-  // entries yet" over a history that simply had not arrived. Same defect as
-  // the one fixed in useHomeDay, in the smaller of the two places.
+  // One clock for the page: its today goes to every child (CLAUDE.md).
+  const today = useToday();
+  const { user } = useAuth();
   const { entries, isPending, isError, hasData, saveWeight, deleteWeight } = useWeights();
-  const goalKg = useWeightGoalKg();
-  const [editing, setEditing] = useState<BodyWeightEntry | null>(null);
+  const goals = useQuery(goalsQueryOptions(user?.id));
+  const [range, setRange] = useState<RangeId>("3M");
+  const [open, setOpen] = useState<string | null>(null);
+  const [target, setTarget] = useState<WeighInTarget | null>(null);
 
-  const today = toLocalISO();
   const summary = useMemo(() => deriveWeightSummary(entries, today), [entries, today]);
+  const spec = RANGES.find((r) => r.id === range)!;
+  const start = rangeStart(spec, today, summary.points[0]?.date ?? today);
+  const rows = useMemo(() => periodRows(summary.points, spec.period, start, today), [summary.points, spec.period, start, today]);
 
-  if (isPending) return <Spinner label="Loading your weight history" />;
+  // isPending, not isLoading (CLAUDE.md), and the goals too: the goal colours
+  // the rate and writes the goal line, so drawing first would flip white to
+  // green. Not while the goals are paused offline with nothing saved, though:
+  // that would spin forever, so it reads as a failed load instead.
+  if (isPending || (goals.isPending && goals.fetchStatus !== "paused")) {
+    return <Spinner label="Loading your weight history" />;
+  }
 
   // Distinguished from empty: a failed fetch must not read as "no data yet".
-  // Someone with ten months of history seeing "No entries" would reasonably
-  // conclude it had been lost. Only when there is nothing to show, though: a
-  // failed refresh keeps the last good history, and the toast says it failed.
+  // Only when there is nothing to show, though: a failed refresh keeps the
+  // last good history, and the toast says it failed.
   if (isError && !hasData) {
     return (
       <Card>
@@ -41,29 +70,55 @@ export function WeightPage() {
     );
   }
 
+  const goal = goals.data?.find((g) => g.kind === "weight") ?? null;
+  const goalsFailed = !goals.data && (goals.isError || goals.fetchStatus === "paused");
+
   return (
-    <div className="space-y-4">
-      <div>
-        <div className="lbl text-accent">Weight</div>
-        <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">Body weight</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight">Weight</h1>
+        {/* The one white action on this screen. */}
+        <Button onClick={() => setTarget({ mode: "log" })}>Log</Button>
       </div>
 
-      <LogWeightCard save={saveWeight} entries={entries} />
-      <WeightStats summary={summary} goalKg={goalKg} />
-      <WeightChart
-        points={summary.points}
-        line={summary.line}
-        start={summary.points[0]?.date ?? today}
-        today={today}
-        goalKg={goalKg}
-        span="all time"
-        weekly={false}
-      />
-      <WeightList entries={entries} onSelect={setEditing} />
+      <WeightHeadline summary={summary} today={today} goal={goal} goalsFailed={goalsFailed} />
 
-      <EditWeightSheet
-        entry={editing}
-        onClose={() => setEditing(null)}
+      {summary.points.length > 0 && (
+        <>
+          <RangePicker
+            value={range}
+            onChange={(id) => {
+              setRange(id);
+              setOpen(null);
+            }}
+          />
+          <WeightChart
+            points={summary.points}
+            line={summary.line}
+            start={start}
+            today={today}
+            goalKg={goal?.target_kg ?? null}
+            span={spec.span}
+            weekly={spec.id === "1M"}
+          />
+          <PeriodList
+            rows={rows}
+            kind={spec.period}
+            entries={entries}
+            goalKg={goal?.target_kg ?? null}
+            today={today}
+            open={open}
+            onToggle={(s) => setOpen((o) => (o === s ? null : s))}
+            onSelect={(e) => setTarget({ mode: "edit", entry: e })}
+          />
+        </>
+      )}
+
+      <WeighInSheet
+        target={target}
+        onClose={() => setTarget(null)}
+        entries={entries}
+        today={today}
         save={saveWeight}
         remove={deleteWeight}
       />

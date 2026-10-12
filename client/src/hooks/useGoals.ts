@@ -2,27 +2,16 @@ import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/r
 import { useAuth } from "@/auth/AuthProvider";
 import { insightsApi } from "@/api/insights";
 
-/** The goals query, shared by useGoals and useWeightGoalKg so both read one cache entry. */
+/** The goals query, shared by useGoals, useHomeDay and the Weight page so all read one cache entry. */
 export function goalsQueryOptions(userId: string | undefined) {
   return queryOptions({
     queryKey: ["goals", userId ?? "anon"],
     queryFn: insightsApi.goals,
     enabled: !!userId,
-    // Insights renders its own failure; elsewhere a missing goal only leaves a
-    // weight trend uncoloured, which needs no toast.
+    // Insights and Weight render their own failure; on Home a missing goal only
+    // leaves a weight trend uncoloured, which needs no toast.
     meta: { errorToast: false },
   });
-}
-
-/**
- * The weight goal's target, or null. Only what a weight trend is coloured
- * against (trendTone): while it loads, or if it fails, trends stay neutral —
- * never wrongly green.
- */
-export function useWeightGoalKg(): number | null {
-  const { user } = useAuth();
-  const { data } = useQuery(goalsQueryOptions(user?.id));
-  return data?.find((g) => g.kind === "weight")?.target_kg ?? null;
 }
 
 /** Goals and their writes. Not optimistic: the server records each goal's start. */

@@ -17,8 +17,7 @@ vi.mock("@/features/weight/WeightChart", async (importOriginal) => ({
 
 const fit = (ratePerWeek: number): TrendFit => ({ status: "fit", ratePerWeek, current: 82, slope: ratePerWeek / 7 });
 const summary = (over: Partial<WeightSummary>): WeightSummary => ({
-  latest: 82, latestDate: "2026-10-06", average7: 82.2, fit: fit(-0.4), points: [], line: [],
-  deltaWeek: -0.6, deltaMonth: -1.8, lowest: 81.5, streak: 4, trend: [], ...over,
+  latest: 82, latestDate: "2026-10-06", average7: 82.2, fit: fit(-0.4), points: [], line: [], ...over,
 });
 function show(over: Partial<WeightSummary>, goalKg: number | null = 78) {
   return render(

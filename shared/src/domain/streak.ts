@@ -1,5 +1,4 @@
 import { shiftISO } from './date'
-import type { BodyWeightEntry } from '../types'
 
 /**
  * Length of the run of consecutive days ending today or yesterday.
@@ -33,9 +32,4 @@ export function calculateStreak(completedDates: string[], today: string): number
     streak++
   }
   return streak
-}
-
-/** Same rule, over body-weight entries. */
-export function calcWeightStreak(entries: BodyWeightEntry[], today: string): number {
-  return calculateStreak(entries.map(e => e.date), today)
 }

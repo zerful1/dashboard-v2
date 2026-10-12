@@ -15,7 +15,6 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
   "components/ui/Input.tsx": { count: 1, why: "placeholder: the label carries the meaning" },
   "features/gym/ExerciseRow.tsx": { count: 1, why: "the row's chevron icon" },
   "layout/AppLayout.tsx": { count: 1, why: "the More sheet's chevrons" },
-  "features/weight/WeightStats.tsx": { count: 1, why: "the — shown when there is no change" },
   "features/nutrition/WeekStrip.tsx": { count: 1, why: "the — under a day with nothing logged" },
   "features/weight/PeriodList.tsx": { count: 1, why: "the — for no change, and for a week with nothing yet" },
   "features/weight/WeightHeadline.tsx": { count: 1, why: "the — figure with no weigh-in in 7 days" },
