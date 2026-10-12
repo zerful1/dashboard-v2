@@ -50,7 +50,15 @@ export function WeightPage() {
 
       <LogWeightCard save={saveWeight} entries={entries} />
       <WeightStats summary={summary} goalKg={goalKg} />
-      <WeightChart points={summary.points} trend={summary.trend} goalKg={goalKg} />
+      <WeightChart
+        points={summary.points}
+        line={summary.line}
+        start={summary.points[0]?.date ?? today}
+        today={today}
+        goalKg={goalKg}
+        span="all time"
+        weekly={false}
+      />
       <WeightList entries={entries} onSelect={setEditing} />
 
       <EditWeightSheet
