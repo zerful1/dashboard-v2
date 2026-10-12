@@ -136,6 +136,10 @@ export function WeightChart({ points, line, start, today, goalKg, span, weekly }
               dataKey="x"
               type="number"
               domain={[0, daysBetweenISO(start, today)]}
+              // Today sits at the axis's end, and 1M labels it: inset the end so
+              // its centred label fits inside the chart (it overran by a pixel
+              // in the browser pass, and the font decides by how much).
+              padding={{ left: 0, right: 16 }}
               ticks={ticks.map((t) => t.x)}
               tickFormatter={(x: number) => labels.get(x) ?? ""}
               // Muted, not dim: axis labels are words to read (CLAUDE.md).
