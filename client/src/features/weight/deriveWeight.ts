@@ -1,10 +1,16 @@
-import { linearTrend, trendPoint, calcWeightStreak, shiftISO } from "@dashboard/shared";
-import type { BodyWeightEntry } from "@dashboard/shared";
+import { linearTrend, trendPoint, calcWeightStreak, rollingAverage, shiftISO, trendFit, windowMean } from "@dashboard/shared";
+import type { AveragePoint, BodyWeightEntry, PeriodKind, TrendFit } from "@dashboard/shared";
 import type { ChartPoint } from "./WeightChart";
 
 export interface WeightSummary {
   latest: number | null;
   latestDate: string | null;
+  /** The mean of the weigh-ins in the 7 days ending today; null with none (redesign part 5, §3). */
+  average7: number | null;
+  /** Insights' fit over the last 56 days (trendFit): the one rate, with or without a goal. */
+  fit: TrendFit;
+  /** The trailing 7-day average at each weigh-in, oldest first. */
+  line: AveragePoint[];
   deltaWeek: number | null;
   deltaMonth: number | null;
   lowest: number | null;
@@ -30,6 +36,9 @@ export function deriveWeightSummary(
     return {
       latest: null,
       latestDate: null,
+      average7: null,
+      fit: trendFit("weight", [], today),
+      line: [],
       deltaWeek: null,
       deltaMonth: null,
       lowest: null,
@@ -67,6 +76,9 @@ export function deriveWeightSummary(
   return {
     latest: latestEntry.weight_kg,
     latestDate: latestEntry.date,
+    average7: windowMean(points, shiftISO(today, -6), today),
+    fit: trendFit("weight", points.map((p) => ({ date: p.date, value: p.kg })), today),
+    line: rollingAverage(points),
     deltaWeek: weekAgo === null ? null : round1(latestEntry.weight_kg - weekAgo),
     deltaMonth: monthAgo === null ? null : round1(latestEntry.weight_kg - monthAgo),
     lowest: Math.min(...points.map((p) => p.kg)),
@@ -102,4 +114,29 @@ export function goalPlacement(
   if (goalKg < Math.min(...plotted) - 1) return "below";
   if (goalKg > Math.max(...plotted) + 1) return "above";
   return "in";
+}
+
+export type RangeId = "1M" | "3M" | "6M" | "1Y" | "All";
+
+export interface RangeSpec {
+  id: RangeId;
+  /** Days back from today; null for All, which starts at the first weigh-in. */
+  days: number | null;
+  /** Weeks for 1M and 3M, months beyond (redesign part 5, §4). */
+  period: PeriodKind;
+  /** For the chart's label: "Weight over 3 months". */
+  span: string;
+}
+
+export const RANGES: readonly RangeSpec[] = [
+  { id: "1M", days: 30, period: "week", span: "1 month" },
+  { id: "3M", days: 91, period: "week", span: "3 months" },
+  { id: "6M", days: 182, period: "month", span: "6 months" },
+  { id: "1Y", days: 365, period: "month", span: "1 year" },
+  { id: "All", days: null, period: "month", span: "all time" },
+];
+
+/** The range's first day: `today - days`, or the first weigh-in for All. */
+export function rangeStart(range: RangeSpec, today: string, first: string): string {
+  return range.days === null ? first : shiftISO(today, -range.days);
 }

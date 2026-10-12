@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { deriveWeightSummary, goalPlacement } from "../src/features/weight/deriveWeight";
-import type { BodyWeightEntry } from "@dashboard/shared";
+import { shiftISO, type BodyWeightEntry } from "@dashboard/shared";
+import { deriveWeightSummary, goalPlacement, RANGES, rangeStart, type RangeId } from "../src/features/weight/deriveWeight";
 
 const e = (date: string, kg: number): BodyWeightEntry => ({
   id: date,
@@ -117,5 +117,57 @@ describe("goalPlacement", () => {
   it("has nothing to place without a goal or without weigh-ins", () => {
     expect(goalPlacement(pts, trend, null)).toBeNull();
     expect(goalPlacement([], [], 80)).toBeNull();
+  });
+});
+
+describe("deriveWeightSummary: redesign part 5", () => {
+  it("averages the weigh-ins of the 7 days ending today", () => {
+    // 8 Aug is 7 days back: outside the window.
+    const s = deriveWeightSummary([e("2026-08-08", 90), e("2026-08-09", 82), e("2026-08-15", 84)], TODAY);
+    expect(s.average7).toBe(83);
+  });
+
+  it("has no 7-day average without a weigh-in in that window", () => {
+    expect(deriveWeightSummary([e("2026-08-08", 90)], TODAY).average7).toBeNull();
+  });
+
+  it("fits Insights' rate over the weigh-ins", () => {
+    // 14 daily weigh-ins falling 0.1 kg a day: 0.7 kg a week.
+    const entries = Array.from({ length: 14 }, (_, i) => e(shiftISO(TODAY, -i), 80 + i * 0.1));
+    const s = deriveWeightSummary(entries, TODAY);
+    expect(s.fit.status === "fit" && s.fit.ratePerWeek).toBeCloseTo(-0.7, 6);
+  });
+
+  it("has no rate with fewer than 14 weigh-ins in 56 days", () => {
+    expect(deriveWeightSummary([e(TODAY, 80)], TODAY).fit).toEqual({ status: "not-enough-data", have: 1, need: 14 });
+  });
+
+  it("draws the line as the rolling 7-day average, oldest first", () => {
+    const s = deriveWeightSummary([e("2026-08-15", 84), e("2026-08-14", 82)], TODAY);
+    expect(s.line).toEqual([
+      { date: "2026-08-14", kg: 82, gapBefore: false },
+      { date: "2026-08-15", kg: 83, gapBefore: false },
+    ]);
+  });
+
+  it("is empty with no weigh-ins", () => {
+    const s = deriveWeightSummary([], TODAY);
+    expect(s.average7).toBeNull();
+    expect(s.line).toEqual([]);
+    expect(s.fit).toEqual({ status: "not-enough-data", have: 0, need: 14 });
+  });
+});
+
+describe("rangeStart", () => {
+  const r = (id: RangeId) => RANGES.find((x) => x.id === id)!;
+  it("reaches back the range's days from today", () => {
+    expect(rangeStart(r("1M"), "2026-10-14", "2025-01-01")).toBe("2026-09-14");
+    expect(rangeStart(r("3M"), "2026-10-14", "2025-01-01")).toBe("2026-07-15");
+  });
+  it("starts All at the first weigh-in", () => {
+    expect(rangeStart(r("All"), "2026-10-14", "2025-01-01")).toBe("2025-01-01");
+  });
+  it("lists weeks for 1M and 3M, and months beyond", () => {
+    expect(RANGES.map((x) => x.period)).toEqual(["week", "week", "month", "month", "month"]);
   });
 });

@@ -20,6 +20,7 @@ afterEach(() => vi.restoreAllMocks());
 // No points, so the Home sparkline (Recharts) renders nothing in jsdom.
 const summary = (over: Partial<WeightSummary>): WeightSummary => ({
   latest: 82, latestDate: "2026-10-06", deltaWeek: -0.6, deltaMonth: -1.8, lowest: 81.5, streak: 4,
+  average7: 82.2, fit: { status: "not-enough-data", have: 0, need: 14 }, line: [],
   points: [], trend: [], ...over,
 });
 
