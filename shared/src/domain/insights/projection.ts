@@ -20,6 +20,42 @@ export const PROJECTION_RULES = {
   lift: { windowDays: 84, minPoints: 6, flatPerWeek: 0.1 },
 } as const
 
+
+/** The least-squares line a projection draws on, or why there is none. `slope` is per day. */
+export type TrendFit =
+  | { status: 'fit'; ratePerWeek: number; current: number; slope: number }
+  | { status: 'not-enough-data'; have: number; need: number }
+
+/** A kind's window: after `today - windowDays`, up to and including today, oldest first. */
+function inWindow(kind: Goal['kind'], points: ProjectionPoint[], today: string): ProjectionPoint[] {
+  const from = shiftISO(today, -PROJECTION_RULES[kind].windowDays)
+  return points
+    .filter((p) => p.date > from && p.date <= today)
+    .sort((a, b) => a.date.localeCompare(b.date))
+}
+
+/**
+ * The rate a projection is built on, on its own (redesign part 5): the Weight
+ * page and Home show it with or without a goal, and it must be the number
+ * Insights projects from, so there is one definition of it. `current` is the
+ * line's value at today.
+ */
+export function trendFit(kind: Goal['kind'], points: ProjectionPoint[], today: string): TrendFit {
+  const rule = PROJECTION_RULES[kind]
+  const window = inWindow(kind, points, today)
+  if (window.length < rule.minPoints) {
+    return { status: 'not-enough-data', have: window.length, need: rule.minPoints }
+  }
+  const first = window[0]!.date
+  const line = linearTrend(window.map((p) => ({ x: daysBetweenISO(first, p.date), y: p.value })))
+  return {
+    status: 'fit',
+    ratePerWeek: line.slope * 7,
+    current: trendPoint(daysBetweenISO(first, today), line),
+    slope: line.slope,
+  }
+}
+
 /**
  * When a goal is reached at the current rate - or, honestly, that it cannot
  * be said. A confidently wrong date is worse than no date.
@@ -30,23 +66,18 @@ export function projectGoal(
   today: string,
 ): Projection {
   const rule = PROJECTION_RULES[goal.kind]
-  const from = shiftISO(today, -rule.windowDays)
-  const window = points
-    .filter((p) => p.date > from && p.date <= today)
-    .sort((a, b) => a.date.localeCompare(b.date))
   // Reaching a lift goal is a fact - a set at the target - not a trend, so it
   // needs no minimum number of sessions. `current` is that best set.
+  const window = inWindow(goal.kind, points, today)
   if (goal.kind === 'lift' && window.some((p) => p.value >= goal.target_kg)) {
     return { goalId: goal.id, status: 'reached', current: Math.max(...window.map((p) => p.value)) }
   }
-  if (window.length < rule.minPoints) {
-    return { goalId: goal.id, status: 'not-enough-data', have: window.length, need: rule.minPoints }
+  const fit = trendFit(goal.kind, points, today)
+  if (fit.status === 'not-enough-data') {
+    return { goalId: goal.id, status: 'not-enough-data', have: fit.have, need: fit.need }
   }
 
-  const first = window[0]!.date
-  const trend = linearTrend(window.map((p) => ({ x: daysBetweenISO(first, p.date), y: p.value })))
-  const current = trendPoint(daysBetweenISO(first, today), trend)
-  const ratePerWeek = trend.slope * 7
+  const { ratePerWeek, current, slope } = fit
   const target = goal.target_kg
 
   // A lift goal is always up (and was judged reached above). A weight goal
@@ -60,7 +91,7 @@ export function projectGoal(
 
   // A lift's trend can sit above a target no session has actually lifted yet:
   // that reads as "this week", not as a date in the past.
-  const days = Math.max(0, Math.ceil((target - current) / trend.slope))
+  const days = Math.max(0, Math.ceil((target - current) / slope))
   if (days > 365) return { goalId: goal.id, status: 'over-a-year', ratePerWeek, current }
   return { goalId: goal.id, status: 'projected', date: mondayOf(shiftISO(today, days)), ratePerWeek, current }
 }
