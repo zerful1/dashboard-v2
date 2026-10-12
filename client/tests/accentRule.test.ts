@@ -21,6 +21,7 @@ const ALLOWED: Record<string, string> = {
   "layout/BottomTabs.tsx": "the active tab's dot: identity chrome",
   "features/nutrition/DayFigure.tsx": "the macro bars' fill: data, inside its track",
   "features/nutrition/WeekStrip.tsx": "the bars' fill (data ink) and the protein dot (a small done mark)",
+  "features/weight/PeriodList.tsx": "week dots: small done marks",
 };
 
 /**

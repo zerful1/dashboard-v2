@@ -6,6 +6,7 @@ import { ExerciseRow } from "../src/features/gym/ExerciseRow";
 import { HabitRow } from "../src/features/habits/HabitRow";
 import { WeekLine } from "../src/features/home/WeekLine";
 import { TodayHabitsCard } from "../src/features/habits/TodayHabitsCard";
+import { PeriodList } from "../src/features/weight/PeriodList";
 import { createQueryClient } from "../src/lib/queryClient";
 import * as apiModule from "../src/lib/api";
 
@@ -61,5 +62,16 @@ describe("unticked done marks", () => {
     );
     const button = await screen.findByRole("button", { name: "Mark Skincare done" });
     expect(button.querySelector('[data-part="mark"]')).toHaveClass("border-dim", "text-muted");
+  });
+
+  it("rings an unweighed day in dim, on Weight's weeks", () => {
+    const { container } = render(
+      <PeriodList
+        rows={[{ kind: "period", start: "2026-10-05", end: "2026-10-11", current: false, average: 82, change: null, weighIns: 1,
+          days: ["weighed", "missed", "missed", "missed", "missed", "missed", "missed"] }]}
+        kind="week" entries={[]} goalKg={null} today="2026-10-14" open={null} onToggle={() => {}} onSelect={() => {}}
+      />,
+    );
+    expect(container.querySelectorAll('[data-part="mark"]')[1]).toHaveClass("border-dim");
   });
 });

@@ -17,6 +17,7 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
   "layout/AppLayout.tsx": { count: 1, why: "the More sheet's chevrons" },
   "features/weight/WeightStats.tsx": { count: 1, why: "the — shown when there is no change" },
   "features/nutrition/WeekStrip.tsx": { count: 1, why: "the — under a day with nothing logged" },
+  "features/weight/PeriodList.tsx": { count: 1, why: "the — for no change, and for a week with nothing yet" },
 };
 
 function files(dir: string): string[] {
