@@ -9,7 +9,7 @@ import {
   YAxis,
 } from "recharts";
 import { useMemo } from "react";
-import { linearTrend, trendPoint, type LiftChartPoint } from "@dashboard/shared";
+import { linearTrend, trendPoint, type AveragePoint, type LiftChartPoint } from "@dashboard/shared";
 import { useMotionSafe } from "@/lib/motion";
 import { goalPlacement } from "./deriveWeight";
 
@@ -172,6 +172,13 @@ export function WeightChart({ points, trend, goalKg = null }: Props) {
   );
 }
 
+/** The 7-day average with a null between two points more than 7 days apart, so the line breaks there. */
+export function sparklineRows(line: AveragePoint[]): { date: string; kg: number | null }[] {
+  return line.flatMap((p) =>
+    p.gapBefore ? [{ date: `${p.date}-gap`, kg: null }, { date: p.date, kg: p.kg }] : [{ date: p.date, kg: p.kg }],
+  );
+}
+
 /**
  * A sparkline, not a chart: no axes, no grid, no tooltip, no legend. It shows
  * shape only — the Weight page is where the detail lives.
@@ -185,15 +192,18 @@ export function WeightChart({ points, trend, goalKg = null }: Props) {
  * It lives here because this file is the swappable charting boundary declared
  * at the top. Importing Recharts into the Home tile instead would give the
  * codebase a second import site and quietly retire that rule.
+ *
+ * Since redesign part 5 it draws the 7-day average, as the Weight chart's
+ * white line does, so the white line means one thing on both screens.
  */
-export function WeightSparkline({ points }: { points: ChartPoint[] }) {
+export function WeightSparkline({ line }: { line: AveragePoint[] }) {
   const safe = useMotionSafe();
-  if (points.length < 2) return null;
+  if (line.length < 2) return null;
 
   return (
     <div className="h-8">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={points}>
+        <LineChart data={sparklineRows(line)}>
           {/* Without a domain Recharts pads to round numbers and a 0.4 kg move
               renders as a flat line. dataMin/dataMax uses the full height. */}
           <YAxis hide domain={["dataMin", "dataMax"]} />
