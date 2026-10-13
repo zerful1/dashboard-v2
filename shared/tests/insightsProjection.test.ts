@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { projectGoal, type ProjectionPoint } from '../src/domain/insights/projection'
+import { projectGoal, trendFit, type ProjectionPoint } from '../src/domain/insights/projection'
 import { shiftISO } from '../src/domain/date'
 
 const TODAY = '2026-09-30' // a Wednesday: +14 and +15 days fall in the same week
@@ -80,5 +80,32 @@ describe('projectGoal: lift', () => {
   it('calls under 0.1 kg a week flat, and a falling trend away', () => {
     expect(projectGoal(liftGoal(80), line(6, 70, 0.05, 7), TODAY)).toMatchObject({ status: 'flat' })
     expect(projectGoal(liftGoal(80), line(6, 70, -1, 7), TODAY)).toMatchObject({ status: 'away' })
+  })
+})
+
+// Redesign part 5: Weight and Home show this rate with or without a goal, and it
+// must be the number Insights projects from.
+describe('trendFit', () => {
+  it('needs 14 points inside the window', () => {
+    expect(trendFit('weight', line(13, 79, -0.5), TODAY)).toEqual({ status: 'not-enough-data', have: 13, need: 14 })
+  })
+
+  it('leaves out a point exactly 56 days back, and counts today', () => {
+    const recent = line(13, 79, -0.5) // today and the 12 days before it
+    expect(trendFit('weight', [{ date: shiftISO(TODAY, -56), value: 90 }, ...recent], TODAY).status).toBe('not-enough-data')
+    expect(trendFit('weight', [{ date: shiftISO(TODAY, -55), value: 79.5 }, ...recent], TODAY).status).toBe('fit')
+  })
+
+  it("gives the rate per week and the line's value today", () => {
+    const fit = trendFit('weight', line(14, 79, -0.5), TODAY)
+    expect(fit.status === 'fit' && fit.ratePerWeek).toBeCloseTo(-0.5, 6)
+    expect(fit.status === 'fit' && fit.current).toBeCloseTo(79, 6)
+  })
+
+  it('is the rate a projection reports', () => {
+    const points = line(14, 79, -0.5)
+    const p = projectGoal(weightGoal(75), points, TODAY)
+    const fit = trendFit('weight', points, TODAY)
+    expect(p.status === 'projected' && fit.status === 'fit' && p.ratePerWeek === fit.ratePerWeek).toBe(true)
   })
 })

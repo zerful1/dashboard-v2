@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { rangeLabel, spokenDate, weekdayInitial } from "../src/lib/dates";
+import { monthLabel, monthRangeLabel, monthTick, rangeLabel, spokenDate, weekdayInitial } from "../src/lib/dates";
 
 describe("rangeLabel", () => {
   it("names a span inside one month", () => {
@@ -22,5 +22,29 @@ describe("spokenDate and weekdayInitial", () => {
   });
   it("gives the weekday's initial", () => {
     expect(["2026-10-05", "2026-10-06", "2026-10-11"].map(weekdayInitial)).toEqual(["M", "T", "S"]);
+  });
+});
+
+describe("monthLabel", () => {
+  it("names a month of this year in full, and another year's short with its year", () => {
+    expect(monthLabel("2026-10-01", "2026-10-14")).toBe("October");
+    expect(monthLabel("2025-09-01", "2026-10-14")).toBe("Sep 2025");
+  });
+});
+
+describe("monthRangeLabel", () => {
+  it("names a run of months, with years when either is outside today's", () => {
+    expect(monthRangeLabel("2026-02-01", "2026-04-30", "2026-10-14")).toBe("Feb – Apr");
+    expect(monthRangeLabel("2025-11-01", "2026-02-28", "2026-10-14")).toBe("Nov 2025 – Feb 2026");
+  });
+  it("names a single month the way monthLabel does", () => {
+    expect(monthRangeLabel("2026-10-01", "2026-10-31", "2026-10-14")).toBe("October");
+  });
+});
+
+describe("monthTick", () => {
+  it("is the short month, with January carrying its year", () => {
+    expect(monthTick("2026-10-01")).toBe("Oct");
+    expect(monthTick("2026-01-01")).toBe("Jan 2026");
   });
 });

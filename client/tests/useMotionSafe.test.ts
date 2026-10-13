@@ -26,7 +26,7 @@ describe("useMotionSafe", () => {
 
   it("is FALSE when the OS asks for reduced motion", () => {
     // The case that matters. Sheet reads this to decide drag={safe ? "y" : false},
-    // WeightList to decide whether rows animate their height, and the Home card
+    // WeightHeadline to decide whether its figure rises in, and the Home card
     // to decide whether it lifts on hover. If this ever returned true here, all
     // three would animate against an explicit accessibility request.
     reducedMotion.value = true;

@@ -2,6 +2,7 @@ export * from "./types";
 export * from "./policy";
 export * from "./domain/date";
 export * from "./domain/trend";
+export * from "./domain/weight";
 export * from "./domain/streak";
 export * from "./domain/habits";
 export * from "./domain/format";

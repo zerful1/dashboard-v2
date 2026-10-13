@@ -1,15 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { calculateStreak, calcWeightStreak } from '../src/domain/streak'
-import type { BodyWeightEntry } from '../src/types'
+import { calculateStreak } from '../src/domain/streak'
 
 // No fake timers and no TZ dependency: the current day is an argument, so these
 // tests behave identically on any machine in any timezone.
 const TODAY = '2026-05-09'
 const YESTERDAY = '2026-05-08'
-
-function makeEntry(date: string): BodyWeightEntry {
-  return { id: crypto.randomUUID(), user_id: 'u', date, weight_kg: 70, notes: null, created_at: '' }
-}
 
 describe('calculateStreak', () => {
   it('returns 0 for empty completions', () => {
@@ -48,35 +43,5 @@ describe('calculateStreak', () => {
 
   it('ignores a future-dated entry rather than counting it', () => {
     expect(calculateStreak(['2026-05-20'], TODAY)).toBe(0)
-  })
-})
-
-describe('calcWeightStreak', () => {
-  it('returns 0 for empty entries', () => {
-    expect(calcWeightStreak([], TODAY)).toBe(0)
-  })
-
-  it('returns 0 when last entry was 2+ days ago', () => {
-    expect(calcWeightStreak([makeEntry('2026-05-06'), makeEntry('2026-05-05')], TODAY)).toBe(0)
-  })
-
-  it('returns 1 for a single entry today', () => {
-    expect(calcWeightStreak([makeEntry(TODAY)], TODAY)).toBe(1)
-  })
-
-  it('returns 1 for a single entry yesterday', () => {
-    expect(calcWeightStreak([makeEntry(YESTERDAY)], TODAY)).toBe(1)
-  })
-
-  it('counts consecutive days ending today', () => {
-    expect(calcWeightStreak([
-      makeEntry(TODAY), makeEntry(YESTERDAY), makeEntry('2026-05-07'),
-    ], TODAY)).toBe(3)
-  })
-
-  it('stops at a gap', () => {
-    expect(calcWeightStreak([
-      makeEntry(TODAY), makeEntry(YESTERDAY), makeEntry('2026-05-07'), makeEntry('2026-05-04'),
-    ], TODAY)).toBe(3)
   })
 })

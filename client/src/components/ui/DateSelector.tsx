@@ -25,11 +25,14 @@ function label(value: string, today: string): string {
 export function DateSelector({
   value,
   onChange,
+  today: pageToday,
 }: {
   value: string;
   onChange: (d: string) => void;
+  /** The page's today (CLAUDE.md, one clock per page). Without it, the clock's. */
+  today?: string;
 }) {
-  const today = toLocalISO();
+  const today = pageToday ?? toLocalISO();
 
   return (
     <div
