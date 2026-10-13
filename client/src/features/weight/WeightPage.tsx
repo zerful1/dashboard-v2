@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { periodRows } from "@dashboard/shared";
 import { useAuth } from "@/auth/AuthProvider";
@@ -51,8 +51,15 @@ export function WeightPage() {
   // isPending, not isLoading (CLAUDE.md), and the goals too: the goal colours
   // the rate and writes the goal line, so drawing first would flip white to
   // green. Not while the goals are paused offline with nothing saved, though:
-  // that would spin forever, so it reads as a failed load instead.
-  if (isPending || (goals.isPending && goals.fetchStatus !== "paused")) {
+  // that would spin forever, so it reads as a failed load instead. And only
+  // until the page has drawn once: the signal returning starts the goals'
+  // fetch (pending again), and spinning then would unmount an open sheet.
+  const [drawn, setDrawn] = useState(false);
+  const ready = !isPending && !(goals.isPending && goals.fetchStatus !== "paused" && !drawn);
+  useEffect(() => {
+    if (ready) setDrawn(true);
+  }, [ready]);
+  if (!ready) {
     return <Spinner label="Loading your weight history" />;
   }
 

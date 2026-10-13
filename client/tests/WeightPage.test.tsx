@@ -110,6 +110,29 @@ describe("Weight page", () => {
     expect(screen.getByText("7-day average", { selector: ".lbl" })).toBeInTheDocument();
   });
 
+  // Final review: once drawn without the goals, the signal returning starts
+  // their fetch (pending again). Spinning then would unmount an open sheet and
+  // lose what was being typed, so the page waits for the goals only once.
+  it("stays drawn, with an open sheet, when the signal returns and the goals start loading", async () => {
+    let release!: (goals: Goal[]) => void;
+    mockApi({ goals: new Promise<Goal[]>((r) => (release = r)) });
+    const qc = renderPage({ seed: HISTORY, offline: true });
+    expect(await screen.findByText("Couldn't load your goal")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Log" }));
+    const field = screen.getByLabelText("Weight (kg)");
+    await userEvent.clear(field);
+    await userEvent.type(field, "79.6");
+
+    await act(async () => onlineManager.setOnline(true));
+    await waitFor(() => expect(qc.getQueryState(["goals", "u1"])?.fetchStatus).toBe("fetching"));
+    await act(async () => {}); // let the page re-render on that state
+    expect(screen.queryByRole("status", { name: "Loading your weight history" })).toBeNull();
+    expect(screen.getByLabelText("Weight (kg)")).toHaveValue(79.6);
+
+    await act(async () => release([GOAL]));
+    expect(await screen.findByText(/^Goal 78 kg ·/)).toBeInTheDocument();
+  });
+
   it("lists weeks for 3M and months for 6M", async () => {
     mockApi();
     renderPage();
