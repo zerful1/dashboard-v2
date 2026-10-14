@@ -31,7 +31,9 @@ export function InsightsPage() {
   const goals = useGoals();
   const historyNames = useHistoryExerciseNames();
   // The weight change is coloured by the goal: wait for it, or its failure (isPending, CLAUDE.md).
-  const goalsSettled = !goals.isPending;
+  // Not while paused offline with nothing saved, though: that would spin for good,
+  // so the rows draw uncoloured until the goals arrive (the Weight page's rule).
+  const goalsSettled = !goals.isPending || goals.isPaused;
   const goalKg = goals.goals.find((g) => g.kind === "weight")?.target_kg ?? null;
   const all = records.data ?? [];
 

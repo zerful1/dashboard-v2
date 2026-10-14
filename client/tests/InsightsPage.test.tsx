@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react-query";
 import { shiftISO, type Goal, type RecordEvent, type WeekNumbers, type WeeklyReview } from "@dashboard/shared";
 import { InsightsPage } from "../src/features/insights/InsightsPage";
 import * as apiModule from "../src/lib/api";
@@ -70,6 +70,7 @@ const rowsOf = (name: string) => within(screen.getByRole("list", { name })).getA
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
+  onlineManager.setOnline(true);
 });
 
 describe("Insights: the week", () => {
@@ -138,6 +139,18 @@ describe("Insights: the week", () => {
     expect(screen.queryByText("+0.8")).toBeNull();
     await act(async () => release([WEIGHT_GOAL]));
     expect((await screen.findByText("+0.8")).closest("[data-tone]")).toHaveAttribute("data-tone", "good");
+  });
+
+  // Final review: offline, with the week saved and goals never loaded, the goals
+  // query pauses and stays pending. Waiting for it would spin for good (Weight's rule).
+  it("draws the saved week offline when the goals were never loaded", async () => {
+    freeze();
+    mockApi();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    client.setQueryData(["insightsReview", "u1", "2026-09-21"], review("2026-09-21"));
+    onlineManager.setOnline(false);
+    renderPage(client);
+    expect(await screen.findByText("38 sets · 9,120 kg (+6%)")).toBeInTheDocument();
   });
 
   it("shows an error card with Retry when the week cannot load", async () => {

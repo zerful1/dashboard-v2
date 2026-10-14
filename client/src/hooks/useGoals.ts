@@ -33,6 +33,8 @@ export function useGoals() {
   return {
     goals: query.data ?? [],
     isPending: query.isPending,
+    /** Waiting for a signal: offline with nothing saved, so it may stay pending a long time. */
+    isPaused: query.isPaused,
     isError: query.isError,
     hasData: query.data !== undefined,
     refetch: query.refetch,
