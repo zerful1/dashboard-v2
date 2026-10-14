@@ -56,6 +56,15 @@ describe("WeekRows", () => {
     expect(screen.getByText(/4 weigh-ins/)).toBeInTheDocument();
   });
 
+  // Found in the browser pass: 80.52 against 80.49 read "▲ 0.0", and could go green.
+  it("shows no arrow and no colour for a change that rounds to 0.0", () => {
+    const flat = review({ previous: numbers({ weight: { average: 78.58, weighIns: 3 } }) });
+    render(<WeekRows review={flat} goalKg={80} />);
+    const change = screen.getByText("0.0").closest("[data-tone]");
+    expect(change).toHaveAttribute("data-tone", "neutral");
+    expect(change).not.toHaveTextContent(/[▲▼]/);
+  });
+
   it("says there were no weigh-ins", () => {
     render(<WeekRows review={review({ current: numbers({ weight: { average: null, weighIns: 0 } }) })} goalKg={null} />);
     expect(screen.getByText("No weigh-ins")).toBeInTheDocument();

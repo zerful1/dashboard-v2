@@ -42,7 +42,9 @@ export function WeekRows({ review, goalKg }: { review: WeeklyReview; goalKg: num
   const avgOver = t !== null && c.food.avgKcal !== null && c.food.avgKcal > t.calories;
   const now = c.weight.average;
   const before = p.weight.average;
-  const tone = now !== null && before !== null ? trendTone(before, now, goalKg) : null;
+  // From the change as shown: 80.52 against 80.49 reads "0.0", with no arrow and no colour.
+  const diff = now !== null && before !== null ? Math.round((now - before) * 10) / 10 : null;
+  const tone = diff === null ? null : diff === 0 ? "neutral" : trendTone(before!, now!, goalKg);
 
   return (
     <div>
@@ -87,8 +89,8 @@ export function WeekRows({ review, goalKg }: { review: WeeklyReview; goalKg: num
             <>
               {before !== null && (
                 <span data-tone={tone ?? undefined} className={tone === "good" ? "text-good" : "text-text"}>
-                  <span aria-hidden className="mr-1">{now < before ? "▼" : now > before ? "▲" : ""}</span>
-                  {signed(now - before, 1)}
+                  {diff !== 0 && <span aria-hidden className="mr-1">{diff! < 0 ? "▼" : "▲"}</span>}
+                  {signed(diff!, 1)}
                 </span>
               )}
               {before !== null && " · "}
