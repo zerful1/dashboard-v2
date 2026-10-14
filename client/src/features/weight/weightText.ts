@@ -1,4 +1,4 @@
-import { PROJECTION_RULES, projectGoal, shiftISO, trendTone, type Goal, type Projection, type TrendFit } from "@dashboard/shared";
+import { PROJECTION_RULES, projectGoal, shiftISO, trendTone, weightGoalReached, type Goal, type Projection, type TrendFit } from "@dashboard/shared";
 import { dayMonth, signed } from "@/features/insights/format";
 
 export type RateLine =
@@ -9,16 +9,19 @@ export type RateLine =
 /**
  * The rate as Weight and Home word it (redesign part 5, §3): Insights' own fit,
  * "flat" under its own threshold, and green only toward the goal (trendTone,
- * from where the line stood a week ago to where it stands today).
+ * from where the line stood a week ago to where it stands today). Once the goal
+ * is reached, carrying on is not progress (§9): neutral, by the same rule that
+ * makes the goal line say "reached".
  */
-export function rateLine(fit: TrendFit, goalKg: number | null): RateLine {
+export function rateLine(fit: TrendFit, goal: Pick<Goal, "target_kg" | "start_kg"> | null): RateLine {
   if (fit.status === "not-enough-data") return { kind: "none", have: fit.have, need: fit.need };
   if (Math.abs(fit.ratePerWeek) < PROJECTION_RULES.weight.flatPerWeek) return { kind: "flat" };
+  const reached = goal !== null && weightGoalReached(goal, fit.current);
   return {
     kind: "rate",
     arrow: fit.ratePerWeek < 0 ? "▼" : "▲",
     text: `${signed(fit.ratePerWeek, 1)} kg a week`,
-    tone: trendTone(fit.current - fit.ratePerWeek, fit.current, goalKg),
+    tone: reached ? "neutral" : trendTone(fit.current - fit.ratePerWeek, fit.current, goal?.target_kg ?? null),
   };
 }
 

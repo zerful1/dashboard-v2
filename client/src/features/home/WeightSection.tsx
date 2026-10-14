@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import type { Goal } from "@dashboard/shared";
 import { Card } from "@/components/ui/Card";
 import type { WeightSummary } from "@/features/weight/deriveWeight";
 import { WeightSparkline } from "@/features/weight/WeightChart";
@@ -6,7 +7,8 @@ import { rateLine } from "@/features/weight/weightText";
 
 export interface HomeWeight {
   summary: WeightSummary;
-  goalKg: number | null;
+  /** The weight goal: the rate is green toward it, and neutral once it is reached. */
+  goal: Pick<Goal, "target_kg" | "start_kg"> | null;
   isError: boolean;
 }
 
@@ -23,9 +25,9 @@ export function WeightSection({ weight }: { weight: HomeWeight }) {
       </Card>
     );
   }
-  const { summary, goalKg } = weight;
+  const { summary, goal } = weight;
   if (summary.latest === null) return null;
-  const rate = rateLine(summary.fit, goalKg);
+  const rate = rateLine(summary.fit, goal);
 
   return (
     <Link to="/weight" className="block border-t border-raised py-4">
