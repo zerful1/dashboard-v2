@@ -144,6 +144,9 @@ describe("GoalsSection", () => {
     await userEvent.type(screen.getByLabelText("Target weight (kg)"), "74.5");
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(calls).toContainEqual({ key: "PUT /api/goals/weight", body: { target_kg: 74.5 } });
+    // Wait for the save to finish (it clears the field), or a sheet that closes
+    // on success would still be open when this looks.
+    await waitFor(() => expect(screen.getByLabelText("Target weight (kg)")).toHaveValue(""));
     expect(screen.getByRole("dialog", { name: "Goals" })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Done" }));
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Goals" })).toBeNull());
