@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { RecordEvent, WeekNumbers, WeeklyReview } from "@dashboard/shared";
+import { shiftISO, type Goal, type RecordEvent, type WeekNumbers, type WeeklyReview } from "@dashboard/shared";
 import { InsightsPage } from "../src/features/insights/InsightsPage";
 import * as apiModule from "../src/lib/api";
 import { ApiError } from "../src/lib/api";
@@ -12,7 +12,7 @@ vi.mock("@/auth/AuthProvider", () => ({
   useAuth: () => ({ user: { id: "u1", email: "a@b.com" }, loading: false }),
 }));
 
-/** Saturday 3 Oct 2026 at local noon: the last full week is 21–27 Sep. */
+/** Saturday 3 Oct 2026 at local noon: the last full week is 21–27 Sep; this week began on 28 Sep. */
 function freeze() {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(2026, 9, 3, 12));
@@ -27,22 +27,22 @@ const numbers = (over: Partial<WeekNumbers> = {}): WeekNumbers => ({
 const review = (week: string, over: Partial<WeeklyReview> = {}): WeeklyReview => ({
   week, current: numbers(), trainingTarget: 5, foodTarget: { calories: 2402, proteinG: 180 },
   previous: numbers({ training: { days: 3, sets: 30, volume: 8600 }, weight: { average: 77.8, weighIns: 3 } }),
+  days: Array.from({ length: 7 }, (_, i) => ({ date: shiftISO(week, i), trained: i < 4, kcal: 2310, weightKg: 78.6 })),
   ...over,
 });
-const record = (i: number): RecordEvent => ({
-  date: `2026-09-${String(28 - (i % 28)).padStart(2, "0")}`, exercise_name: `Lift ${i}`,
-  heaviest: { weightKg: 60 + i, reps: 8, previousKg: 59 + i },
+const rec = (date: string, name: string, kg = 105, prev = 100): RecordEvent => ({
+  date, exercise_name: name, heaviest: { weightKg: kg, reps: 5, previousKg: prev },
 });
+const WEIGHT_GOAL: Goal = { id: "g", user_id: "u1", kind: "weight", exercise_name: null, target_kg: 80, start_kg: 76, created_at: "" };
 
-interface Routes { review?: (week: string) => unknown; records?: () => unknown }
+interface Routes { review?: (week: string) => unknown; records?: () => unknown; goals?: () => unknown }
 /** By path, longest prefix first. */
 function mockApi(r: Routes = {}) {
   const calls: string[] = [];
   vi.spyOn(apiModule, "api").mockImplementation(async (path: string) => {
     calls.push(path);
-    // The Goals section's reads (Part 2): empty, so these tests stay about the review and records.
     if (path.startsWith("/api/insights/projections")) return [] as never;
-    if (path.startsWith("/api/goals")) return [] as never;
+    if (path.startsWith("/api/goals")) return (r.goals ? r.goals() : []) as never;
     if (path.startsWith("/api/workouts/exercise-names")) return [] as never;
     if (path.startsWith("/api/insights/review")) {
       const week = new URL(path, "http://x").searchParams.get("week")!;
@@ -65,37 +65,24 @@ function renderPage(client = new QueryClient({ defaultOptions: { queries: { retr
   return client;
 }
 
+const rowsOf = (name: string) => within(screen.getByRole("list", { name })).getAllByRole("listitem");
+
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
 });
 
-describe("Insights weekly review", () => {
-  it("opens on the last full week, with each line against the week before", async () => {
+describe("Insights: the week", () => {
+  it("opens on the last full week, as three rows", async () => {
     freeze();
     const calls = mockApi();
     renderPage();
     expect(await screen.findByText("21–27 Sep")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Insights" })).toBeInTheDocument();
+    expect(screen.getByText("Last week")).toBeInTheDocument();
     expect(calls).toContain("/api/insights/review?week=2026-09-21");
-    expect(await screen.findByText("4 of 5 days · 38 sets · 9,120 kg (+6%)")).toBeInTheDocument();
-    expect(screen.getByText("3 days logged · avg 2,310 kcal of 2,402 · 168 g protein of 180")).toBeInTheDocument();
-    expect(screen.getByText("avg 78.6 kg (+0.8)")).toBeInTheDocument();
-  });
-
-  // Found in the browser: "1 sets".
-  it("says one set and one day in the singular", async () => {
-    freeze();
-    mockApi({ review: (w) => review(w, { current: numbers({ training: { days: 1, sets: 1, volume: 300 } }) }) });
-    renderPage();
-    expect(await screen.findByText("1 of 5 days · 1 set · 300 kg (−97%)")).toBeInTheDocument();
-  });
-
-  it("says no food was logged instead of showing zero", async () => {
-    freeze();
-    mockApi({ review: (w) => review(w, { current: numbers({ food: { daysLogged: 0, avgKcal: null, avgProteinG: null } }) }) });
-    renderPage();
-    expect(await screen.findByText("No food logged")).toBeInTheDocument();
-    expect(screen.queryByText(/0 kcal/)).toBeNull();
+    expect(await screen.findByText("38 sets · 9,120 kg (+6%)")).toBeInTheDocument();
+    expect(screen.getByText("of 2,402 · 168 of 180 g protein · 3 days logged")).toBeInTheDocument();
   });
 
   it("steps back a week, and cannot step past the last full week", async () => {
@@ -106,12 +93,11 @@ describe("Insights weekly review", () => {
     expect(next).toBeDisabled();
     await userEvent.click(screen.getByRole("button", { name: "Previous week" }));
     expect(await screen.findByText("14–20 Sep")).toBeInTheDocument();
+    expect(screen.getByText("Week")).toBeInTheDocument();
     expect(calls).toContain("/api/insights/review?week=2026-09-14");
     expect(screen.getByRole("button", { name: "Next week" })).toBeEnabled();
   });
 
-  // Review finding: left open over Sunday night, the review must move on to
-  // the new last full week (the Food page's rule: follow the clock until picked).
   it("moves on to the new last full week when the app wakes on Monday", async () => {
     freeze();
     const calls = mockApi();
@@ -140,6 +126,20 @@ describe("Insights weekly review", () => {
     expect(calls).not.toContain("/api/insights/review?week=2026-09-28");
   });
 
+  // Review focus 1.
+  it("waits for the goals before colouring the weight change", async () => {
+    freeze();
+    let release!: (g: Goal[]) => void;
+    mockApi({ goals: () => new Promise<Goal[]>((r) => (release = r)) });
+    const client = renderPage();
+    // The week has arrived; only the goals are outstanding.
+    await waitFor(() => expect(client.getQueryData(["insightsReview", "u1", "2026-09-21"])).toBeDefined());
+    expect(screen.queryByText("38 sets · 9,120 kg (+6%)")).toBeNull();
+    expect(screen.queryByText("+0.8")).toBeNull();
+    await act(async () => release([WEIGHT_GOAL]));
+    expect((await screen.findByText("+0.8")).closest("[data-tone]")).toHaveAttribute("data-tone", "good");
+  });
+
   it("shows an error card with Retry when the week cannot load", async () => {
     freeze();
     let fail = true;
@@ -148,73 +148,91 @@ describe("Insights weekly review", () => {
     expect(await screen.findByText("Could not load this week")).toBeInTheDocument();
     fail = false;
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
-    expect(await screen.findByText("4 of 5 days · 38 sets · 9,120 kg (+6%)")).toBeInTheDocument();
+    expect(await screen.findByText("38 sets · 9,120 kg (+6%)")).toBeInTheDocument();
   });
 
-  // Review focus 5.
-  it("keeps the review on a failed refresh", async () => {
+  it("keeps the week on a failed refresh", async () => {
     freeze();
     let fail = false;
     mockApi({ review: (w) => { if (fail) throw new ApiError(500, "Server error"); return review(w); } });
     const client = renderPage();
-    await screen.findByText("4 of 5 days · 38 sets · 9,120 kg (+6%)");
+    await screen.findByText("38 sets · 9,120 kg (+6%)");
     fail = true;
     await act(() => client.refetchQueries({ queryKey: ["insightsReview"] }));
-    // Wait for the failure to reach the screen: TanStack notifies React on a
-    // later tick, so asserting straight after act proves nothing.
     expect(await screen.findByText("Couldn't refresh — showing saved data.")).toBeInTheDocument();
-    expect(screen.getByText("4 of 5 days · 38 sets · 9,120 kg (+6%)")).toBeInTheDocument();
-    expect(screen.queryByText("Could not load this week")).toBeNull();
+    expect(screen.getByText("38 sets · 9,120 kg (+6%)")).toBeInTheDocument();
   });
 });
 
-describe("Insights records", () => {
-  it("shows 20 records, then 20 more on Show more", async () => {
+describe("Insights: records", () => {
+  it("shows the records set in the week shown, biggest jump first", async () => {
     freeze();
-    mockApi({ records: () => Array.from({ length: 45 }, (_, i) => record(i)) });
+    mockApi({ records: () => [rec("2026-09-24", "Bench", 62.5, 60), rec("2026-09-22", "Squat", 105, 100), rec("2026-09-26", "Curl", 15, 14)] });
     renderPage();
-    await waitFor(() => expect(screen.getAllByRole("listitem")).toHaveLength(20));
-    await userEvent.click(screen.getByRole("button", { name: "Show more" }));
-    expect(screen.getAllByRole("listitem")).toHaveLength(40);
+    await screen.findByRole("list", { name: "Records that week" });
+    expect(rowsOf("Records that week").map((r) => r.textContent)).toEqual([
+      expect.stringContaining("Curl"), expect.stringContaining("Squat"), expect.stringContaining("Bench"),
+    ]);
   });
 
-  it("reads a record as date, exercise and what it beat", async () => {
+  it("moves the records with the week, and keeps this week's where they are", async () => {
     freeze();
-    mockApi({ records: () => [{ date: "2026-08-24", exercise_name: "Lat Pulldown",
-      heaviest: { weightKg: 66, reps: 8, previousKg: 61.3 }, e1rm: { valueKg: 82.5, previousKg: 79 } }] });
+    mockApi({ records: () => [rec("2026-09-24", "Bench"), rec("2026-09-16", "Row"), rec("2026-09-30", "Press")] });
     renderPage();
-    expect(await screen.findByText("heaviest 66 kg (was 61.3) · est. 1RM 82.5 kg (was 79)")).toBeInTheDocument();
-    expect(screen.getByText("Lat Pulldown")).toBeInTheDocument();
+    expect((await screen.findByRole("list", { name: "This week so far" }))).toHaveTextContent("Press");
+    expect(rowsOf("Records that week")[0]).toHaveTextContent("Bench");
+    await userEvent.click(screen.getByRole("button", { name: "Previous week" }));
+    await screen.findByText("14–20 Sep");
+    expect(rowsOf("Records that week")[0]).toHaveTextContent("Row");
+    expect(screen.getByRole("list", { name: "This week so far" })).toHaveTextContent("Press");
+  });
+
+  // Review focus 5.
+  it("shows 5, then the rest on N more; changing the week closes it", async () => {
+    freeze();
+    mockApi({ records: () => Array.from({ length: 8 }, (_, i) => rec("2026-09-23", `Lift ${i}`, 100 + i + 1)) });
+    renderPage();
+    await screen.findByRole("list", { name: "Records that week" });
+    expect(rowsOf("Records that week")).toHaveLength(5);
+    await userEvent.click(screen.getByRole("button", { name: "3 more" }));
+    expect(rowsOf("Records that week")).toHaveLength(8);
+    await userEvent.click(screen.getByRole("button", { name: "Previous week" }));
+    await screen.findByText("14–20 Sep");
+    await userEvent.click(screen.getByRole("button", { name: "Next week" }));
+    await screen.findByText("21–27 Sep");
+    expect(rowsOf("Records that week")).toHaveLength(5);
+  });
+
+  it("says when a week, or this week, has none", async () => {
+    freeze();
+    mockApi();
+    renderPage();
+    expect(await screen.findByText("No records that week.")).toBeInTheDocument();
+    expect(screen.getByText("None yet this week.")).toBeInTheDocument();
   });
 
   it("keeps the records on a failed refresh", async () => {
     freeze();
     let fail = false;
-    mockApi({ records: () => { if (fail) throw new ApiError(500, "Server error"); return [record(1)]; } });
+    mockApi({ records: () => { if (fail) throw new ApiError(500, "Server error"); return [rec("2026-09-24", "Bench")]; } });
     const client = renderPage();
-    await screen.findByText("Lift 1");
+    await screen.findByRole("list", { name: "Records that week" });
     fail = true;
     await act(() => client.refetchQueries({ queryKey: ["insightsRecords"] }));
     expect(await screen.findByText("Couldn't refresh — showing saved data.")).toBeInTheDocument();
-    expect(screen.getByText("Lift 1")).toBeInTheDocument();
-    expect(screen.queryByText("Could not load records")).toBeNull();
+    expect(screen.getByRole("list", { name: "Records that week" })).toHaveTextContent("Bench");
+    expect(screen.queryByText("Couldn't load records")).toBeNull();
   });
 
-  it("dates a record from another year with its year", async () => {
+  it("shows the records' failure once, with Retry, and hides this week's block", async () => {
     freeze();
-    mockApi({ records: () => [
-      { date: "2026-09-24", exercise_name: "Bench Press", heaviest: { weightKg: 62.5, reps: 5, previousKg: 60 } },
-      { date: "2025-09-30", exercise_name: "Squat", heaviest: { weightKg: 100, reps: 5, previousKg: 95 } },
-    ] });
+    let fail = true;
+    mockApi({ records: () => { if (fail) throw new ApiError(500, "Server error"); return [rec("2026-09-24", "Bench")]; } });
     renderPage();
-    expect(await screen.findByText("24 Sep")).toBeInTheDocument();
-    expect(screen.getByText("30 Sep 2025")).toBeInTheDocument();
-  });
-
-  it("explains an empty feed", async () => {
-    freeze();
-    mockApi();
-    renderPage();
-    expect(await screen.findByText("No records yet. They appear when a lift beats its best.")).toBeInTheDocument();
+    expect(await screen.findByText("Couldn't load records")).toBeInTheDocument();
+    expect(screen.queryByText("This week so far")).toBeNull();
+    fail = false;
+    await userEvent.click(screen.getAllByRole("button", { name: "Retry" }).at(-1)!);
+    expect(await screen.findByRole("list", { name: "Records that week" })).toHaveTextContent("Bench");
   });
 });
