@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Goal, Projection } from "@dashboard/shared";
@@ -38,6 +38,11 @@ function renderSection() {
       <GoalsSection today="2026-09-30" historyNames={HISTORY} />
     </QueryClientProvider>,
   );
+}
+
+/** The forms live in the sheet now: open it first. */
+async function openSheet() {
+  await userEvent.click(await screen.findByRole("button", { name: /^(Change|Set goals)$/ }));
 }
 
 afterEach(() => vi.restoreAllMocks());
@@ -80,6 +85,7 @@ describe("GoalsSection", () => {
   it("saves a target weight", async () => {
     const calls = mockApi([], []);
     renderSection();
+    await openSheet();
     await userEvent.type(await screen.findByLabelText("Target weight (kg)"), "74.5");
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(calls).toContainEqual({ key: "PUT /api/goals/weight", body: { target_kg: 74.5 } });
@@ -88,6 +94,7 @@ describe("GoalsSection", () => {
   it("adds a lift goal in the history's spelling", async () => {
     const calls = mockApi([], []);
     renderSection();
+    await openSheet();
     await userEvent.type(await screen.findByLabelText("Lift"), "lat pulldown");
     await userEvent.type(screen.getByLabelText("Target (kg)"), "75");
     await userEvent.click(screen.getByRole("button", { name: "Add" }));
@@ -99,7 +106,8 @@ describe("GoalsSection", () => {
     const lifts = ["A", "B", "C", "D", "E"].map((n, i) => goal({ id: `l${i}`, kind: "lift", exercise_name: n }));
     mockApi(lifts, []);
     renderSection();
-    expect(await screen.findByText("E → 75 kg")).toBeInTheDocument();
+    await openSheet();
+    expect((await screen.findAllByText("E → 75 kg")).length).toBeGreaterThan(0);
     expect(screen.queryByLabelText("Lift")).toBeNull();
     expect(screen.getByText("5 of 5 lift goals")).toBeInTheDocument();
   });
@@ -107,7 +115,37 @@ describe("GoalsSection", () => {
   it("removes a lift goal", async () => {
     const calls = mockApi([goal({ id: "g2", kind: "lift", exercise_name: "Lat Pulldown" })], []);
     renderSection();
+    await openSheet();
     await userEvent.click(await screen.findByRole("button", { name: "Remove Lat Pulldown goal" }));
     expect(calls.map((c) => c.key)).toContain("DELETE /api/goals/g2");
+  });
+
+  it("keeps the forms in a sheet, behind Change", async () => {
+    mockApi([goal({})], []);
+    renderSection();
+    expect(await screen.findByText("Weight → 75 kg")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Target weight (kg)")).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "Change" }));
+    expect(screen.getByRole("dialog", { name: "Goals" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Target weight (kg)")).toBeInTheDocument();
+  });
+
+  it("says there are no goals yet, and offers to set them", async () => {
+    mockApi([], []);
+    renderSection();
+    expect(await screen.findByText("No goals yet.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Set goals" })).toBeInTheDocument();
+  });
+
+  it("stays open after a save, and closes on Done", async () => {
+    const calls = mockApi([], []);
+    renderSection();
+    await openSheet();
+    await userEvent.type(screen.getByLabelText("Target weight (kg)"), "74.5");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(calls).toContainEqual({ key: "PUT /api/goals/weight", body: { target_kg: 74.5 } });
+    expect(screen.getByRole("dialog", { name: "Goals" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Done" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Goals" })).toBeNull());
   });
 });
