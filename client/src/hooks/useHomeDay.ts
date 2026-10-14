@@ -119,7 +119,7 @@ export function useHomeDay(today: string) {
     },
     weight: {
       summary: weight,
-      goalKg: goals.data?.find((g) => g.kind === "weight")?.target_kg ?? null,
+      goal: goals.data?.find((g) => g.kind === "weight") ?? null,
       isError: weightsFailed,
       saveWeight: weights.saveWeight,
     },

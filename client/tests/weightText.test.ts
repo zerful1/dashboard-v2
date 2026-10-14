@@ -4,23 +4,30 @@ import { goalLine, latestText, rateLine } from "../src/features/weight/weightTex
 
 const TODAY = "2026-10-14"; // a Wednesday
 const fit = (ratePerWeek: number, current = 82): TrendFit => ({ status: "fit", ratePerWeek, current, slope: ratePerWeek / 7 });
+const goal = (target_kg: number, start_kg: number | null = 84) => ({ id: "g", kind: "weight" as const, target_kg, start_kg });
 
 describe("rateLine", () => {
   it("words a falling rate, green toward a lower goal", () => {
-    expect(rateLine(fit(-0.4), 78)).toEqual({ kind: "rate", arrow: "▼", text: "−0.4 kg a week", tone: "good" });
+    expect(rateLine(fit(-0.4), goal(78))).toEqual({ kind: "rate", arrow: "▼", text: "−0.4 kg a week", tone: "good" });
   });
   it("leaves a rate away from the goal neutral, never amber or red", () => {
-    expect(rateLine(fit(0.4), 78)).toMatchObject({ arrow: "▲", text: "+0.4 kg a week", tone: "neutral" });
+    expect(rateLine(fit(0.4), goal(78))).toMatchObject({ arrow: "▲", text: "+0.4 kg a week", tone: "neutral" });
+  });
+  // Spec §9: past a reached goal, carrying on is not progress. The goal line
+  // says "reached" by the same rule (weightGoalReached), so the two agree.
+  it("goes neutral once the goal is reached", () => {
+    expect(rateLine(fit(-0.5, 77.9), goal(78))).toMatchObject({ kind: "rate", tone: "neutral" });
+    expect(rateLine(fit(-0.5, 78.1), goal(78))).toMatchObject({ tone: "good" });
   });
   it("is neutral without a goal", () => {
     expect(rateLine(fit(-0.4), null)).toMatchObject({ tone: "neutral" });
   });
   it("calls under 0.05 kg a week flat, the projection's own threshold", () => {
-    expect(rateLine(fit(-0.04), 78)).toEqual({ kind: "flat" });
-    expect(rateLine(fit(-0.05), 78)).toMatchObject({ kind: "rate" });
+    expect(rateLine(fit(-0.04), goal(78))).toEqual({ kind: "flat" });
+    expect(rateLine(fit(-0.05), goal(78))).toMatchObject({ kind: "rate" });
   });
   it("says how many weigh-ins a rate still needs", () => {
-    expect(rateLine({ status: "not-enough-data", have: 9, need: 14 }, 78)).toEqual({ kind: "none", have: 9, need: 14 });
+    expect(rateLine({ status: "not-enough-data", have: 9, need: 14 }, goal(78))).toEqual({ kind: "none", have: 9, need: 14 });
   });
 });
 
@@ -36,8 +43,6 @@ describe("latestText", () => {
 /** n daily weigh-ins ending today, on an exact line at `perWeek` that ends at `endKg`. */
 const daily = (n: number, endKg: number, perWeek: number) =>
   Array.from({ length: n }, (_, i) => ({ date: shiftISO(TODAY, -(n - 1 - i)), kg: endKg - (perWeek * (n - 1 - i)) / 7 }));
-const goal = (target_kg: number, start_kg: number | null = 84) => ({ id: "g", kind: "weight" as const, target_kg, start_kg });
-
 describe("goalLine", () => {
   it("names the Monday the trend reaches the goal", () => {
     // From 80 at -0.5 kg a week, 79 is 14 days away: Wed 28 Oct, whose Monday is 26 Oct.

@@ -34,6 +34,13 @@ describe("WeightHeadline", () => {
     expect(rate).toHaveClass("text-good");
   });
 
+  it("turns the rate white once the goal is reached, beside the goal line saying so", () => {
+    const { container } = show(daily(14, 77.9, -0.5), { goal: goal(78) });
+    expect(screen.getByText("Goal 78 kg · reached")).toBeInTheDocument();
+    expect(screen.getByText("−0.5 kg a week")).toBeInTheDocument();
+    expect(container.querySelector(".text-good")).toBeNull();
+  });
+
   it("leaves the rate white without a goal", () => {
     const { container } = show(daily(14, 80, -0.5));
     expect(container.querySelector(".text-good, .text-caution, .text-negative")).toBeNull();

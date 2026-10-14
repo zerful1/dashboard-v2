@@ -57,6 +57,17 @@ export function trendFit(kind: Goal['kind'], points: ProjectionPoint[], today: s
 }
 
 /**
+ * Whether a weight goal counts as reached with the trend at `current`: at or
+ * past the target, heading from where the goal started - or, with no starting
+ * weigh-in yet, from where the trend is now. One rule, so the goal line saying
+ * "reached" and the rate no longer reading as progress always agree.
+ */
+export function weightGoalReached(goal: Pick<Goal, 'target_kg' | 'start_kg'>, current: number): boolean {
+  const direction = Math.sign(goal.target_kg - (goal.start_kg ?? current))
+  return direction === 0 || (direction < 0 ? current <= goal.target_kg : current >= goal.target_kg)
+}
+
+/**
  * When a goal is reached at the current rate - or, honestly, that it cannot
  * be said. A confidently wrong date is worse than no date.
  */
@@ -84,7 +95,7 @@ export function projectGoal(
   // points from where it started to the target; with no starting weigh-in yet,
   // from where the trend is now (the first weigh-in after it fills the start).
   const direction = goal.kind === 'lift' ? 1 : Math.sign(target - (goal.start_kg ?? current))
-  const reached = goal.kind === 'weight' && (direction === 0 || (direction < 0 ? current <= target : current >= target))
+  const reached = goal.kind === 'weight' && weightGoalReached(goal, current)
   if (reached) return { goalId: goal.id, status: 'reached', current }
   if (Math.abs(ratePerWeek) < rule.flatPerWeek) return { goalId: goal.id, status: 'flat', ratePerWeek, current }
   if (Math.sign(ratePerWeek) !== direction) return { goalId: goal.id, status: 'away', ratePerWeek, current }

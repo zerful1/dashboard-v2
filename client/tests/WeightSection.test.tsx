@@ -19,10 +19,11 @@ const fit = (ratePerWeek: number): TrendFit => ({ status: "fit", ratePerWeek, cu
 const summary = (over: Partial<WeightSummary>): WeightSummary => ({
   latest: 82, latestDate: "2026-10-06", average7: 82.2, fit: fit(-0.4), points: [], line: [], ...over,
 });
-function show(over: Partial<WeightSummary>, goalKg: number | null = 78) {
+const GOAL = { target_kg: 78, start_kg: 84 };
+function show(over: Partial<WeightSummary>, goal: { target_kg: number; start_kg: number | null } | null = GOAL) {
   return render(
     <MemoryRouter>
-      <WeightSection weight={{ summary: summary(over), goalKg, isError: false }} />
+      <WeightSection weight={{ summary: summary(over), goal, isError: false }} />
     </MemoryRouter>,
   );
 }
@@ -39,6 +40,12 @@ describe("Home's weight section (redesign part 5, §6)", () => {
   it("leaves the rate muted without a goal, and never amber or red", () => {
     const { container } = show({}, null);
     expect(container.querySelector(".text-good, .text-caution, .text-negative")).toBeNull();
+  });
+
+  it("leaves the rate muted once the goal is reached, as Weight does", () => {
+    const { container } = show({ fit: { status: "fit", ratePerWeek: -0.5, current: 77.9, slope: -0.5 / 7 } });
+    expect(screen.getByText("−0.5 kg a week")).toBeInTheDocument();
+    expect(container.querySelector(".text-good")).toBeNull();
   });
 
   it("says Flat under 0.05 kg a week", () => {

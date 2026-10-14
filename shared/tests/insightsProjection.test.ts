@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { projectGoal, trendFit, type ProjectionPoint } from '../src/domain/insights/projection'
+import { projectGoal, trendFit, weightGoalReached, type ProjectionPoint } from '../src/domain/insights/projection'
 import { shiftISO } from '../src/domain/date'
 
 const TODAY = '2026-09-30' // a Wednesday: +14 and +15 days fall in the same week
@@ -107,5 +107,22 @@ describe('trendFit', () => {
     const p = projectGoal(weightGoal(75), points, TODAY)
     const fit = trendFit('weight', points, TODAY)
     expect(p.status === 'projected' && fit.status === 'fit' && p.ratePerWeek === fit.ratePerWeek).toBe(true)
+  })
+})
+
+// The one rule for "reached": the goal line says it and the rate stops being
+// green by the same test (redesign part 5, §9).
+describe('weightGoalReached', () => {
+  it('is reached at or past the target, in the direction from where it started', () => {
+    expect(weightGoalReached({ target_kg: 78, start_kg: 84 }, 78)).toBe(true)
+    expect(weightGoalReached({ target_kg: 78, start_kg: 84 }, 77.9)).toBe(true)
+    expect(weightGoalReached({ target_kg: 78, start_kg: 84 }, 78.1)).toBe(false)
+    expect(weightGoalReached({ target_kg: 85, start_kg: 80 }, 85.2)).toBe(true)
+    expect(weightGoalReached({ target_kg: 85, start_kg: 80 }, 84.9)).toBe(false)
+  })
+
+  it('with no start, takes the direction from where the weight is now', () => {
+    expect(weightGoalReached({ target_kg: 78, start_kg: null }, 79)).toBe(false)
+    expect(weightGoalReached({ target_kg: 78, start_kg: null }, 78)).toBe(true)
   })
 })

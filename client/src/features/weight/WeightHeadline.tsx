@@ -20,7 +20,7 @@ interface Props {
  */
 export function WeightHeadline({ summary, today, goal, goalsFailed }: Props) {
   const safe = useMotionSafe();
-  const rate = rateLine(summary.fit, goal?.target_kg ?? null);
+  const rate = rateLine(summary.fit, goal);
   const latest =
     summary.latest !== null && summary.latestDate !== null ? ` · ${latestText(summary.latest, summary.latestDate, today)}` : "";
 
