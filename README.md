@@ -1,80 +1,70 @@
-# dashboard-v2
+# Dashboard
 
-Multi-user health and life tracker — gym, nutrition, habits and media. React client,
-Express API, Postgres.
+A personal tracker for training, body weight, food and habits. Phone-first, black and white, and it keeps working offline.
 
-A rebuild of a single-user React + Supabase-client app as a proper client/server
-application with its own session-based authentication.
+**[Open the app →](https://dashboard-v2-nine-phi.vercel.app/)** "Try the demo" needs no account.
 
-## Setup
+<p align="center">
+  <img src="docs/screenshots/home.png" width="250" alt="Home: today at a glance">
+  <img src="docs/screenshots/weight.png" width="250" alt="Weight: the 7-day average, the rate and the goal">
+  <img src="docs/screenshots/food.png" width="250" alt="Food: a day against its targets">
+</p>
+
+## What it does
+
+- **Home:** today at a glance, with the weigh-in, the workout, food left and habits.
+- **Gym:** log sets beside last time, see each lift as moving, stalled or going back, and browse 12 weeks of history.
+- **Weight:** the 7-day average, the rate per week and when you'll reach your goal, by week or by month.
+- **Food:** a diary against your targets, barcode scanning, and the last 7 days at a glance.
+- **Insights:** a weekly review, personal records and goal projections.
+- **Habits:** daily ticks from Home.
+
+It installs to the home screen, reads offline from a saved cache, and exports everything you own as one JSON file.
+
+## Stack
+
+React 19 · RSBuild · Tailwind 4 · TanStack Query 5 · Express 4 · Postgres 17 (Supabase) · Vercel
+
+## Run it locally
+
+You need Node 20+ and a Postgres database. Locally the app uses the `app_dev` schema.
 
 ```bash
 npm install
-cp .env.example .env    # fill in the database password and a session secret
+cp .env.example .env     # database URLs, DB_SCHEMA=app_dev, a session secret
 npm run migrate
-npm run dev             # API on :3001
+npm run dev:api          # API on :3001
+npm run dev:web          # app on :5173, proxying /api to the API
 ```
 
-Generate a session secret with:
+- **Sign-ups are closed by default.** Set `SIGNUP_ALLOWLIST=*` to register, or use **Try the demo**.
+- **Sample history:** `npm run seed-dev -w @dashboard/server -- --email <your address> --reset` fills an account you've registered.
+- **A session secret:** `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
+## Scripts
 
-## Commands
-
-| Command | Purpose |
+| Command | What it does |
 |---|---|
-| `npm run dev` | Start the API on :3001 |
-| `npm test` | Run every workspace's tests |
-| `npm run typecheck` | Typecheck all workspaces plus the Vercel entry point |
-| `npm run build` | Build the shared package |
+| `npm run dev:api` / `npm run dev:web` | The API on :3001, the app on :5173 |
+| `npm test` | Every workspace's tests (the server's need the `app_test` schema) |
+| `npm run typecheck` | Typecheck every workspace |
+| `npm run build` | Build the shared package and the app |
 | `npm run migrate` | Apply pending migrations to `$DB_SCHEMA` |
 
 ## Layout
 
 ```
-shared/   Pure domain logic and types. No I/O, imported by both halves.
-server/   Express API.
-api/      Vercel entry point — exports the Express app.
+shared/   domain logic and types, no I/O, used by both sides
+server/   Express API: routes parse, repositories own the SQL, services wrap email and hashing
+client/   the React app
+api/      Vercel entry point, exporting the Express app
 ```
 
-`server/` splits three ways, and the split is load-bearing:
+## How it's built
 
-- **`routes/`** parse requests and format responses. They never write SQL.
-- **`repositories/`** own all SQL. Every function takes `userId` as its first
-  parameter and scopes its `WHERE` by it.
-- **`services/`** wrap external dependencies — password hashing, email.
+- **Ownership in code, not row-level security.** Every repository function takes the user id first and filters on it. Every repository has a test proving one user can't reach another's rows.
+- **Sessions, not tokens.** An httpOnly cookie is backed by Postgres, so signing out really ends the session. Passwords are argon2id, and login takes the same time whether or not the email exists.
+- **Dates are strings.** Every date stays `YYYY-MM-DD` from the database to the screen, so a clock change never shifts a day.
+- **Offline without caching the API.** The service worker caches only the built app. Saved data comes from a per-user query cache, cleared at every sign-in and sign-out.
 
-## Authorization
-
-The previous version relied on Postgres row-level security. This one enforces
-ownership in application code, so the rule is structural rather than remembered:
-
-- Repository functions cannot be called without a user scope.
-- `req.userId` is assigned in exactly one place (`requireAuth`) and read only from
-  the session — never from a body, param or query string.
-- `requireAuth` is mounted at router level, so new routes are protected by default.
-- Every repository has a test asserting one user cannot read or write another's rows.
-
-## Database
-
-One Supabase Postgres, two connection paths:
-
-| | Port | Why |
-|---|---|---|
-| Runtime | 6543 (transaction pooler) | Connection state does not persist, so all queries are schema-qualified via `T` |
-| Migrations | 5432 (session pooler) | Holds one backend, so `SET search_path` persists and DDL stays unqualified |
-
-The application lives in the `app` schema. Tests use `app_test`, and
-`server/tests/setup.ts` refuses to run against anything else.
-
-## Sessions
-
-`express-session` with an httpOnly `SameSite=Lax` cookie, stored in Postgres via
-`connect-pg-simple`. Sessions rather than JWT because logout genuinely invalidates —
-the server row is deleted — and there is no token for XSS to steal.
-
-Passwords are argon2id at OWASP's recommended parameters. Login always performs a
-verify, against a dummy hash when the email is unknown, so response time does not
-reveal which addresses have accounts.
+The conventions, and the reasons behind them, are in [`CLAUDE.md`](CLAUDE.md).
