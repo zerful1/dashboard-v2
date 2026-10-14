@@ -76,7 +76,7 @@ export function WeekRows({ review, goalKg }: { review: WeeklyReview; goalKg: num
                 `${plural(c.food.daysLogged, "day", "days")} logged`,
               ].filter(Boolean).join(" · ")
         }
-        spoken={over.length ? `Over target on ${days(over)}` : c.food.daysLogged ? "No day over target" : ""}
+        spoken={over.length ? `Over target on ${days(over)}` : t && c.food.daysLogged ? "No day over target" : ""}
         strip={<FoodBars days={review.days} target={t?.calories ?? null} />}
       />
       <Row

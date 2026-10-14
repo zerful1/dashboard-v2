@@ -42,6 +42,14 @@ describe("WeekRows", () => {
     expect(screen.getByText("2,500")).toHaveClass("text-caution");
   });
 
+  // Final review: with no target, "No day over target" is a false statement.
+  it("tells a screen reader nothing about targets when there is none", () => {
+    const { rerender } = render(<WeekRows review={review()} goalKg={null} />);
+    expect(screen.getByText("No day over target")).toBeInTheDocument();
+    rerender(<WeekRows review={review({ foodTarget: null })} goalKg={null} />);
+    expect(screen.queryByText("No day over target")).toBeNull();
+  });
+
   it("says no food was logged instead of showing zero", () => {
     render(<WeekRows review={review({ current: numbers({ food: { daysLogged: 0, avgKcal: null, avgProteinG: null } }) })} goalKg={null} />);
     expect(screen.getByText("No food logged")).toBeInTheDocument();
