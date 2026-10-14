@@ -2,7 +2,7 @@
 
 A personal tracker for training, body weight, food and habits. Phone-first, black and white, and it keeps working offline.
 
-**[Open the app →](https://dashboard-v2-nine-phi.vercel.app/)** "Try the demo" needs no account.
+**[Open the app](https://dashboard-v2-nine-phi.vercel.app/)** → "Try the demo" needs no account.
 
 <p align="center">
   <img src="docs/screenshots/home.png" width="250" alt="Home: today at a glance">
