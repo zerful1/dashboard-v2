@@ -23,7 +23,8 @@ export function App() {
         // new shape, which fails far from the cause.
         // v2: Profile gained the body-detail fields (nutrition, phase 1).
         // v3: WorkoutSet gained reps_left / reps_right (single-sided sets).
-        buster: "v4",
+        // v5: WeeklyReview gained days (Insights, redesign part 6).
+        buster: "v5",
         dehydrateOptions: { shouldDehydrateQuery: shouldPersistQuery },
       }}
     >

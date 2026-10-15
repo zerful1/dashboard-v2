@@ -22,6 +22,7 @@ const ALLOWED: Record<string, string> = {
   "features/nutrition/DayFigure.tsx": "the macro bars' fill: data, inside its track",
   "features/nutrition/WeekStrip.tsx": "the bars' fill (data ink) and the protein dot (a small done mark)",
   "features/weight/PeriodList.tsx": "week dots: small done marks",
+  "features/insights/WeekStrips.tsx": "days trained (small done marks) and the food bars' fill (data ink)",
 };
 
 /**

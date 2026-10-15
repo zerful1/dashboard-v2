@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { weekNumbers, weeklyReview, type ReviewInputs } from '../src/domain/insights/review'
+import { reviewDays, weekNumbers, weeklyReview, type ReviewInputs } from '../src/domain/insights/review'
 import { DEFAULT_SPLIT } from '../src/domain/splitRotation'
 import type { NutritionTarget } from '../src/types'
 
@@ -61,5 +61,38 @@ describe('weeklyReview', () => {
     expect(r.trainingTarget).toBe(5)
     expect(r.foodTarget).toEqual({ calories: 2600, proteinG: 190 })
     expect(weeklyReview(empty, '2026-09-21', DEFAULT_SPLIT, []).foodTarget).toBeNull()
+  })
+})
+
+describe('reviewDays', () => {
+  const inputs: ReviewInputs = {
+    ...empty,
+    sessionDates: ['2026-09-21', '2026-09-23', '2026-09-28'],
+    food: [
+      { date: '2026-09-22', calories: 1000, protein_g: 80 },
+      { date: '2026-09-22', calories: 1400, protein_g: 100 },
+      { date: '2026-09-20', calories: 9999, protein_g: 1 },
+    ],
+    weights: [
+      { date: '2026-09-21', weight_kg: 80.4 },
+      { date: '2026-09-27', weight_kg: 79.9 },
+      { date: '2026-09-28', weight_kg: 70 },
+    ],
+  }
+
+  it('gives the seven days from the Monday, each with its training, calories and weigh-in', () => {
+    expect(reviewDays(inputs, '2026-09-21')).toEqual([
+      { date: '2026-09-21', trained: true, kcal: null, weightKg: 80.4 },
+      { date: '2026-09-22', trained: false, kcal: 2400, weightKg: null },
+      { date: '2026-09-23', trained: true, kcal: null, weightKg: null },
+      { date: '2026-09-24', trained: false, kcal: null, weightKg: null },
+      { date: '2026-09-25', trained: false, kcal: null, weightKg: null },
+      { date: '2026-09-26', trained: false, kcal: null, weightKg: null },
+      { date: '2026-09-27', trained: false, kcal: null, weightKg: 79.9 },
+    ])
+  })
+
+  it('is what the weekly review returns as its days', () => {
+    expect(weeklyReview(inputs, '2026-09-21', DEFAULT_SPLIT, []).days).toEqual(reviewDays(inputs, '2026-09-21'))
   })
 })

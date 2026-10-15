@@ -49,6 +49,15 @@ describe("weekly review endpoint", () => {
     expect(res.body).toMatchObject({
       week: "2026-09-21",
       trainingTarget: 5,
+      days: [
+        { date: "2026-09-21", trained: false, kcal: null, weightKg: null },
+        { date: "2026-09-22", trained: true, kcal: null, weightKg: 78 },
+        { date: "2026-09-23", trained: false, kcal: 2000, weightKg: null },
+        { date: "2026-09-24", trained: true, kcal: null, weightKg: null },
+        { date: "2026-09-25", trained: false, kcal: null, weightKg: null },
+        { date: "2026-09-26", trained: false, kcal: null, weightKg: null },
+        { date: "2026-09-27", trained: false, kcal: null, weightKg: 77 },
+      ],
       foodTarget: { calories: 2402, proteinG: 180 },
       current: {
         training: { days: 2, sets: 2, volume: 550 },

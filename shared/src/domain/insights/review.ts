@@ -17,11 +17,24 @@ export interface WeekNumbers {
   weight: { average: number | null; weighIns: number }
 }
 
+/** One day of the reviewed week (redesign part 6, §3.1). */
+export interface ReviewDay {
+  date: string
+  /** A session that day: the rule `training.days` counts. */
+  trained: boolean
+  /** The day's summed calories; null when nothing was logged, never 0. */
+  kcal: number | null
+  /** The day's weigh-in; null when none. */
+  weightKg: number | null
+}
+
 export interface WeeklyReview {
   /** The week's Monday. */
   week: string
   current: WeekNumbers
   previous: WeekNumbers
+  /** Monday to Sunday of `week`: the strips beside each row. */
+  days: ReviewDay[]
   /** Non-rest slots in the split. */
   trainingTarget: number
   /** In force on the week's Sunday; null when there was none. */
@@ -60,6 +73,21 @@ export function weekNumbers(inputs: ReviewInputs, monday: string): WeekNumbers {
   }
 }
 
+/** The seven days from `monday`, out of rows that may span more (§3.1). */
+export function reviewDays(inputs: ReviewInputs, monday: string): ReviewDay[] {
+  return Array.from({ length: 7 }, (_, i) => {
+    const date = shiftISO(monday, i)
+    const food = inputs.food.filter((f) => f.date === date)
+    const weight = inputs.weights.find((w) => w.date === date)
+    return {
+      date,
+      trained: inputs.sessionDates.includes(date),
+      kcal: food.length ? sum(food.map((f) => f.calories)) : null,
+      weightKg: weight ? weight.weight_kg : null,
+    }
+  })
+}
+
 export function weeklyReview(
   inputs: ReviewInputs,
   monday: string,
@@ -71,6 +99,7 @@ export function weeklyReview(
     week: monday,
     current: weekNumbers(inputs, monday),
     previous: weekNumbers(inputs, shiftISO(monday, -7)),
+    days: reviewDays(inputs, monday),
     trainingTarget: split.week.filter((slot) => slot !== 'rest').length,
     foodTarget: target ? { calories: target.calories, proteinG: target.protein_g } : null,
   }
