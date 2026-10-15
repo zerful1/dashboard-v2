@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { shiftISO, toLocalISO, type HabitSummary } from "@dashboard/shared";
@@ -45,6 +45,23 @@ const keys = (calls: { key: string }[]) => calls.map((c) => c.key);
 afterEach(() => vi.restoreAllMocks());
 
 describe("HabitsPage", () => {
+  // Redesign part 7: a plain title, as on Weight and Insights.
+  it("is headed Habits", async () => {
+    mockApi(async () => [habit({})]);
+    renderPage();
+    expect(await screen.findByRole("heading", { level: 1, name: "Habits" })).toBeInTheDocument();
+    expect(screen.queryByText("Daily habits")).toBeNull();
+  });
+
+  it("lists the habits as rows, while editing too", async () => {
+    mockApi(async () => [habit({}), habit({ id: "h2", name: "Put on retainer", sort_order: 2 })]);
+    renderPage();
+    const rows = async () => within(await screen.findByRole("list", { name: "Your habits" })).getAllByRole("listitem");
+    expect(await rows()).toHaveLength(2);
+    await userEvent.click(screen.getByRole("button", { name: "Edit" }));
+    expect(await rows()).toHaveLength(2);
+  });
+
   it("toggles a day in the strip: PUT when it wasn't done, DELETE when it was", async () => {
     const yesterday = shiftISO(today, -1);
     const calls = mockApi(async () => [habit({ recent: [yesterday] })]);
@@ -150,7 +167,8 @@ describe("HabitsPage", () => {
       throw new ApiError(500, "boom");
     });
     renderPage();
-    expect(await screen.findByText("Couldn't load your habits.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+    expect(await screen.findByText("Couldn't load your habits.")).toHaveClass("text-negative");
+    // An outline, as on Insights: retrying is not the screen's one white action.
+    expect(screen.getByRole("button", { name: "Retry" })).toHaveClass("border-edge");
   });
 });

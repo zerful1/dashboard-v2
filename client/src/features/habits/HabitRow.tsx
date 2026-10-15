@@ -11,7 +11,7 @@ export function HabitRow({ habit, days, today, locked, onToggle }: {
   onToggle: (date: string, done: boolean) => void;
 }) {
   return (
-    <li className="space-y-2">
+    <div role="listitem" className="space-y-2 py-3">
       <div className="flex items-center gap-2">
         <span className="min-w-0 flex-1 truncate text-sm">
           {habit.emoji && <span className="mr-1.5">{habit.emoji}</span>}
@@ -47,6 +47,6 @@ export function HabitRow({ habit, days, today, locked, onToggle }: {
           );
         })}
       </div>
-    </li>
+    </div>
   );
 }
