@@ -39,7 +39,7 @@ describe("unticked done marks", () => {
 
   it("rings an unticked day on the habit strip in dim, with its letter in grey", () => {
     const { container } = render(
-      <ul><HabitRow habit={habit} days={[today]} today={today} locked={false} onToggle={() => {}} /></ul>,
+      <div role="list"><HabitRow habit={habit} days={[today]} today={today} locked={false} onToggle={() => {}} /></div>,
     );
     expect(container.querySelector('[data-part="mark"]')).toHaveClass("border-dim", "text-muted");
   });

@@ -44,7 +44,7 @@ export function EditHabitRow({ habit, first, last, locked, canMove, onSave, onMo
 
   const icon = "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted disabled:opacity-30";
   return (
-    <li className="space-y-2">
+    <div role="listitem" className="space-y-2 py-3">
       <div className="flex gap-2">
         <Input aria-label={`Emoji for ${habit.name}`} value={emoji} maxLength={16} disabled={locked}
           onChange={(e) => setEmoji(e.target.value)} onBlur={save} onKeyDown={blurOnEnter} className="w-14 text-center" />
@@ -64,6 +64,6 @@ export function EditHabitRow({ habit, first, last, locked, canMove, onSave, onMo
           <Trash2 size={18} aria-hidden />
         </button>
       </div>
-    </li>
+    </div>
   );
 }
