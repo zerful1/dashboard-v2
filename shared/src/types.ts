@@ -36,17 +36,6 @@ export interface BodyWeightEntry {
   created_at: string;
 }
 
-export interface ProgressPhoto {
-  id: string;
-  user_id: string;
-  storage_path: string;
-  date: string; // 'YYYY-MM-DD'
-  weight_kg: number | null;
-  notes: string | null;
-  created_at: string;
-  signedUrl: string; // resolved on read, not stored
-}
-
 // ---------------------------------------------------------------------------
 // Training
 // ---------------------------------------------------------------------------
@@ -138,13 +127,6 @@ export interface Habit {
   emoji: string | null;
   sort_order: number;
   created_at: string;
-}
-
-export interface HabitCompletion {
-  id: string;
-  user_id: string;
-  habit_id: string;
-  completed_date: string;
 }
 
 /** GET /api/habits: a habit with what the screens show of it. */
@@ -355,42 +337,6 @@ export interface DayTotal {
   date: string; // 'YYYY-MM-DD'
   calories: number;
   protein_g: number;
-}
-
-// ---------------------------------------------------------------------------
-// Media
-// ---------------------------------------------------------------------------
-
-export type MediaType = "film" | "series" | "game";
-
-// Status sets are enforced in app logic (domain/media.ts), not the DB — the
-// `status` column is plain text. Films/series and games share Completed / Paused /
-// Dropped but differ on their "active" + "planned" labels.
-export type WatchStatus = "Watching" | "Plan to Watch" | "Completed" | "Paused" | "Dropped";
-export type GameStatus = "Playing" | "Plan to Play" | "Completed" | "Paused" | "Dropped";
-export type MediaStatus = WatchStatus | GameStatus;
-
-export interface Media {
-  id: string;
-  user_id: string;
-  type: MediaType;
-  name: string;
-  status: MediaStatus;
-  rating: number | null; // 1.0–10.0, numeric(3,1)
-  last_played: string | null; // 'YYYY-MM-DD' (games)
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-  replay_dismissed: boolean;
-}
-
-export interface MediaSeason {
-  id: string;
-  user_id: string;
-  media_id: string;
-  season_number: number;
-  episodes_watched: number | null;
-  rating: number | null; // 1.0–10.0 — per-season verdict; series rating is separate
 }
 
 // ---------------------------------------------------------------------------
