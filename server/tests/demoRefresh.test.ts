@@ -12,13 +12,13 @@ const count = async (table: string, userId: string) =>
   (await pool.query<{ n: number }>(`SELECT count(*)::int AS n FROM ${table} WHERE user_id = $1`, [userId])).rows[0]!.n;
 
 describe("demo account", () => {
-  it("is created once, named Demo, in London time", async () => {
+  it("is created once, in London time", async () => {
     const a = await findOrCreateDemoUser();
     const b = await findOrCreateDemoUser();
     expect(b.id).toBe(a.id);
     expect(a.email).toBe(DEMO_EMAIL);
-    const { rows } = await pool.query(`SELECT display_name, timezone FROM ${T.profiles} WHERE user_id = $1`, [a.id]);
-    expect(rows[0]).toEqual({ display_name: "Demo", timezone: "Europe/London" });
+    const { rows } = await pool.query(`SELECT timezone FROM ${T.profiles} WHERE user_id = $1`, [a.id]);
+    expect(rows[0]).toEqual({ timezone: "Europe/London" });
     expect(isDemoEmail(" Demo@Demo.invalid ")).toBe(true);
   });
 

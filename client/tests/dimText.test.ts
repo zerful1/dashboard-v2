@@ -19,6 +19,7 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
   "features/weight/PeriodList.tsx": { count: 1, why: "the — for no change, and for a week with nothing yet" },
   "features/weight/WeightHeadline.tsx": { count: 1, why: "the — figure with no weigh-in in 7 days" },
   "features/insights/WeekRows.tsx": { count: 1, why: "the — figure for a row with nothing that week" },
+  "features/settings/ShortcutList.tsx": { count: 1, why: "each shortcut row's chevron icon" },
 };
 
 function files(dir: string): string[] {

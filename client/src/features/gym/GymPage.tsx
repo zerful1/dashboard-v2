@@ -16,6 +16,7 @@ import { DayPickerSheet } from "./DayPickerSheet";
 import { ExerciseList } from "./ExerciseList";
 import { ExerciseSheet } from "./ExerciseSheet";
 import { SplitEditorSheet } from "./SplitEditorSheet";
+import { useOpenParam } from "@/hooks/useOpenParam";
 import { RenameExerciseSheet } from "./RenameExerciseSheet";
 import { CardioSection } from "./CardioSection";
 import { StatsTab } from "./StatsTab";
@@ -73,6 +74,7 @@ export function GymPage() {
   const [active, setActive] = useState<Exercise | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [splitOpen, setSplitOpen] = useState(false);
+  useOpenParam("split", () => setSplitOpen(true));
   const [dayPicker, setDayPicker] = useState(false);
 
   const activeSets = active

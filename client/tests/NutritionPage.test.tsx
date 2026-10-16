@@ -59,9 +59,9 @@ function mockApi(o: Opts = {}) {
 }
 const asked = (calls: { key: string }[], key: string) => calls.some((c) => c.key === key);
 
-function renderPage(client = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
+function renderPage(client = new QueryClient({ defaultOptions: { queries: { retry: false } } }), url = "/nutrition") {
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[url]}>
       <QueryClientProvider client={client}>
         <NutritionPage />
       </QueryClientProvider>
@@ -329,6 +329,15 @@ describe("NutritionPage, the last 7 days (redesign part 4)", () => {
     await new Promise((r) => setTimeout(r, 50));
     expect(asked(calls, "GET /api/nutrition/diary?date=2026-09-24")).toBe(false);
     expect(bar(/^Tuesday 22 September/)).toHaveAttribute("aria-pressed", "true");
+  });
+});
+
+// Settings' shortcut (redesign part 8, §3).
+describe("NutritionPage, opened from Settings", () => {
+  it("opens Targets from ?open=targets", async () => {
+    mockApi();
+    renderPage(undefined, "/nutrition?open=targets");
+    expect(await screen.findByRole("dialog", { name: "Targets" })).toBeInTheDocument();
   });
 });
 

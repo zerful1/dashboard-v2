@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useOpenParam } from "@/hooks/useOpenParam";
 import type { Goal, Projection } from "@dashboard/shared";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -22,6 +23,7 @@ export function GoalsSection({ today, historyNames }: { today: string; historyNa
   const g = useGoals();
   const projections = useProjections(today);
   const [open, setOpen] = useState(false);
+  useOpenParam("goals", () => setOpen(true));
   const byGoal = new Map((projections.data ?? []).map((p) => [p.goalId, p]));
   const weightGoal = g.goals.find((x) => x.kind === "weight");
   const lifts = g.goals.filter((x) => x.kind === "lift");

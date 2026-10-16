@@ -19,6 +19,7 @@ import { AddFoodSheet } from "./AddFoodSheet";
 import { EditEntrySheet } from "./EditEntrySheet";
 import { CopyDaySheet } from "./CopyDaySheet";
 import { TargetsSheet } from "./TargetsSheet";
+import { useOpenParam } from "@/hooks/useOpenParam";
 
 /** The strip's last day and the open day, once the user has picked either. */
 interface Picked {
@@ -61,6 +62,7 @@ export function NutritionPage() {
   const [editing, setEditing] = useState<FoodLogEntry | null>(null);
   const [copying, setCopying] = useState(false);
   const [targeting, setTargeting] = useState(false);
+  useOpenParam("targets", () => setTargeting(true));
 
   const summary = useMemo(() => deriveDay(diary.entries, targets.targets, open), [diary.entries, targets.targets, open]);
   // A conclusion, so it waits for the targets as well as the days (CLAUDE.md, isPending).

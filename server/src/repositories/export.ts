@@ -1,5 +1,5 @@
-import type { ExportFile } from "@dashboard/shared";
-import { withTransaction } from "../db/pool";
+import type { DataSummary, ExportFile } from "@dashboard/shared";
+import { pool, withTransaction } from "../db/pool";
 import { T } from "../config";
 import { NotFound } from "../errors";
 
@@ -66,6 +66,26 @@ export async function writeUserExport(userId: string, write: (chunk: string) => 
     }
     write("}}");
   });
+}
+
+/**
+ * How much the user has logged, and since when: Settings' line beside the
+ * download. LEAST skips nulls, so `since` is null only when all three are.
+ */
+export async function getDataSummary(userId: string): Promise<DataSummary> {
+  const { rows } = await pool.query<DataSummary>(
+    `SELECT LEAST(
+              (SELECT min(date) FROM ${T.bodyWeight} WHERE user_id = $1),
+              (SELECT min(date) FROM ${T.workoutSessions} WHERE user_id = $1),
+              (SELECT min(date) FROM ${T.foodLogEntries} WHERE user_id = $1)
+            )::text AS since,
+            (SELECT count(*) FROM ${T.bodyWeight} WHERE user_id = $1)::int AS "weighIns",
+            (SELECT count(*) FROM ${T.workoutSessions} WHERE user_id = $1)::int AS sessions,
+            (SELECT count(DISTINCT date) FROM ${T.foodLogEntries} WHERE user_id = $1)::int AS "foodDays",
+            (SELECT count(*) FROM ${T.habits} WHERE user_id = $1)::int AS habits`,
+    [userId],
+  );
+  return rows[0]!;
 }
 
 /** The whole export as one object, for anything that wants it in memory. */

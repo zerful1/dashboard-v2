@@ -8,21 +8,11 @@ export interface User {
   created_at: string;
 }
 
-/**
- * Units are a display concern only — everything is stored in kg and converted at
- * render time. Storing user-dependent units would put a conversion in the path of
- * every aggregate.
- */
-export type WeightUnit = "kg" | "lb";
-
 export type Sex = "male" | "female";
 export type ActivityLevel = "sedentary" | "light" | "moderate" | "very" | "extra";
 
 export interface Profile {
   user_id: string;
-  display_name: string;
-  avatar_path: string | null;
-  units: WeightUnit;
   timezone: string;
   updated_at: string;
   // Optional body details. Used only by the nutrition TDEE hint, and null
@@ -419,4 +409,15 @@ export interface ExportFile {
   account: { id: string; email: string; created_at: string };
   /** Keyed by database table name; every value is an array, even for one-row tables. */
   tables: Record<string, Record<string, unknown>[]>;
+}
+
+/** What Settings says is stored, beside the download (redesign part 8, §4). */
+export interface DataSummary {
+  /** The earliest date among weigh-ins, sessions and food entries; null when there is none. */
+  since: string | null;
+  weighIns: number;
+  sessions: number;
+  /** Distinct dates with a food entry. */
+  foodDays: number;
+  habits: number;
 }

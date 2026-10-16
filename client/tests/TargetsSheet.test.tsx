@@ -12,7 +12,7 @@ vi.mock("@/auth/AuthProvider", () => ({
 }));
 
 const PROFILE: Profile = {
-  user_id: "u1", display_name: "", avatar_path: null, units: "kg", timezone: "Europe/London", updated_at: "",
+  user_id: "u1", timezone: "Europe/London", updated_at: "",
   height_cm: null, birth_year: null, sex: null, activity_level: null,
 };
 const cut: NutritionTarget = {

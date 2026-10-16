@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
 import type { Goal, Projection } from "@dashboard/shared";
 import { GoalsSection } from "../src/features/insights/GoalsSection";
 import * as apiModule from "../src/lib/api";
@@ -32,11 +33,13 @@ function mockApi(goals: Goal[], projections: Projection[]) {
   return calls;
 }
 
-function renderSection() {
+function renderSection(url = "/insights") {
   render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-      <GoalsSection today="2026-09-30" historyNames={HISTORY} />
-    </QueryClientProvider>,
+    <MemoryRouter initialEntries={[url]}>
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <GoalsSection today="2026-09-30" historyNames={HISTORY} />
+      </QueryClientProvider>
+    </MemoryRouter>,
   );
 }
 
@@ -128,6 +131,13 @@ describe("GoalsSection", () => {
     await userEvent.click(screen.getByRole("button", { name: "Change" }));
     expect(screen.getByRole("dialog", { name: "Goals" })).toBeInTheDocument();
     expect(screen.getByLabelText("Target weight (kg)")).toBeInTheDocument();
+  });
+
+  // Settings' shortcut (redesign part 8, §3).
+  it("opens the goals sheet from ?open=goals", async () => {
+    mockApi([goal({})], []);
+    renderSection("/insights?open=goals");
+    expect(await screen.findByRole("dialog", { name: "Goals" })).toBeInTheDocument();
   });
 
   it("says there are no goals yet, and offers to set them", async () => {

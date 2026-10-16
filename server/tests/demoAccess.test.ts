@@ -58,7 +58,7 @@ describe("demo is read-only", () => {
     const writes = [
       agent.post("/api/weight").send({ date: "2026-10-01", weight_kg: 70 }),
       agent.put("/api/goals/weight").send({ target_kg: 70 }),
-      agent.patch("/api/profile").send({ display_name: "Hacked" }),
+      agent.patch("/api/profile").send({ timezone: "UTC" }),
       agent.delete("/api/profile").send({ password: "x" }),
       agent.post("/api/auth/change-password").send({ currentPassword: "x", newPassword: "correct-horse-10" }),
       agent.post("/api/workouts/sets").send({ date: "2026-10-01", day_type: 1, exercise_name: "Squat", set_number: 1, weight_kg: 100, reps: 5 }),

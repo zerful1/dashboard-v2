@@ -13,6 +13,12 @@ export function prettyDate(iso: string): string {
   });
 }
 
+/** "24 Jun 2026", built as a LOCAL date like prettyDate. Settings' data summary. */
+export function dayMonthYear(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y!, m! - 1, d!).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
 /** "Monday 6 Oct" for a YYYY-MM-DD, built as a LOCAL date like prettyDate. Home's header. */
 export function longDate(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);

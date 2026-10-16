@@ -1,10 +1,20 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/requireAuth";
-import { writeUserExport } from "../repositories/export";
+import { getDataSummary, writeUserExport } from "../repositories/export";
 
 export const exportRouter = Router();
 // Router level, so a route added to this file is protected by default.
 exportRouter.use(requireAuth);
+
+// What Settings shows beside the download. Above "/" only for reading order;
+// Express matches the full path either way.
+exportRouter.get("/summary", async (req, res, next) => {
+  try {
+    res.set("Cache-Control", "no-store").json(await getDataSummary(req.userId));
+  } catch (err) {
+    next(err);
+  }
+});
 
 // Reads only, so the demo's read-only rule (CLAUDE.md: no GET writes) holds.
 exportRouter.get("/", async (req, res, next) => {

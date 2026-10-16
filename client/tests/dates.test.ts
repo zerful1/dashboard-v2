@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { monthLabel, monthRangeLabel, monthTick, rangeLabel, spokenDate, weekdayInitial } from "../src/lib/dates";
+import { dayMonthYear, monthLabel, monthRangeLabel, monthTick, rangeLabel, spokenDate, weekdayInitial } from "../src/lib/dates";
+
+describe("dayMonthYear", () => {
+  it("reads 24 Jun 2026", () => {
+    expect(dayMonthYear("2026-06-24")).toBe("24 Jun 2026");
+  });
+});
 
 describe("rangeLabel", () => {
   it("names a span inside one month", () => {

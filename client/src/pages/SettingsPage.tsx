@@ -11,6 +11,9 @@ import { Input } from "@/components/ui/Input";
 import { Field } from "@/components/ui/Field";
 import { Spinner } from "@/components/ui/Spinner";
 import { YourDataCard } from "@/features/settings/YourDataCard";
+import { ShortcutList } from "@/features/settings/ShortcutList";
+import { AppSection } from "@/features/settings/AppSection";
+import { useToday } from "@/hooks/useToday";
 
 /**
  * Resolves `tz` to its canonical IANA name (folds case, resolves an alias
@@ -38,9 +41,9 @@ function normalizeTimeZone(tz: string): string | null {
 /**
  * How this page reports failure, and the rule behind it (the whole rule is in
  * lib/queryClient.ts): a form submission renders its own inline error;
- * everything else toasts. Nothing here is a submission — the two text fields
- * autosave on blur, after the user has already moved on, and there is no
- * submit button to anchor a message to — so none of the three mutations render
+ * everything else toasts. Nothing here is a submission — the timezone field
+ * autosaves on blur, after the user has already moved on, and there is no
+ * submit button to anchor a message to — so none of the mutations render
  * error UI. Each rejection is left to the app-wide toast, which sits on the
  * MutationCache and so fires whether or not a mutation has its own onError.
  *
@@ -51,6 +54,8 @@ function normalizeTimeZone(tz: string): string | null {
 export function SettingsPage() {
   const qc = useQueryClient();
   const { user, logout } = useAuth();
+  // One clock for the page (CLAUDE.md).
+  const today = useToday();
 
   const {
     data: profile,
@@ -61,10 +66,10 @@ export function SettingsPage() {
   } = useQuery(profileQuery);
 
   const saveProfile = useMutation({
-    // Narrower than Partial<Profile> on purpose: the server accepts exactly
-    // these three (patchBody in server/src/routes/profile.ts), so a call
-    // passing user_id or updated_at should fail here rather than 400 there.
-    mutationFn: (patch: Partial<Pick<Profile, "display_name" | "units" | "timezone">>) =>
+    // Narrower than Partial<Profile> on purpose: the timezone is the one
+    // field this page sets, so a call passing user_id or updated_at should
+    // fail here rather than 400 there.
+    mutationFn: (patch: Pick<Profile, "timezone">) =>
       api<Profile>("/api/profile", { method: "PATCH", body: JSON.stringify(patch) }),
     onSuccess: (updated) => {
       qc.setQueryData(["profile"], updated);
@@ -72,7 +77,7 @@ export function SettingsPage() {
     },
   });
 
-  // Local, uncommitted text for the two autosave-on-blur fields below. `null`
+  // Local, uncommitted text for the autosave-on-blur field below. `null`
   // means "no edit in flight" — the field just mirrors `profile`. Set while
   // the user types; cleared once their own save attempt concludes, whichever
   // way: a blur with no real change, a successful save, or a failed one.
@@ -82,12 +87,10 @@ export function SettingsPage() {
   // only an easy-to-miss toast saying otherwise.
   //
   // Cleared from the promise `mutateAsync` returns rather than an `onSettled`
-  // passed to `.mutate()`: both fields share `saveProfile`, so if one save is
-  // still in flight when the other field's blur starts a second, that second
-  // call detaches the first call's observer — an `onSettled` passed to
+  // passed to `.mutate()`: if one save is still in flight when the next blur
+  // starts a second, that second call detaches the first call's observer — an `onSettled` passed to
   // `.mutate()` for the first call would then silently never run. The
   // returned promise itself still settles correctly either way.
-  const [nameDraft, setNameDraft] = useState<string | null>(null);
   const [tzDraft, setTzDraft] = useState<string | null>(null);
   const [tzError, setTzError] = useState<string | undefined>(undefined);
 
@@ -123,21 +126,16 @@ export function SettingsPage() {
   // is exactly this case, and it is recoverable, so it gets a retry.
   if (isError) {
     return (
-      <div className="max-w-lg space-y-4">
+      <div className="max-w-lg space-y-6">
+        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <div>
-          <div className="lbl text-accent">Settings</div>
-          <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">Your account</h1>
-          <p className="mt-1 text-sm text-muted">{user?.email}</p>
-        </div>
-
-        <Card className="space-y-3">
-          <p role="alert" className="text-sm leading-relaxed text-muted">
+          <p role="alert" className="text-sm leading-relaxed text-negative">
             We couldn&apos;t load your profile. The server may still be waking up.
           </p>
-          <Button onClick={() => void refetch()} loading={isFetching}>
+          <Button variant="ghost" className="mt-2" onClick={() => void refetch()} loading={isFetching}>
             Try again
           </Button>
-        </Card>
+        </div>
       </div>
     );
   }
@@ -145,98 +143,15 @@ export function SettingsPage() {
   if (isLoading || !profile) return <Spinner label="Loading your profile" />;
 
   return (
-    <div className="max-w-lg space-y-4">
-      <div>
-        <div className="lbl text-accent">Settings</div>
-        <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">Your account</h1>
-        <p className="mt-1 text-sm text-muted">{user?.email}</p>
-      </div>
+    <div className="max-w-lg space-y-6">
+      <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+
+      <ShortcutList today={today} />
+
+      <YourDataCard />
 
       <Card className="space-y-4">
-        <div className="lbl">Profile</div>
-
-        <Field label="Display name" htmlFor="display_name">
-          <Input
-            id="display_name"
-            value={nameDraft ?? profile.display_name}
-            onChange={(e) => setNameDraft(e.target.value)}
-            onBlur={(e) => {
-              const value = e.target.value;
-              if (value === profile.display_name) {
-                setNameDraft(null);
-                return;
-              }
-              void saveProfile
-                .mutateAsync({ display_name: value })
-                .catch(() => {})
-                .finally(() => setNameDraft(null));
-            }}
-          />
-        </Field>
-
-        {/* A fieldset rather than a Field: Field renders `<label for>`, which
-            only ever resolves to a single labelable control, so wrapping a
-            group of buttons in one produced a label pointing at nothing and a
-            button group with no accessible name at all. A legend names the
-            whole set, which is what a choice between two options needs. */}
-        <fieldset>
-          <legend className="lbl mb-1.5">Units</legend>
-          <div className="flex gap-2">
-            {(["kg", "lb"] as const).map((u) => (
-              <Button
-                key={u}
-                type="button"
-                // Tinted, not filled: this says "this is the current setting",
-                // and the filled accent 100px below it says "press this to
-                // change your password". Two different jobs must not share one
-                // treatment.
-                variant={profile.units === u ? "selected" : "subtle"}
-                aria-pressed={profile.units === u}
-                onClick={() => saveProfile.mutate({ units: u })}
-                className="flex-1"
-              >
-                {u}
-              </Button>
-            ))}
-          </div>
-        </fieldset>
-
-        <Field
-          label="Timezone"
-          htmlFor="timezone"
-          hint="An IANA name, e.g. Europe/Warsaw. Used for scheduled work only — the app reads your device's calendar day."
-          error={tzError}
-        >
-          <Input
-            id="timezone"
-            value={tzDraft ?? profile.timezone}
-            onChange={(e) => {
-              setTzDraft(e.target.value);
-              if (tzError) setTzError(undefined);
-            }}
-            onBlur={(e) => {
-              const typed = e.target.value.trim();
-              if (typed === profile.timezone) {
-                setTzDraft(null);
-                return;
-              }
-              const canonical = normalizeTimeZone(typed);
-              if (!canonical) {
-                setTzError("Not a recognized timezone — try a name like Europe/Warsaw.");
-                return;
-              }
-              setTzError(undefined);
-              void saveProfile
-                .mutateAsync({ timezone: canonical })
-                .catch(() => {})
-                .finally(() => setTzDraft(null));
-            }}
-          />
-        </Field>
-      </Card>
-
-      <Card className="space-y-4">
-        <div className="lbl">Change password</div>
+        <h2 className="lbl">Password</h2>
         <Field label="Current password" htmlFor="current">
           <Input
             id="current"
@@ -271,10 +186,43 @@ export function SettingsPage() {
         </Button>
       </Card>
 
-      <YourDataCard />
+      <AppSection />
 
-      <Card className="space-y-3">
-        <div className="lbl">Account</div>
+      <Card className="space-y-4">
+        <h2 className="lbl">Account</h2>
+        <p className="text-sm">{user?.email}</p>
+        <Field
+          label="Timezone"
+          htmlFor="timezone"
+          hint="Used to keep times right when you copy a day of food."
+          error={tzError}
+        >
+          <Input
+            id="timezone"
+            value={tzDraft ?? profile.timezone}
+            onChange={(e) => {
+              setTzDraft(e.target.value);
+              if (tzError) setTzError(undefined);
+            }}
+            onBlur={(e) => {
+              const typed = e.target.value.trim();
+              if (typed === profile.timezone) {
+                setTzDraft(null);
+                return;
+              }
+              const canonical = normalizeTimeZone(typed);
+              if (!canonical) {
+                setTzError("Not a recognized timezone — try a name like Europe/Warsaw.");
+                return;
+              }
+              setTzError(undefined);
+              void saveProfile
+                .mutateAsync({ timezone: canonical })
+                .catch(() => {})
+                .finally(() => setTzDraft(null));
+            }}
+          />
+        </Field>
         <Button variant="ghost" onClick={() => void logout()} className="w-full">
           Sign out
         </Button>
