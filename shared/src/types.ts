@@ -13,16 +13,12 @@ export interface User {
  * render time. Storing user-dependent units would put a conversion in the path of
  * every aggregate.
  */
-export type WeightUnit = "kg" | "lb";
 
 export type Sex = "male" | "female";
 export type ActivityLevel = "sedentary" | "light" | "moderate" | "very" | "extra";
 
 export interface Profile {
   user_id: string;
-  display_name: string;
-  avatar_path: string | null;
-  units: WeightUnit;
   timezone: string;
   updated_at: string;
   // Optional body details. Used only by the nutrition TDEE hint, and null

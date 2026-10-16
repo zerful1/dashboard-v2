@@ -82,7 +82,7 @@ function mockApi(o: Overrides = {}) {
   const state = { weights: o.weights };
   const routes: [string, (body?: { date: string; weight_kg: number }) => unknown][] = [
     ["GET /api/auth/me", () => ({ id: "1", email: "you@example.com" })],
-    ["GET /api/profile", () => ({ user_id: "1", display_name: "", units: "kg", timezone: "Europe/London" })],
+    ["GET /api/profile", () => ({ user_id: "1", timezone: "Europe/London" })],
     ["GET /api/split", () => {
       if (o.splitFails) throw new ApiError(500, "boom");
       return o.splitNeverResolves ? new Promise(() => {}) : DEFAULT_SPLIT;

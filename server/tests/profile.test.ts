@@ -13,7 +13,7 @@ const bob = { email: "bob@example.com", password: "correct-horse-9" };
 describe("profile", () => {
   it("requires a session", async () => {
     await request(app).get("/api/profile").expect(401);
-    await request(app).patch("/api/profile").send({ units: "lb" }).expect(401);
+    await request(app).patch("/api/profile").send({ timezone: "UTC" }).expect(401);
     await request(app).delete("/api/profile").expect(401);
   });
 
@@ -22,36 +22,34 @@ describe("profile", () => {
     await agent.post("/api/auth/register").send(alice);
 
     const res = await agent.get("/api/profile").expect(200);
-    expect(res.body.units).toBe("kg");
-    expect(res.body.display_name).toBe("");
     expect(res.body.timezone).toBe("Europe/London");
-    expect(res.body.avatar_path).toBeNull();
+  });
+
+  // Settings redesign (part 8): nothing read them, so they went.
+  it("no longer has display_name, units or avatar_path", async () => {
+    const agent = request.agent(app);
+    await agent.post("/api/auth/register").send(alice);
+
+    const res = await agent.get("/api/profile").expect(200);
+    expect(res.body).not.toHaveProperty("display_name");
+    expect(res.body).not.toHaveProperty("units");
+    expect(res.body).not.toHaveProperty("avatar_path");
+    expect(res.body.timezone).toBe("Europe/London");
+  });
+
+  it("refuses a field it no longer has", async () => {
+    const agent = request.agent(app);
+    await agent.post("/api/auth/register").send(alice);
+    await agent.patch("/api/profile").send({ units: "lb" }).expect(400);
   });
 
   it("patches only the supplied fields", async () => {
     const agent = request.agent(app);
     await agent.post("/api/auth/register").send(alice);
 
-    const res = await agent.patch("/api/profile").send({ units: "lb" }).expect(200);
-    expect(res.body.units).toBe("lb");
+    const res = await agent.patch("/api/profile").send({ height_cm: 180 }).expect(200);
+    expect(res.body.height_cm).toBe(180);
     expect(res.body.timezone).toBe("Europe/London");
-    expect(res.body.display_name).toBe("");
-  });
-
-  it("trims display_name", async () => {
-    const agent = request.agent(app);
-    await agent.post("/api/auth/register").send(alice);
-
-    const res = await agent.patch("/api/profile").send({ display_name: "  Alice  " }).expect(200);
-    expect(res.body.display_name).toBe("Alice");
-  });
-
-  it("rejects an invalid unit", async () => {
-    const agent = request.agent(app);
-    await agent.post("/api/auth/register").send(alice);
-
-    const res = await agent.patch("/api/profile").send({ units: "stone" }).expect(400);
-    expect(res.body.details.units).toBeDefined();
   });
 
   it("rejects an empty patch", async () => {
@@ -73,13 +71,13 @@ describe("profile", () => {
 
     const res = await bobAgent
       .patch("/api/profile")
-      .send({ user_id: aliceId, display_name: "Injected" })
+      .send({ user_id: aliceId, timezone: "Asia/Tokyo" })
       .expect(200);
 
     // The write landed on Bob — the session's user — not on the id he asked for.
     expect(res.body.user_id).toBe(bobId);
-    expect((await getProfile(bobId))!.display_name).toBe("Injected");
-    expect((await getProfile(aliceId))!.display_name).toBe("");
+    expect((await getProfile(bobId))!.timezone).toBe("Asia/Tokyo");
+    expect((await getProfile(aliceId))!.timezone).toBe("Europe/London");
   });
 
   it("rejects a body containing only a user_id", async () => {
@@ -105,18 +103,18 @@ describe("ownership scoping", () => {
     const aliceId = (await findUserByEmail(alice.email))!.id;
     const bobId = (await findUserByEmail(bob.email))!.id;
 
-    await updateProfile(aliceId, { display_name: "Alice" });
-    await updateProfile(bobId, { display_name: "Bob" });
+    await updateProfile(aliceId, { timezone: "Europe/Warsaw" });
+    await updateProfile(bobId, { timezone: "Asia/Tokyo" });
 
     // Bob's session sees only Bob's row.
     const seen = await bobAgent.get("/api/profile").expect(200);
-    expect(seen.body.display_name).toBe("Bob");
+    expect(seen.body.timezone).toBe("Asia/Tokyo");
     expect(seen.body.user_id).toBe(bobId);
 
     // A write scoped to Bob leaves Alice untouched.
-    await bobAgent.patch("/api/profile").send({ display_name: "Hacked" }).expect(200);
-    expect((await getProfile(aliceId))!.display_name).toBe("Alice");
-    expect((await getProfile(bobId))!.display_name).toBe("Hacked");
+    await bobAgent.patch("/api/profile").send({ timezone: "America/New_York" }).expect(200);
+    expect((await getProfile(aliceId))!.timezone).toBe("Europe/Warsaw");
+    expect((await getProfile(bobId))!.timezone).toBe("America/New_York");
   });
 
   it("repository reads are scoped even when called directly", async () => {
@@ -124,7 +122,7 @@ describe("ownership scoping", () => {
     await aliceAgent.post("/api/auth/register").send(alice);
     const aliceId = (await findUserByEmail(alice.email))!.id;
 
-    await updateProfile(aliceId, { display_name: "Alice" });
+    await updateProfile(aliceId, { timezone: "Europe/Warsaw" });
 
     // A user id that does not exist must yield nothing, never the first row.
     expect(await getProfile("00000000-0000-0000-0000-000000000000")).toBeNull();

@@ -29,8 +29,6 @@ profileRouter.get("/", async (req, res, next) => {
 
 const patchBody = z
   .object({
-    display_name: z.string().trim().max(60).optional(),
-    units: z.enum(["kg", "lb"]).optional(),
     // A permissive check; the value is only ever passed to Intl, which throws on
     // a genuinely unknown zone at the point of use.
     timezone: z.string().min(1).max(60).optional(),

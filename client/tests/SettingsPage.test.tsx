@@ -29,9 +29,6 @@ afterEach(() => vi.restoreAllMocks());
 
 const PROFILE = {
   user_id: "1",
-  display_name: "Alice",
-  avatar_path: null,
-  units: "kg",
   timezone: "Europe/London",
   updated_at: "",
   height_cm: null,

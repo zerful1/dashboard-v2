@@ -1,10 +1,8 @@
 import { pool, withTransaction } from "../db/pool";
 import { T } from "../config";
-import type { ActivityLevel, Profile, Sex, WeightUnit } from "@dashboard/shared";
+import type { ActivityLevel, Profile, Sex } from "@dashboard/shared";
 
 export interface ProfilePatch {
-  display_name?: string;
-  units?: WeightUnit;
   timezone?: string;
   /** null clears it; absent leaves it as it was. */
   height_cm?: number | null;
@@ -15,7 +13,7 @@ export interface ProfilePatch {
 
 // birth_year is smallint, which node-pg returns as a number; height_cm is
 // numeric, which would arrive as a string without the cast.
-const PROFILE_COLS = `user_id, display_name, avatar_path, units, timezone, updated_at,
+const PROFILE_COLS = `user_id, timezone, updated_at,
        height_cm::float8 AS height_cm, birth_year, sex, activity_level`;
 
 /**
@@ -44,18 +42,16 @@ export async function updateProfile(
   // take a "mentioned" flag, so null can clear one (#17 review 11).
   const { rows } = await pool.query<Profile>(
     `UPDATE ${T.profiles}
-        SET display_name   = COALESCE($2, display_name),
-            units          = COALESCE($3, units),
-            timezone       = COALESCE($4, timezone),
-            height_cm      = CASE WHEN $9::boolean  THEN $5 ELSE height_cm END,
-            birth_year     = CASE WHEN $10::boolean THEN $6 ELSE birth_year END,
-            sex            = CASE WHEN $11::boolean THEN $7 ELSE sex END,
-            activity_level = CASE WHEN $12::boolean THEN $8 ELSE activity_level END,
+        SET timezone       = COALESCE($2, timezone),
+            height_cm      = CASE WHEN $7::boolean  THEN $3 ELSE height_cm END,
+            birth_year     = CASE WHEN $8::boolean  THEN $4 ELSE birth_year END,
+            sex            = CASE WHEN $9::boolean  THEN $5 ELSE sex END,
+            activity_level = CASE WHEN $10::boolean THEN $6 ELSE activity_level END,
             updated_at     = now()
       WHERE user_id = $1
       RETURNING ${PROFILE_COLS}`,
     [
-      userId, patch.display_name ?? null, patch.units ?? null, patch.timezone ?? null,
+      userId, patch.timezone ?? null,
       patch.height_cm ?? null, patch.birth_year ?? null, patch.sex ?? null, patch.activity_level ?? null,
       patch.height_cm !== undefined, patch.birth_year !== undefined, patch.sex !== undefined, patch.activity_level !== undefined,
     ],

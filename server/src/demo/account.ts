@@ -1,6 +1,4 @@
 import { randomBytes } from "node:crypto";
-import { pool } from "../db/pool";
-import { T } from "../config";
 import { Conflict } from "../errors";
 import { createUserWithProfile, findUserByEmail } from "../repositories/users";
 import { hashPassword } from "../services/password";
@@ -29,7 +27,6 @@ export async function findOrCreateDemoUser(): Promise<{ id: string; email: strin
   if (existing) return { id: existing.id, email: existing.email };
   try {
     const user = await createUserWithProfile(DEMO_EMAIL, await hashPassword(randomBytes(32).toString("hex")));
-    await pool.query(`UPDATE ${T.profiles} SET display_name = 'Demo' WHERE user_id = $1`, [user.id]);
     return user;
   } catch (err) {
     // Two first visits at once: the other one created it.
