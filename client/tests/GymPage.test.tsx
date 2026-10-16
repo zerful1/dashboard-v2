@@ -48,12 +48,12 @@ function mockByPath() {
 }
 
 /** `gymDay` is what Home's Start/Continue link carries. */
-function renderPage(gymDay?: number) {
+function renderPage(gymDay?: number, search = "") {
   const qc = createQueryClient();
   const def = qc.getDefaultOptions();
   qc.setDefaultOptions({ ...def, queries: { ...def.queries, retry: false } });
   render(
-    <MemoryRouter initialEntries={[{ pathname: "/gym", state: gymDay === undefined ? null : { gymDay } }]}>
+    <MemoryRouter initialEntries={[{ pathname: "/gym", search, state: gymDay === undefined ? null : { gymDay } }]}>
       <QueryClientProvider client={qc}>
         <GymPage />
       </QueryClientProvider>
@@ -159,6 +159,16 @@ describe("Gym's header (redesign part 3a, §2)", () => {
 
 // Deferred from #31: useSplit falls back to DEFAULT_SPLIT, so a split that failed
 // with nothing cached named the default split's day, and logged against it.
+// Settings' shortcut (redesign part 8, §3). Gym spins until the split loads,
+// so this also pins the hook sitting above the early returns.
+describe("Gym, opened from Settings", () => {
+  it("opens the split editor from ?open=split, after the split loads", async () => {
+    mockByPath();
+    renderPage(undefined, "?open=split");
+    expect(await screen.findByRole("dialog", { name: /split/i })).toBeInTheDocument();
+  });
+});
+
 describe("Gym, when the split fails to load", () => {
   /** ROUTES, with the split and the last logged day answered by the test. */
   function mockSplit(split: () => unknown, sessions: unknown[] = []) {
