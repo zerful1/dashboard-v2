@@ -59,7 +59,7 @@ describe("exportUserData", () => {
       [config.DB_SCHEMA],
     );
     const expected = rows.map((r) => r.table_name).filter((t) => t !== "password_reset_tokens").sort();
-    expect(expected).toHaveLength(16);
+    expect(expected).toHaveLength(13);
     expect(Object.keys((await exportUserData(a.id)).tables).sort()).toEqual(expected);
   });
 

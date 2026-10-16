@@ -30,11 +30,11 @@ export async function truncateAll(): Promise<void> {
   // per-user state, and truncating it between tests would be wasted work.
   await pool.query(
     `TRUNCATE ${T.users}, ${T.profiles}, ${T.passwordResetTokens}, ${T.session},
-              ${T.bodyWeight}, ${T.progressPhotos}, ${T.exercises},
+              ${T.bodyWeight}, ${T.exercises},
               ${T.workoutSessions}, ${T.workoutSets}, ${T.cardioEntries},
               ${T.workoutSplit}, ${T.habits}, ${T.habitCompletions},
               ${T.nutritionTargets}, ${T.foodItems}, ${T.foodLogEntries},
-              ${T.media}, ${T.mediaSeasons}, ${T.goals}
+              ${T.goals}
      RESTART IDENTITY CASCADE`,
   );
 }
