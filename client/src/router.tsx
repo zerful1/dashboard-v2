@@ -45,8 +45,8 @@ const InsightsPage = lazy(() =>
 const HabitsPage = lazy(() =>
   import("@/features/habits/HabitsPage").then((m) => ({ default: m.HabitsPage })),
 );
-const ComingSoonPage = lazy(() =>
-  import("@/pages/ComingSoonPage").then((m) => ({ default: m.ComingSoonPage })),
+const NotFoundPage = lazy(() =>
+  import("@/pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })),
 );
 
 export const router = createBrowserRouter([
@@ -82,7 +82,7 @@ export const router = createBrowserRouter([
           // that strands the user is a different thing from one that doesn't.
           // Static paths outrank a splat in React Router's ranking, so the
           // routes above are unaffected by their order relative to this one.
-          { path: "*", element: <ComingSoonPage /> },
+          { path: "*", element: <NotFoundPage /> },
         ],
       },
     ],
