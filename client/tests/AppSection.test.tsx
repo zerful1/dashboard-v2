@@ -24,12 +24,20 @@ describe("versionText", () => {
 
 describe("AppSection", () => {
   it("refreshes the app when asked", async () => {
-    const spy = vi.spyOn(refresh, "refreshApp").mockResolvedValue(undefined);
+    const spy = vi.spyOn(refresh, "refreshApp").mockResolvedValue(true);
     renderSection();
     expect(screen.getByText("Version dev")).toBeInTheDocument();
     expect(screen.getByText("For when it looks out of date. Your data stays on the server.")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Refresh the app" }));
     expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it("says so when the server can't be reached, and clears nothing", async () => {
+    vi.spyOn(refresh, "refreshApp").mockResolvedValue(false);
+    renderSection();
+    await userEvent.click(screen.getByRole("button", { name: "Refresh the app" }));
+    expect(await screen.findByText("Couldn't reach the server, so nothing was cleared.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Refresh the app" })).toBeEnabled();
   });
 
   // Review focus 4: with no signal, emptying the caches leaves nothing to load.
