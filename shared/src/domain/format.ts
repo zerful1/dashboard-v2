@@ -8,10 +8,6 @@ function repsText(s: ShownSet) {
   return s.reps_left != null && s.reps_right != null ? `L${s.reps_left} R${s.reps_right}` : `${s.reps}`
 }
 
-export function setShort(s: ShownSet) {
-  return s.is_bodyweight ? `BW×${repsText(s)}` : `${s.weight_kg}×${repsText(s)}`
-}
-
 export function setLong(s: ShownSet) {
   return s.is_bodyweight ? `BW × ${repsText(s)}` : `${s.weight_kg}kg × ${repsText(s)}`
 }

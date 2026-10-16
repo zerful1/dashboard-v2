@@ -1,4 +1,4 @@
-import { Home, Scale, Dumbbell, Apple, TrendingUp, CheckSquare, Clapperboard, Settings } from "lucide-react";
+import { Home, Scale, Dumbbell, Apple, TrendingUp, CheckSquare, Settings } from "lucide-react";
 
 // `primary` items get a slot in the bottom tab bar; the rest live behind More.
 // Five primary slots plus More is the practical ceiling — at 390px that is 78px
@@ -13,6 +13,5 @@ export const NAV_ITEMS = [
   // The fifth and last primary slot (see the ceiling note above).
   { to: "/insights", label: "Insights", icon: TrendingUp, primary: true },
   { to: "/habits", label: "Habits", icon: CheckSquare, primary: false },
-  { to: "/media", label: "Media", icon: Clapperboard, primary: false },
   { to: "/settings", label: "Settings", icon: Settings, primary: false },
 ] as const;

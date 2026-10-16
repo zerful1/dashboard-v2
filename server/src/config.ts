@@ -74,7 +74,6 @@ export const T = {
   session: `${S}.session`,
   // domain
   bodyWeight: `${S}.body_weight`,
-  progressPhotos: `${S}.progress_photos`,
   exercises: `${S}.exercises`,
   workoutSessions: `${S}.workout_sessions`,
   workoutSets: `${S}.workout_sets`,
@@ -85,8 +84,6 @@ export const T = {
   nutritionTargets: `${S}.nutrition_targets`,
   foodItems: `${S}.food_items`,
   foodLogEntries: `${S}.food_log_entries`,
-  media: `${S}.media`,
-  mediaSeasons: `${S}.media_seasons`,
   cofidFoods: `${S}.cofid_foods`,
   goals: `${S}.goals`,
 } as const;

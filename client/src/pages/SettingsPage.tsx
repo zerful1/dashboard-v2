@@ -23,12 +23,10 @@ import { useToday } from "@/hooks/useToday";
  * The server's own check (`patchBody` in server/src/routes/profile.ts) is
  * deliberately permissive — any non-empty string up to 60 characters is
  * accepted, and a bad value is only ever rejected where it's actually handed
- * to `Intl`. Nothing in this codebase does that yet, so a typo saved here
- * wouldn't fail today — it would save silently and only misbehave once
- * scheduled, per-timezone work exists, with nothing left to connect that
- * failure back to this field. Running the same check at the point the value
- * is typed is what turns a silent future failure into an immediate, honest
- * one now.
+ * to a timezone parser. Food's copy-a-day hands it to Postgres (`AT TIME
+ * ZONE`), which rejects an unknown zone, so a typo saved here would surface
+ * there, far from this field. Running the same check at the point the value
+ * is typed is what turns that distant failure into an immediate, honest one.
  */
 function normalizeTimeZone(tz: string): string | null {
   try {

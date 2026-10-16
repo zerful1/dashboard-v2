@@ -1,6 +1,6 @@
 # dashboard-v2
 
-A personal tracker — gym, body weight, nutrition, habits, media. A rebuild of a
+A personal tracker — gym, body weight, nutrition, habits. A rebuild of a
 single-user Supabase-client app into a multi-user client/server one.
 
 npm workspaces: `shared/` and `server/` are CommonJS, `client/` is ESM and

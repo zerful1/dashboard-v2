@@ -25,9 +25,6 @@ const TABLES: { name: string; ref: string; orderBy: string }[] = [
   { name: "goals", ref: T.goals, orderBy: "t.created_at, t.id" },
   { name: "habits", ref: T.habits, orderBy: "t.sort_order, t.created_at, t.id" },
   { name: "habit_completions", ref: T.habitCompletions, orderBy: "t.completed_date, t.id" },
-  { name: "media", ref: T.media, orderBy: "t.created_at, t.id" },
-  { name: "media_seasons", ref: T.mediaSeasons, orderBy: "t.media_id, t.season_number, t.id" },
-  { name: "progress_photos", ref: T.progressPhotos, orderBy: "t.date, t.created_at, t.id" },
 ];
 
 /**

@@ -52,32 +52,6 @@ export function daysBetweenISO(from: string, to: string): number {
   return Math.round((utc(to) - utc(from)) / 86_400_000)
 }
 
-/** Day of the calendar year, 1-based (Jan 1 = 1). */
-export function getDayOfYear(d: Date = new Date()): number {
-  const year = d.getFullYear()
-  const month = d.getMonth()
-  const date = d.getDate()
-
-  let dayCount = 0
-  for (let m = 0; m < month; m++) {
-    const daysInMonth = new Date(year, m + 1, 0).getDate()
-    dayCount += daysInMonth
-  }
-  dayCount += date
-
-  return dayCount
-}
-
-/** Week of the calendar year, 1-based — ceil(dayOfYear / 7). Matches the prototype's "WK" badge. */
-export function getWeekOfYear(d: Date = new Date()): number {
-  return Math.ceil(getDayOfYear(d) / 7)
-}
-
-/** Number of days in the calendar year of `d` (365 or 366). */
-export function getDaysInYear(d: Date = new Date()): number {
-  return getDayOfYear(new Date(d.getFullYear(), 11, 31))
-}
-
 /** A YYYY-MM-DD that names a day that exists: no 30 February, no month 13. */
 export function isRealDate(iso: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false
