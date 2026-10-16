@@ -38,7 +38,8 @@ export function ShortcutList({ today }: { today: string }) {
   return (
     <Card>
       <h2 className="lbl">Set on other pages</h2>
-      <List className="mt-2">
+      {/* No closing line: the next section's hairline follows. */}
+      <List className="mt-2 border-b-0">
         {rows.map((r) => (
           <Link key={r.name} to={r.to} className="flex items-center gap-3 py-3">
             <span className="text-sm">{r.name}</span>

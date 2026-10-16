@@ -168,6 +168,8 @@ describe("SettingsPage, redesigned (part 8)", () => {
       await screen.findByText((_, el) => el?.tagName === "P" &&
         el.textContent === "Since 24 Jun 2026: 108 weigh-ins · 71 sessions · 112 days of food · 2 habits"),
     ).toBeInTheDocument();
+    // Browser pass: "21 / days of food" broke across lines. A count keeps its words.
+    expect(screen.getByText("112").parentElement).toHaveClass("whitespace-nowrap");
   });
 
   it("says when nothing is logged yet", async () => {

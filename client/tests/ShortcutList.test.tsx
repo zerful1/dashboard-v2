@@ -63,6 +63,14 @@ describe("ShortcutList", () => {
     expect(await screen.findByText("2 habits")).toBeInTheDocument();
   });
 
+  // Browser pass: its closing line sat 24 px above Your data's, a double hairline.
+  it("draws no closing line under the list", async () => {
+    mockApi();
+    renderList();
+    await screen.findByText("2 habits");
+    expect(screen.getByRole("link", { name: /Habits/ }).parentElement).toHaveClass("border-b-0");
+  });
+
   // Review focus 1: useSplit answers DEFAULT_SPLIT until the real one loads.
   it("leaves a value blank while it loads, never the default split's", async () => {
     mockApi({ split: null });

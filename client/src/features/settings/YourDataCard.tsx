@@ -40,7 +40,10 @@ function SummaryLine({ s }: { s: DataSummary }) {
       {parts.map(([n, word], i) => (
         <span key={word}>
           {i > 0 && " · "}
-          <span className="text-text">{n.toLocaleString("en-GB")}</span> {word}
+          {/* A count keeps its words on one line. */}
+          <span className="whitespace-nowrap">
+            <span className="text-text">{n.toLocaleString("en-GB")}</span> {word}
+          </span>
         </span>
       ))}
     </p>
