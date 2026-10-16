@@ -416,3 +416,14 @@ export interface ExportFile {
   /** Keyed by database table name; every value is an array, even for one-row tables. */
   tables: Record<string, Record<string, unknown>[]>;
 }
+
+/** What Settings says is stored, beside the download (redesign part 8, §4). */
+export interface DataSummary {
+  /** The earliest date among weigh-ins, sessions and food entries; null when there is none. */
+  since: string | null;
+  weighIns: number;
+  sessions: number;
+  /** Distinct dates with a food entry. */
+  foodDays: number;
+  habits: number;
+}
