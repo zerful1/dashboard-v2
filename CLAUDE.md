@@ -155,6 +155,15 @@ DB_SCHEMA=app npm run drift
 the moment the command ends. **Never edit `.env` to point at `app`** — the next
 test run inherits it.
 
+### Which side of the deploy a migration runs on
+
+Merging auto-deploys, so the order is the migration's shape. **An additive
+migration runs on production before the merge**: the deployed code ignores a
+new table or column, and the new code needs it. **A dropping one runs after the
+deploy is live**: the deployed code still names the column, and fails the
+moment it goes. 007 (Settings' unused profile fields) was the first of those,
+and was nearly run first. Either way, check `app._migrations` after.
+
 ### The `_dev` suffix guard is a convention, not three separate guards
 
 Anything that writes refuses a schema it should not touch, **before it writes**,
