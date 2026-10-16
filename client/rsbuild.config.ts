@@ -18,6 +18,12 @@ export default defineConfig({
   plugins: [pluginReact(), pluginTailwindcss()],
   source: {
     entry: { index: './src/index.tsx' },
+    // The version Settings shows (lib/buildInfo.ts). Vercel sets the commit at
+    // build time; a local build has none and reads as "dev".
+    define: {
+      __BUILD_SHA__: JSON.stringify(process.env.VERCEL_GIT_COMMIT_SHA ?? ''),
+      __BUILD_DATE__: JSON.stringify(new Date().toISOString().slice(0, 10)),
+    },
   },
   // Without this RSBuild generates its own HTML and src/index.html is ignored,
   // so the tab read "Rsbuild App" — a title nobody chose, from a file nobody
