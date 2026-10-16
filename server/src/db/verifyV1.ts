@@ -69,7 +69,6 @@ async function main(): Promise<void> {
       ["nutrition_targets", "nutrition_targets", "nutrition_targets"],
       ["food_items", "food_items", "food_items"],
       ["food_log_entries", "food_log_entries", "food_log_entries"],
-      ["media", "media", "media"],
     ] as const) {
       await pair(
         `count ${name}`,

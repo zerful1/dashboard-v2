@@ -24,7 +24,7 @@ export interface Profile {
 }
 
 // ---------------------------------------------------------------------------
-// Body weight & photos
+// Body weight
 // ---------------------------------------------------------------------------
 
 export interface BodyWeightEntry {

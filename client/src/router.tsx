@@ -76,10 +76,8 @@ export const router = createBrowserRouter([
           { path: "/habits", element: <HabitsPage /> },
           { path: "/settings", element: <SettingsPage /> },
           // Inside the protected children, not beside them, so an address that
-          // matches nothing still renders with the nav and sign-out around it.
-          // Most of NAV_ITEMS points here for now: those sections 404 on
-          // purpose — showing the shape of the app beats hiding it — but a 404
-          // that strands the user is a different thing from one that doesn't.
+          // matches nothing still renders with the nav and sign-out around it:
+          // a 404 that strands the user is a different thing from one that doesn't.
           // Static paths outrank a splat in React Router's ranking, so the
           // routes above are unaffected by their order relative to this one.
           { path: "*", element: <NotFoundPage /> },
