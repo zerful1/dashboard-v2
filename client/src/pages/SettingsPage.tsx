@@ -11,6 +11,9 @@ import { Input } from "@/components/ui/Input";
 import { Field } from "@/components/ui/Field";
 import { Spinner } from "@/components/ui/Spinner";
 import { YourDataCard } from "@/features/settings/YourDataCard";
+import { ShortcutList } from "@/features/settings/ShortcutList";
+import { AppSection } from "@/features/settings/AppSection";
+import { useToday } from "@/hooks/useToday";
 
 /**
  * Resolves `tz` to its canonical IANA name (folds case, resolves an alias
@@ -51,6 +54,8 @@ function normalizeTimeZone(tz: string): string | null {
 export function SettingsPage() {
   const qc = useQueryClient();
   const { user, logout } = useAuth();
+  // One clock for the page (CLAUDE.md).
+  const today = useToday();
 
   const {
     data: profile,
@@ -121,21 +126,16 @@ export function SettingsPage() {
   // is exactly this case, and it is recoverable, so it gets a retry.
   if (isError) {
     return (
-      <div className="max-w-lg space-y-4">
+      <div className="max-w-lg space-y-6">
+        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <div>
-          <div className="lbl text-accent">Settings</div>
-          <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">Your account</h1>
-          <p className="mt-1 text-sm text-muted">{user?.email}</p>
-        </div>
-
-        <Card className="space-y-3">
-          <p role="alert" className="text-sm leading-relaxed text-muted">
+          <p role="alert" className="text-sm leading-relaxed text-negative">
             We couldn&apos;t load your profile. The server may still be waking up.
           </p>
-          <Button onClick={() => void refetch()} loading={isFetching}>
+          <Button variant="ghost" className="mt-2" onClick={() => void refetch()} loading={isFetching}>
             Try again
           </Button>
-        </Card>
+        </div>
       </div>
     );
   }
@@ -143,52 +143,15 @@ export function SettingsPage() {
   if (isLoading || !profile) return <Spinner label="Loading your profile" />;
 
   return (
-    <div className="max-w-lg space-y-4">
-      <div>
-        <div className="lbl text-accent">Settings</div>
-        <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">Your account</h1>
-        <p className="mt-1 text-sm text-muted">{user?.email}</p>
-      </div>
+    <div className="max-w-lg space-y-6">
+      <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+
+      <ShortcutList today={today} />
+
+      <YourDataCard />
 
       <Card className="space-y-4">
-        <div className="lbl">Profile</div>
-
-        <Field
-          label="Timezone"
-          htmlFor="timezone"
-          hint="An IANA name, e.g. Europe/Warsaw. Used for scheduled work only — the app reads your device's calendar day."
-          error={tzError}
-        >
-          <Input
-            id="timezone"
-            value={tzDraft ?? profile.timezone}
-            onChange={(e) => {
-              setTzDraft(e.target.value);
-              if (tzError) setTzError(undefined);
-            }}
-            onBlur={(e) => {
-              const typed = e.target.value.trim();
-              if (typed === profile.timezone) {
-                setTzDraft(null);
-                return;
-              }
-              const canonical = normalizeTimeZone(typed);
-              if (!canonical) {
-                setTzError("Not a recognized timezone — try a name like Europe/Warsaw.");
-                return;
-              }
-              setTzError(undefined);
-              void saveProfile
-                .mutateAsync({ timezone: canonical })
-                .catch(() => {})
-                .finally(() => setTzDraft(null));
-            }}
-          />
-        </Field>
-      </Card>
-
-      <Card className="space-y-4">
-        <div className="lbl">Change password</div>
+        <h2 className="lbl">Password</h2>
         <Field label="Current password" htmlFor="current">
           <Input
             id="current"
@@ -223,10 +186,43 @@ export function SettingsPage() {
         </Button>
       </Card>
 
-      <YourDataCard />
+      <AppSection />
 
-      <Card className="space-y-3">
-        <div className="lbl">Account</div>
+      <Card className="space-y-4">
+        <h2 className="lbl">Account</h2>
+        <p className="text-sm">{user?.email}</p>
+        <Field
+          label="Timezone"
+          htmlFor="timezone"
+          hint="Used to keep times right when you copy a day of food."
+          error={tzError}
+        >
+          <Input
+            id="timezone"
+            value={tzDraft ?? profile.timezone}
+            onChange={(e) => {
+              setTzDraft(e.target.value);
+              if (tzError) setTzError(undefined);
+            }}
+            onBlur={(e) => {
+              const typed = e.target.value.trim();
+              if (typed === profile.timezone) {
+                setTzDraft(null);
+                return;
+              }
+              const canonical = normalizeTimeZone(typed);
+              if (!canonical) {
+                setTzError("Not a recognized timezone — try a name like Europe/Warsaw.");
+                return;
+              }
+              setTzError(undefined);
+              void saveProfile
+                .mutateAsync({ timezone: canonical })
+                .catch(() => {})
+                .finally(() => setTzDraft(null));
+            }}
+          />
+        </Field>
         <Button variant="ghost" onClick={() => void logout()} className="w-full">
           Sign out
         </Button>
