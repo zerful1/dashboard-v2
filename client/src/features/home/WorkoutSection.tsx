@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Check } from "lucide-react";
 import type { WorkoutProgress } from "@dashboard/shared";
 import { Card } from "@/components/ui/Card";
+import { PILL } from "@/components/ui/pill";
 import { cn } from "@/lib/cn";
 
 export interface HomeWorkout {
@@ -22,11 +23,6 @@ function detail(p: WorkoutProgress): string {
   if (!p.started) return p.total > 0 ? `${plural(p.total, "exercise")} · not started` : "Not started";
   return p.total > 0 ? `${p.done} of ${plural(p.total, "exercise")} · ${plural(p.sets, "set")}` : plural(p.sets, "set");
 }
-
-// Button's primary look on a Link, focus ring included: it navigates, so it is a link.
-const PILL =
-  "inline-flex items-center justify-center rounded-full text-sm font-semibold transition " +
-  "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
 
 /** Today's workout: big with the white action in the top slot, compact below it. */
 export function WorkoutSection({ workout, prominent = false }: { workout: HomeWorkout; prominent?: boolean }) {

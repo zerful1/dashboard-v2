@@ -23,6 +23,7 @@ const ALLOWED: Record<string, string> = {
   "features/nutrition/WeekStrip.tsx": "the bars' fill (data ink) and the protein dot (a small done mark)",
   "features/weight/PeriodList.tsx": "week dots: small done marks",
   "features/insights/WeekStrips.tsx": "days trained (small done marks) and the food bars' fill (data ink)",
+  "pages/AboutPage.tsx": "the Open the app link: the one action, a link outside Button",
 };
 
 /**

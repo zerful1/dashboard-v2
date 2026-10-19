@@ -1,11 +1,12 @@
 import { lazy } from "react";
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, type RouteObject } from "react-router-dom";
 import { ProtectedRoute } from "@/auth/ProtectedRoute";
 import { AppLayout } from "@/layout/AppLayout";
 import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
+import { AboutPage } from "@/pages/AboutPage";
 import { RouteErrorPage } from "@/pages/RouteErrorPage";
 
 /**
@@ -19,8 +20,8 @@ import { RouteErrorPage } from "@/pages/RouteErrorPage";
  * `.then` unwrapping is needed because these are named exports and React.lazy
  * expects a module whose `default` is the component.
  *
- * The four unauthenticated screens above are deliberately NOT split. They are
- * small forms with no heavy dependencies, and they sit on the cold-start
+ * The five unauthenticated screens above are deliberately NOT split. They are
+ * small pages with no heavy dependencies, and they sit on the cold-start
  * critical path: splitting them would add a load-the-entry-then-discover-the-
  * chunk round trip to the one route every signed-out visitor hits first.
  */
@@ -49,7 +50,8 @@ const NotFoundPage = lazy(() =>
   import("@/pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })),
 );
 
-export const router = createBrowserRouter([
+/** Exported for tests, which build a memory router from the same table. */
+export const routes: RouteObject[] = [
   {
     // A pathless root whose only job is to own one errorElement for the whole
     // tree — errors bubble to the nearest ancestor that has one, and without
@@ -61,6 +63,9 @@ export const router = createBrowserRouter([
       { path: "/register", element: <RegisterPage /> },
       { path: "/forgot-password", element: <ForgotPasswordPage /> },
       { path: "/reset-password", element: <ResetPasswordPage /> },
+      // Public, beside /login: the 404 below sits inside ProtectedRoute, so a
+      // missing public route sends a signed-out visitor to /login instead.
+      { path: "/about", element: <AboutPage /> },
       {
         element: (
           <ProtectedRoute>
@@ -85,4 +90,6 @@ export const router = createBrowserRouter([
       },
     ],
   },
-]);
+];
+
+export const router = createBrowserRouter(routes);
