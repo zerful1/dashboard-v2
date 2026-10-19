@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { ApiError } from "@/lib/api";
@@ -34,6 +34,10 @@ export function AboutPage() {
   const navigate = useNavigate();
   const [demoBusy, setDemoBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // A navigation keeps the scroll, and the login page's link is the last thing
+  // on it: without this, a small phone opens here past the title.
+  useEffect(() => window.scrollTo(0, 0), []);
 
   async function onDemo() {
     setError(null);

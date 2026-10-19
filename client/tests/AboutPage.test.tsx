@@ -124,6 +124,16 @@ describe("AboutPage", () => {
     expect(screen.getByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
   });
 
+  // The final review: the login page's link is the last thing on it, and a
+  // navigation keeps the scroll, so a small phone opened this page past its title.
+  it("opens at the top of the page", async () => {
+    mockApi();
+    const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+    renderPage();
+    await screen.findByRole("button", { name: "Try the demo" });
+    expect(scrollTo).toHaveBeenCalledWith(0, 0);
+  });
+
   it("says what the spec says", async () => {
     mockApi();
     renderPage();
