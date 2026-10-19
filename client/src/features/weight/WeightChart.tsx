@@ -54,17 +54,22 @@ export function weightRows(points: ChartPoint[], line: AveragePoint[], start: st
   return rows;
 }
 
-/** Every 7 days back from today for one month; otherwise the 1st of each month. */
+/**
+ * Every 7 days back from today for one month; otherwise the 1st of each month,
+ * unless fewer than two 1sts fall in the range — a new account's All range —
+ * when the weekly ticks label it instead of one month or none.
+ */
 export function weightTicks(start: string, today: string, weekly: boolean): { x: number; label: string }[] {
+  if (!weekly) {
+    const months: { x: number; label: string }[] = [];
+    for (let d = start.endsWith("-01") ? start : nextMonthStart(start); d <= today; d = nextMonthStart(d)) {
+      months.push({ x: daysBetweenISO(start, d), label: monthTick(d) });
+    }
+    if (months.length >= 2) return months;
+  }
   const ticks: { x: number; label: string }[] = [];
   const total = daysBetweenISO(start, today);
-  if (weekly) {
-    for (let back = 0; back <= total; back += 7) ticks.unshift({ x: total - back, label: dayMonth(shiftISO(today, -back), today) });
-    return ticks;
-  }
-  for (let d = start.endsWith("-01") ? start : nextMonthStart(start); d <= today; d = nextMonthStart(d)) {
-    ticks.push({ x: daysBetweenISO(start, d), label: monthTick(d) });
-  }
+  for (let back = 0; back <= total; back += 7) ticks.unshift({ x: total - back, label: dayMonth(shiftISO(today, -back), today) });
   return ticks;
 }
 
@@ -226,11 +231,16 @@ export function WeightChart({ points, line, start, today, goalKg, span, weekly }
   );
 }
 
-/** The 7-day average with a null between two points more than 7 days apart, so the line breaks there. */
-export function sparklineRows(line: AveragePoint[]): { date: string; kg: number | null }[] {
-  return line.flatMap((p) =>
+/**
+ * The 7-day average with a null between two points more than 7 days apart, so
+ * the line breaks there. A point with a break or the end on both sides has no
+ * line to be part of, so it is marked `lone` and drawn as a dot.
+ */
+export function sparklineRows(line: AveragePoint[]): { date: string; kg: number | null; lone: boolean }[] {
+  const rows = line.flatMap((p) =>
     p.gapBefore ? [{ date: `${p.date}-gap`, kg: null }, { date: p.date, kg: p.kg }] : [{ date: p.date, kg: p.kg }],
   );
+  return rows.map((r, i) => ({ ...r, lone: r.kg !== null && rows[i - 1]?.kg == null && rows[i + 1]?.kg == null }));
 }
 
 /**
@@ -266,7 +276,14 @@ export function WeightSparkline({ line }: { line: AveragePoint[] }) {
             dataKey="kg"
             stroke="var(--color-accent)"
             strokeWidth={2}
-            dot={false}
+            // Only a lone point gets a dot: after a gap, the newest average
+            // has nothing to join, and a line of one point draws nothing.
+            dot={(props: unknown) => {
+              const { cx, cy, index, payload } = props as { cx?: number; cy?: number; index?: number; payload?: { lone?: boolean } };
+              const key = `dot-${index}`;
+              if (cx == null || cy == null || !payload?.lone) return <g key={key} />;
+              return <circle key={key} cx={cx} cy={cy} r={2.5} fill="var(--color-accent)" />;
+            }}
             isAnimationActive={safe}
           />
         </LineChart>

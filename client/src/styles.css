@@ -74,6 +74,13 @@
     outline-offset: 2px;
   }
 
+  /* Recharts makes its chart focusable, so a tap left a box around the Weight
+     chart. Pointer focus only: the keyboard keeps the outline above. */
+  .recharts-wrapper:focus:not(:focus-visible),
+  .recharts-surface:focus:not(:focus-visible) {
+    outline: none;
+  }
+
   /* No double-tap zoom: on iOS a quick double tap (+/−, ticking habits) zoomed
      the page, and a zoomed page pans sideways. Pinch zoom stays — never lock the
      viewport (WCAG 1.4.4). On every element, because touch-action is combined

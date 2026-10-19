@@ -19,6 +19,8 @@ interface Props {
 /** The empty "—": decoration, so dim (CLAUDE.md). */
 const Dash = () => <span className="text-dim">—</span>;
 
+const weighIns = (n: number) => `${n} ${n === 1 ? "weigh-in" : "weigh-ins"}`;
+
 function label(row: PeriodRow, kind: PeriodKind, today: string): string {
   if (row.kind === "period" && row.current) return kind === "week" ? "This week" : "This month";
   return kind === "week" ? rangeLabel(row.start, row.end, today) : monthRangeLabel(row.start, row.end, today);
@@ -58,7 +60,7 @@ export function PeriodList({ rows, kind, entries, goalKg, today, open, onToggle,
               <button
                 type="button"
                 aria-expanded={isOpen}
-                aria-label={`${name}: average ${row.average === null ? "none yet" : `${row.average.toFixed(1)} kg`}, ${spokenChange(row)}, ${row.weighIns} weigh-ins`}
+                aria-label={`${name}: average ${row.average === null ? "none yet" : `${row.average.toFixed(1)} kg`}, ${spokenChange(row)}, ${weighIns(row.weighIns)}`}
                 onClick={() => onToggle(row.start)}
                 className="flex w-full items-center gap-2 py-3 text-left text-sm hover:bg-accent/5"
               >
@@ -66,7 +68,8 @@ export function PeriodList({ rows, kind, entries, goalKg, today, open, onToggle,
                 <span aria-hidden className="flex flex-1 items-center gap-1">
                   {row.days
                     ? row.days.map((d, i) =>
-                        d === "future" ? (
+                        // Neither the future nor the days before any history can be missed.
+                        d === "future" || d === "before" ? (
                           <span key={i} className="h-1.5 w-1.5" />
                         ) : (
                           <span
@@ -76,7 +79,7 @@ export function PeriodList({ rows, kind, entries, goalKg, today, open, onToggle,
                           />
                         ),
                       )
-                    : <span className="text-xs text-muted">{row.weighIns} {row.weighIns === 1 ? "weigh-in" : "weigh-ins"}</span>}
+                    : <span className="text-xs text-muted">{weighIns(row.weighIns)}</span>}
                 </span>
                 <span className="tnum w-10 text-right font-semibold">{row.average === null ? <Dash /> : row.average.toFixed(1)}</span>
                 <span

@@ -15,7 +15,8 @@ export interface AveragePoint {
 }
 
 export type PeriodKind = 'week' | 'month'
-export type DayMark = 'weighed' | 'missed' | 'future'
+/** 'before': a day of the first week before the first weigh-in, when there was no history to miss. */
+export type DayMark = 'weighed' | 'missed' | 'future' | 'before'
 
 /** A row of the Weight page's list (redesign part 5, §4), newest first. */
 export type PeriodRow =
@@ -47,14 +48,25 @@ export function windowMean(points: WeighInPoint[], from: string, to: string): nu
  * At each weigh-in, the mean of the weigh-ins in the 7 days ending on its date
  * (redesign part 5, §3). Looking back only, so the newest point never waits for
  * weigh-ins not yet made. Any input order; the result is oldest first.
+ *
+ * A sliding window: `lo` and `hi` only move forward, so it is linear in the
+ * weigh-ins. Each window is summed afresh, in date order, as windowMean sums
+ * it: a running total that subtracts the expired weigh-in drifts in the last
+ * digit (83.8 came out 83.79999999999993), and the results must not change.
  */
 export function rollingAverage(points: WeighInPoint[]): AveragePoint[] {
   const asc = [...points].sort((a, b) => a.date.localeCompare(b.date))
-  return asc.map((p, i) => ({
-    date: p.date,
-    kg: windowMean(asc, shiftISO(p.date, -6), p.date)!,
-    gapBefore: i > 0 && p.date > shiftISO(asc[i - 1]!.date, 7),
-  }))
+  let lo = 0
+  let hi = 0
+  return asc.map((p, i) => {
+    // hi runs past every weigh-in on this date, as windowMean's filter takes them all.
+    while (hi < asc.length && asc[hi]!.date <= p.date) hi++
+    const from = shiftISO(p.date, -6)
+    while (asc[lo]!.date < from) lo++
+    let sum = 0
+    for (let j = lo; j < hi; j++) sum += asc[j]!.kg
+    return { date: p.date, kg: sum / (hi - lo), gapBefore: i > 0 && p.date > shiftISO(asc[i - 1]!.date, 7) }
+  })
 }
 
 /** The 1st of the month after the one holding `iso`, as string maths. */
@@ -101,7 +113,9 @@ export function periodRows(points: WeighInPoint[], kind: PeriodKind, from: strin
       kind === 'week'
         ? Array.from({ length: 7 }, (_, i) => {
             const d = shiftISO(start, i)
-            return d > today ? 'future' : inside.some((p) => p.date === d) ? 'weighed' : 'missed'
+            if (d > today) return 'future'
+            if (d < first) return 'before'
+            return inside.some((p) => p.date === d) ? 'weighed' : 'missed'
           })
         : null
 

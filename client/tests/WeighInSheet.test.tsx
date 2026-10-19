@@ -42,6 +42,18 @@ describe("WeighInSheet, opened by Log", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
+  it("suggests the latest weigh-in as the placeholder, by date", () => {
+    // Out of order on purpose: the newest by date is 79.6, whatever the array's order.
+    renderSheet(LOG, [entry("2026-08-15", 79.6), entry("2026-08-10", 80.1), entry("2026-08-12", 80.0)].reverse());
+    expect(kg()).toHaveValue(null);
+    expect(kg()).toHaveAttribute("placeholder", "79.6");
+  });
+
+  it("falls back to 82.4 as the placeholder with no weigh-ins", () => {
+    renderSheet(LOG);
+    expect(kg()).toHaveAttribute("placeholder", "82.4");
+  });
+
   it("saves on Enter", async () => {
     const { save } = renderSheet(LOG);
     await userEvent.type(kg(), "82.4{Enter}");

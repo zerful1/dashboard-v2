@@ -55,6 +55,18 @@ describe("PeriodList", () => {
     expect(container.querySelectorAll('[data-part="mark"].border-dim')).toHaveLength(1);
   });
 
+  it("leaves the days before the first weigh-in blank, not ringed as missed", () => {
+    const { container } = renderList([week({ weighIns: 1, days: ["before", "before", "weighed", "missed", "missed", "missed", "missed"] })]);
+    expect(container.querySelectorAll('[data-part="mark"]')).toHaveLength(5);
+    expect(container.querySelectorAll('[data-part="mark"].border-dim')).toHaveLength(4);
+  });
+
+  it("says 1 weigh-in, singular, to a screen reader, and more in the plural", () => {
+    renderList([week({ weighIns: 1 }), week({ start: "2026-09-28", end: "2026-10-04" })]);
+    expect(screen.getByRole("button", { name: /^5–11 Oct/ }).getAttribute("aria-label")).toMatch(/, 1 weigh-in$/);
+    expect(screen.getByRole("button", { name: /^28 Sep/ }).getAttribute("aria-label")).toMatch(/, 6 weigh-ins$/);
+  });
+
   it("shows — when the week before had no weigh-ins", () => {
     renderList([week({ change: null })]);
     expect(screen.getByText("—")).toBeInTheDocument();

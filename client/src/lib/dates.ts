@@ -61,7 +61,9 @@ export function rangeLabel(from: string, to: string, today: string): string {
   const [fy, fm, fd] = from.split("-").map(Number);
   const [ty, tm, td] = to.split("-").map(Number);
   const year = (y: number) => (y === Number(today.slice(0, 4)) ? "" : ` ${y}`);
-  if (fy !== ty) return `${fd} ${MONTHS[fm! - 1]} ${fy} – ${td} ${MONTHS[tm! - 1]}${year(ty!)}`;
+  // Across a year end the second year is named, always, and the first never:
+  // "29 Dec – 4 Jan 2026" (housekeeping item 5).
+  if (fy !== ty) return `${fd} ${MONTHS[fm! - 1]} – ${td} ${MONTHS[tm! - 1]} ${ty}`;
   if (fm !== tm) return `${fd} ${MONTHS[fm! - 1]} – ${td} ${MONTHS[tm! - 1]}${year(ty!)}`;
   return `${fd}–${td} ${MONTHS[tm! - 1]}${year(ty!)}`;
 }

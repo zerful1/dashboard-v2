@@ -43,6 +43,8 @@ function WeighInForm({ target, onClose, entries, today, save, remove }: Props & 
   const existing = entries.find((e) => e.date === date) ?? (target.mode === "edit" ? target.entry : null);
   const [kg, setKg] = useState(existing?.weight_kg.toString() ?? "");
   const [notes, setNotes] = useState(existing?.notes ?? "");
+  // The latest weigh-in by date is the likeliest next one; "82.4" only with none.
+  const latest = entries.reduce<BodyWeightEntry | null>((a, e) => (a === null || e.date > a.date ? e : a), null);
 
   /**
    * Reload the fields when the DATE changes, and only then. Depending on
@@ -79,7 +81,7 @@ function WeighInForm({ target, onClose, entries, today, save, remove }: Props & 
           inputMode="decimal"
           step="0.1"
           min="0"
-          placeholder="82.4"
+          placeholder={latest ? latest.weight_kg.toFixed(1) : "82.4"}
           value={kg}
           onChange={(e) => setKg(e.target.value)}
         />

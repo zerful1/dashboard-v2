@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { nextMonthStart, periodRows, rollingAverage, windowMean, type WeighInPoint } from '../src/domain/weight'
+import { shiftISO } from '../src/domain/date'
+import { nextMonthStart, periodRows, rollingAverage, windowMean, type AveragePoint, type WeighInPoint } from '../src/domain/weight'
 
 const p = (date: string, kg: number): WeighInPoint => ({ date, kg })
 const TODAY = '2026-10-14' // a Wednesday
@@ -29,6 +30,49 @@ describe('rollingAverage', () => {
   it('breaks the line after a gap of more than 7 days, and not at exactly 7', () => {
     const line = rollingAverage([p('2026-10-01', 80), p('2026-10-08', 80), p('2026-10-16', 80)])
     expect(line.map((a) => a.gapBefore)).toEqual([false, false, true])
+  })
+})
+
+/** The quadratic implementation rollingAverage replaced (housekeeping item 2), kept as the reference its results must equal. */
+function referenceRollingAverage(points: WeighInPoint[]): AveragePoint[] {
+  const asc = [...points].sort((a, b) => a.date.localeCompare(b.date))
+  return asc.map((pt, i) => ({
+    date: pt.date,
+    kg: windowMean(asc, shiftISO(pt.date, -6), pt.date)!,
+    gapBefore: i > 0 && pt.date > shiftISO(asc[i - 1]!.date, 7),
+  }))
+}
+
+/** mulberry32: the same 300 weigh-ins on every run. */
+function seeded(seed: number) {
+  return () => {
+    seed = (seed + 0x6d2b79f5) | 0
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+describe('rollingAverage, the sliding window', () => {
+  it('gives exactly what the old implementation gave, gaps and same-day weigh-ins included', () => {
+    const rand = seeded(20261017)
+    const pts: WeighInPoint[] = []
+    let date = '2025-01-06'
+    for (let i = 0; i < 300; i++) {
+      // Mostly daily, sometimes a few days off, now and then a gap past 7 days, and a few repeats of a day.
+      const r = rand()
+      date = shiftISO(date, r < 0.03 ? 0 : r < 0.75 ? 1 : r < 0.95 ? 2 + Math.floor(rand() * 4) : 8 + Math.floor(rand() * 20))
+      pts.push(p(date, Math.round((78 + rand() * 8) * 10) / 10))
+    }
+    // Unsorted input, as the API sends newest first.
+    const input = [...pts].reverse()
+    expect(rollingAverage(input)).toEqual(referenceRollingAverage(input))
+    expect(rollingAverage(input).some((a) => a.gapBefore)).toBe(true)
+  })
+
+  it('gives exactly what the old implementation gave with no weigh-ins and with one', () => {
+    expect(rollingAverage([])).toEqual(referenceRollingAverage([]))
+    expect(rollingAverage([p('2026-10-01', 80.3)])).toEqual(referenceRollingAverage([p('2026-10-01', 80.3)]))
   })
 })
 
@@ -89,6 +133,15 @@ describe('periodRows: weeks', () => {
 
   it('is empty with no weigh-ins', () => {
     expect(periodRows([], 'week', '2026-09-01', TODAY)).toEqual([])
+  })
+
+  it('marks the first week\'s days before the first weigh-in as before, not missed', () => {
+    // 7 Oct is a Wednesday: Monday and Tuesday came before there was any history to miss.
+    const rows = periodRows([p('2026-10-07', 82)], 'week', '2026-09-01', TODAY)
+    expect(rows[1]).toMatchObject({
+      start: '2026-10-05',
+      days: ['before', 'before', 'weighed', 'missed', 'missed', 'missed', 'missed'],
+    })
   })
 })
 
