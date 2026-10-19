@@ -1,0 +1,68 @@
+import { describe, it, expect } from 'vitest'
+import { compositionLine } from '../src/domain/composition'
+import type { TrendFit } from '../src/domain/insights/projection'
+import type { LiftStatus } from '../src/domain/liftProgress'
+
+const fit = (ratePerWeek: number, current = 80): TrendFit => ({ status: 'fit', ratePerWeek, current, slope: ratePerWeek / 7 })
+/** moving, stalled, back, then any others. */
+const lifts = (m: number, s: number, b: number, extra: LiftStatus[] = []): LiftStatus[] =>
+  [...Array(m).fill('moving'), ...Array(s).fill('stalled'), ...Array(b).fill('back'), ...extra]
+const CUT = { target_kg: 78, start_kg: 84 }
+const BULK = { target_kg: 85, start_kg: 76 }
+const verdict = (...a: Parameters<typeof compositionLine>) => compositionLine(...a)?.verdict
+const tone = (...a: Parameters<typeof compositionLine>) => compositionLine(...a)?.tone
+
+// Housekeeping spec §4: the weight's direction from the rate line's own fit,
+// and the strength side from Gym's lift statuses.
+describe('compositionLine', () => {
+  it.each([
+    [fit(-0.4), lifts(6, 0, 1), CUT, 'Losing fat, keeping strength', 'good'],
+    [fit(-0.4), lifts(1, 1, 2), CUT, 'Losing weight, strength slipping', 'caution'],
+    [fit(0.4), lifts(3, 1, 1), BULK, 'Gaining, lifts climbing', 'good'],
+    [fit(0.4), lifts(1, 1, 1), BULK, 'Gaining, lifts not keeping up', 'caution'],
+    [fit(0.01), lifts(3, 1, 1), CUT, 'Weight steady, lifts climbing', 'good'],
+    [fit(0.01), lifts(1, 2, 1), CUT, 'Weight steady, lifts holding', 'neutral'],
+    // R2, the user's call: "lifts holding" would sit beside "2 slipping".
+    [fit(0.01), lifts(0, 1, 2), CUT, 'Weight steady, strength slipping', 'caution'],
+  ] as const)('reads every row of the table: %#', (f, l, g, v, t) => {
+    expect(compositionLine(f, [...l], g)).toMatchObject({ verdict: v, tone: t })
+  })
+
+  it('is green on the weight only toward the goal', () => {
+    expect(tone(fit(-0.4), lifts(6, 0, 1), BULK)).toBe('neutral')
+    expect(tone(fit(0.4), lifts(3, 1, 1), CUT)).toBe('neutral')
+    expect(tone(fit(-0.4), lifts(6, 0, 1), null)).toBe('neutral')
+  })
+
+  it('goes white once the goal is reached, as the rate line does', () => {
+    expect(compositionLine(fit(0.2, 77.5), lifts(3, 1, 1), CUT)).toMatchObject({ verdict: 'Gaining, lifts climbing', tone: 'neutral' })
+    expect(tone(fit(-0.5, 77.9), lifts(6, 0, 1), CUT)).toBe('neutral')
+  })
+
+  it('splits flat from moving where the rate line does', () => {
+    expect(verdict(fit(-0.05), lifts(6, 0, 1), CUT)).toBe('Losing fat, keeping strength')
+    expect(verdict(fit(-0.049), lifts(6, 0, 1), CUT)).toBe('Weight steady, lifts climbing')
+    expect(verdict(fit(0.05), lifts(6, 0, 1), CUT)).toBe('Gaining, lifts climbing')
+  })
+
+  it('counts exactly half slipping as slipping', () => {
+    expect(verdict(fit(-0.4), lifts(2, 0, 2), CUT)).toBe('Losing weight, strength slipping')
+    expect(verdict(fit(-0.4), lifts(3, 0, 2), CUT)).toBe('Losing fat, keeping strength')
+  })
+
+  it('is hidden without a fit, or under 3 counted lifts', () => {
+    expect(compositionLine({ status: 'not-enough-data', have: 9, need: 14 }, lifts(6, 0, 1), CUT)).toBeNull()
+    expect(compositionLine(fit(-0.4), lifts(1, 1, 0, ['new', 'new', 'old', 'new']), CUT)).toBeNull()
+    expect(compositionLine(fit(-0.4), [], CUT)).toBeNull()
+    expect(compositionLine(fit(-0.4), lifts(1, 1, 1), CUT)).not.toBeNull()
+  })
+
+  it('words the detail', () => {
+    const detail = (m: number, s: number, b: number) => compositionLine(fit(-0.4), lifts(m, s, b), CUT)?.detail
+    expect(detail(6, 0, 1)).toBe('6 lifts climbing, 1 slipping')
+    expect(detail(1, 3, 2)).toBe('1 lift climbing, 2 slipping')
+    expect(detail(0, 4, 0)).toBe('4 lifts holding')
+    expect(detail(0, 1, 3)).toBe('3 lifts slipping')
+    expect(detail(2, 5, 0)).toBe('2 lifts climbing')
+  })
+})
