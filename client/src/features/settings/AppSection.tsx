@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -6,7 +8,7 @@ import { useOnline } from "@/hooks/useOnline";
 import { BUILD_DATE, BUILD_SHA, versionText } from "@/lib/buildInfo";
 import { refreshApp } from "@/lib/refreshApp";
 
-/** The version running, and a way to get the latest (redesign part 8, §5). */
+/** The version running, a way to get the latest (redesign part 8, §5), and the project page. */
 export function AppSection() {
   const qc = useQueryClient();
   const online = useOnline();
@@ -43,6 +45,11 @@ export function AppSection() {
             ? "Couldn't reach the server, so nothing was cleared."
             : "For when it looks out of date. Your data stays on the server."}
       </p>
+      <Link to="/about" className="mt-3 flex items-center justify-between border-t border-raised pt-3 text-sm">
+        About this project
+        {/* Decoration: the row is the link. */}
+        <ChevronRight size={16} aria-hidden className="shrink-0 text-dim" />
+      </Link>
     </Card>
   );
 }

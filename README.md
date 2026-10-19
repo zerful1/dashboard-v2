@@ -4,6 +4,8 @@ A personal tracker for training, body weight, food and habits. Phone-first, blac
 
 **[Open the app](https://dashboard-v2-nine-phi.vercel.app/)** → "Try the demo" needs no account.
 
+**[About this project](https://dashboard-v2-nine-phi.vercel.app/about)**: what it does and how it was built.
+
 <p align="center">
   <img src="docs/screenshots/home.png" width="250" alt="Home: today at a glance">
   <img src="docs/screenshots/weight.png" width="250" alt="Weight: the 7-day average, the rate and the goal">

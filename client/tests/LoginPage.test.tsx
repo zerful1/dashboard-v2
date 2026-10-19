@@ -79,3 +79,13 @@ describe("LoginPage", () => {
     expect(screen.queryByRole("alert")).toBeNull();
   });
 });
+
+// Housekeeping PR 4: the project page is linked from here.
+describe("LoginPage, the project page", () => {
+  it("links to the project page", async () => {
+    // Only the session check is called, and it says signed out.
+    vi.spyOn(apiModule, "api").mockRejectedValue(new ApiError(401, "Not authenticated"));
+    renderPage();
+    expect(await screen.findByRole("link", { name: "About this project" })).toHaveAttribute("href", "/about");
+  });
+});

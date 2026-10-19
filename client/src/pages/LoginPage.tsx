@@ -55,6 +55,11 @@ export function LoginPage() {
       footer={
         <>
           No account? <Link to="/register" className="text-text underline underline-offset-4">Create one</Link>
+          <div className="mt-3">
+            <Link to="/about" className="text-text underline underline-offset-4">
+              About this project
+            </Link>
+          </div>
         </>
       }
     >
