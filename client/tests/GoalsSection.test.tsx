@@ -133,11 +133,13 @@ describe("GoalsSection", () => {
     expect(screen.getByLabelText("Target weight (kg)")).toBeInTheDocument();
   });
 
+  // "Target now", not "Now": above "Target weight", a bare "Now 75 kg" read as
+  // your weight today (the call on #44).
   it("says the current target above the weight field, not only as a placeholder", async () => {
     mockApi([goal({})], []);
     renderSection();
     await openSheet();
-    const now = screen.getByText("Now 75 kg");
+    const now = screen.getByText("Target now 75 kg");
     expect(now.compareDocumentPosition(screen.getByLabelText("Target weight (kg)")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
@@ -146,7 +148,7 @@ describe("GoalsSection", () => {
     renderSection();
     await openSheet();
     expect(screen.getByLabelText("Target weight (kg)")).toBeInTheDocument();
-    expect(screen.queryByText(/^Now /)).toBeNull();
+    expect(screen.queryByText(/^Target now /)).toBeNull();
   });
 
   it("gives Change a tap area of at least 24 px", async () => {

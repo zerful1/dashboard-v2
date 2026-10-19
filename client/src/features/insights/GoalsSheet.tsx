@@ -31,7 +31,7 @@ export function GoalsSheet({ open, onClose, historyNames }: { open: boolean; onC
       <div className="space-y-5">
         <div className="space-y-1">
           {/* Said in words: a placeholder is too faint to carry the current target. */}
-          {weightGoal && <p className="text-xs text-muted">Now {weightGoal.target_kg} kg</p>}
+          {weightGoal && <p className="text-xs text-muted">Target now {weightGoal.target_kg} kg</p>}
           <div className="flex items-end gap-2">
             <div className="flex-1">
               <Field label="Target weight (kg)" htmlFor="goal-weight">
