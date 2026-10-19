@@ -260,8 +260,12 @@ TanStack's `onlineManager` starts online and changes only on an `online` or
 is false (#36), and an app opened with no signal pauses rather than fetching.
 
 A device that says it's online with no internet (dead wifi, a captive portal)
-still runs the fetch, and the fetch **fails**. `placeholderData` covers only the
-pending case.
+still runs the fetch, and the fetch **fails** — or hangs with no answer, which
+`api()` gives up on after 15 s (`API_TIMEOUT_MS`) as `ApiError(0, "Timed out",
+"timeout")`. Only the wait for the answer to *start* is timed, never the body:
+`/api/export` streams the user's only backup through `api()`, and a timer over
+the whole request would cut it off on a slow connection while it is still
+arriving. `placeholderData` covers only the pending case.
 
 - **Stats and History's grid** show yesterday's answer as `placeholderData` from
   `newestCached`, scoped by the user id in the key prefix. They cover only the
@@ -329,7 +333,8 @@ closes first. A hook inherits the rule unless it sets its own `networkMode`,
 and none should. Its tests use `createQueryClient()`, because a bare
 `new QueryClient()` in a test does not have it. The global toast then says
 **"You're offline — not saved"** (`writeFailureMessage`, same file), so it agrees
-with the banner rather than reading as some other fault.
+with the banner rather than reading as some other fault; a write that timed out
+says **"Timed out — not saved"** in the same words.
 
 ---
 
