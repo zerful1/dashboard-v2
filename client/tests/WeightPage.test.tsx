@@ -2,7 +2,8 @@ import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClientProvider, onlineManager } from "@tanstack/react-query";
-import { shiftISO, type BodyWeightEntry, type Goal } from "@dashboard/shared";
+import { toast } from "sonner";
+import { shiftISO, type BodyWeightEntry, type Goal, type LiftProgress, type LiftStatus } from "@dashboard/shared";
 import { WeightPage } from "../src/features/weight/WeightPage";
 import { createQueryClient } from "../src/lib/queryClient";
 import * as apiModule from "../src/lib/api";
@@ -25,7 +26,13 @@ interface Routes {
   weights?: BodyWeightEntry[] | Error;
   goals?: Goal[] | Error | Promise<Goal[]>;
   saveFails?: boolean;
+  /** Gym's lift statuses, for the composition line. */
+  progress?: LiftProgress[] | Error | Promise<LiftProgress[]>;
 }
+
+const lift = (name: string, status: LiftStatus): LiftProgress => ({
+  name, status, best: null, change: null, weeksSinceBest: null, lastDate: TODAY,
+});
 
 /** By path, never by call order (CLAUDE.md). */
 function mockApi(routes: Routes = {}) {
@@ -35,6 +42,11 @@ function mockApi(routes: Routes = {}) {
     const method = init?.method ?? "GET";
     const body = init?.body ? JSON.parse(String(init.body)) : undefined;
     calls.push({ method, path, body });
+    if (path.startsWith("/api/workouts/progress")) {
+      const progress = routes.progress ?? [];
+      if (progress instanceof Error) throw progress;
+      return (await progress) as never;
+    }
     if (method === "POST" && path === "/api/weight") {
       if (routes.saveFails) throw new ApiError(500, "boom");
       return entry(body.date, body.weight_kg) as never;
@@ -208,6 +220,39 @@ describe("Weight page", () => {
     renderPage();
     expect(await screen.findByText("No weigh-ins yet")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "3M" })).toBeNull();
+  });
+});
+
+// Housekeeping PR 3: the composition line, from the rate and Gym's lift statuses.
+describe("Weight page, the composition line", () => {
+  const SIX_UP_ONE_BACK = [...["A", "B", "C", "D", "E", "F"].map((n) => lift(n, "moving")), lift("G", "back")];
+
+  it("says what the weight is made of, from the rate and Gym's lifts", async () => {
+    const { calls } = mockApi({ progress: SIX_UP_ONE_BACK });
+    renderPage();
+    const verdict = await screen.findByText("Losing fat, keeping strength");
+    expect(verdict).toHaveClass("text-good");
+    expect(verdict.closest("p")).toHaveTextContent("6 lifts climbing, 1 slipping");
+    expect(calls.find((c) => c.path.startsWith("/api/workouts/progress"))?.path).toContain("today=2026-10-14");
+  });
+
+  it("draws the page while the lifts load, without the line", async () => {
+    mockApi({ progress: new Promise<LiftProgress[]>(() => {}) });
+    renderPage();
+    expect(await screen.findByText("7-day average", { selector: ".lbl" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Log" })).toBeInTheDocument();
+    expect(screen.queryByText(/lifts? (climbing|holding|slipping)/)).toBeNull();
+  });
+
+  it("hides the line, and says nothing, when the lifts fail", async () => {
+    vi.mocked(toast.error).mockClear();
+    mockApi({ progress: new ApiError(500, "boom") });
+    const qc = renderPage();
+    expect(await screen.findByText("7-day average", { selector: ".lbl" })).toBeInTheDocument();
+    await waitFor(() => expect(qc.getQueryState(["liftProgress", "u1", TODAY])?.status).toBe("error"));
+    expect(screen.queryByText(/lifts? (climbing|holding|slipping)/)).toBeNull();
+    expect(screen.queryByText(/Couldn't|Could not/)).toBeNull();
+    expect(toast.error).not.toHaveBeenCalled();
   });
 });
 

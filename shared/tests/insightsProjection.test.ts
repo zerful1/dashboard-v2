@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { projectGoal, trendFit, weightGoalReached, type ProjectionPoint } from '../src/domain/insights/projection'
+import { projectGoal, rateTone, trendFit, weightGoalReached, type ProjectionPoint } from '../src/domain/insights/projection'
 import { shiftISO } from '../src/domain/date'
 
 const TODAY = '2026-09-30' // a Wednesday: +14 and +15 days fall in the same week
@@ -124,5 +124,24 @@ describe('weightGoalReached', () => {
   it('with no start, takes the direction from where the weight is now', () => {
     expect(weightGoalReached({ target_kg: 78, start_kg: null }, 79)).toBe(false)
     expect(weightGoalReached({ target_kg: 78, start_kg: null }, 78)).toBe(true)
+  })
+})
+
+// Housekeeping PR 3: the rate line's colour rule, shared with the composition line.
+describe('rateTone', () => {
+  const fit = (ratePerWeek: number, current = 80) => ({ ratePerWeek, current })
+  const goal = (target_kg: number, start_kg: number | null = 84) => ({ target_kg, start_kg })
+
+  it('is good toward the goal, neutral away from it or with none', () => {
+    expect(rateTone(fit(-0.4), goal(78))).toBe('good')
+    expect(rateTone(fit(0.4), goal(78))).toBe('neutral')
+    expect(rateTone(fit(-0.4), null)).toBe('neutral')
+    expect(rateTone(fit(0.4), goal(85, 76))).toBe('good') // a bulk
+  })
+
+  // trendTone alone calls the second one good: 77.5 is nearer 78 than 77.3 was.
+  it('is neutral once the goal is reached, even drifting back toward it', () => {
+    expect(rateTone(fit(-0.5, 77.9), goal(78))).toBe('neutral')
+    expect(rateTone(fit(0.2, 77.5), goal(78))).toBe('neutral')
   })
 })

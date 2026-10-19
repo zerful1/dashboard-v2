@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import type { Goal } from "@dashboard/shared";
+import type { CompositionLine, Goal } from "@dashboard/shared";
 import { TRANSITIONS, useMotionSafe, springOrNone } from "@/lib/motion";
 import type { WeightSummary } from "./deriveWeight";
 import { goalLine, latestText, rateLine } from "./weightText";
@@ -11,14 +11,19 @@ interface Props {
   goal: Goal | null;
   /** The goals could not be loaded, and none are saved to show. */
   goalsFailed: boolean;
+  /** What the weight is made of (compositionLine), or null with too little to say. */
+  composition: CompositionLine | null;
 }
+
+const TONE_CLASS = { good: "text-good", caution: "text-caution", neutral: "text-text" } as const;
 
 /**
  * Where the weight is and which way it is going, in words, before anything
  * else (redesign part 5, §2–3): the 7-day average, Insights' rate, and the
- * goal's projection.
+ * goal's projection. Then what the weight is made of, from the same rate and
+ * Gym's lift statuses (housekeeping §4, mockup 1A).
  */
-export function WeightHeadline({ summary, today, goal, goalsFailed }: Props) {
+export function WeightHeadline({ summary, today, goal, goalsFailed, composition }: Props) {
   const safe = useMotionSafe();
   const rate = rateLine(summary.fit, goal);
   const latest =
@@ -68,6 +73,15 @@ export function WeightHeadline({ summary, today, goal, goalsFailed }: Props) {
         <p className="mt-1 text-xs text-muted">Couldn't load your goal</p>
       ) : (
         goal && <p className="tnum mt-1 text-xs text-muted">{goalLine(goal, summary.points, today)}</p>
+      )}
+
+      {composition && (
+        <p className="mt-1 text-xs text-muted">
+          <span data-tone={composition.tone} className={TONE_CLASS[composition.tone]}>
+            {composition.verdict}
+          </span>{" "}
+          · {composition.detail}
+        </p>
       )}
     </div>
   );

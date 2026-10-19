@@ -1,6 +1,6 @@
 import type { Goal } from '../../types'
 import { daysBetweenISO, mondayOf, shiftISO } from '../date'
-import { linearTrend, trendPoint } from '../trend'
+import { linearTrend, trendPoint, trendTone } from '../trend'
 
 export interface ProjectionPoint {
   date: string
@@ -65,6 +65,20 @@ export function trendFit(kind: Goal['kind'], points: ProjectionPoint[], today: s
 export function weightGoalReached(goal: Pick<Goal, 'target_kg' | 'start_kg'>, current: number): boolean {
   const direction = Math.sign(goal.target_kg - (goal.start_kg ?? current))
   return direction === 0 || (direction < 0 ? current <= goal.target_kg : current >= goal.target_kg)
+}
+
+/**
+ * Whether a fitted rate reads as progress: green toward the goal (trendTone,
+ * from where the line stood a week ago to where it stands today), and neutral
+ * once the goal is reached, when carrying on is not progress. One rule for the
+ * Weight page's rate line and its composition line, so they never disagree.
+ */
+export function rateTone(
+  fit: { current: number; ratePerWeek: number },
+  goal: Pick<Goal, 'target_kg' | 'start_kg'> | null,
+): 'good' | 'neutral' {
+  if (goal !== null && weightGoalReached(goal, fit.current)) return 'neutral'
+  return trendTone(fit.current - fit.ratePerWeek, fit.current, goal?.target_kg ?? null)
 }
 
 /**
