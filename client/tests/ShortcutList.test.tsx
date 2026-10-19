@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Goal, HabitSummary, NutritionTarget, SplitConfig } from "@dashboard/shared";
 import { ShortcutList } from "../src/features/settings/ShortcutList";
 import * as apiModule from "../src/lib/api";
+import { ApiError } from "../src/lib/api";
 
 vi.mock("@/auth/AuthProvider", () => ({
   useAuth: () => ({ user: { id: "u1", email: "a@b.com" }, loading: false }),
@@ -21,10 +22,13 @@ const target = (effective_from: string): NutritionTarget => ({
 const GOALS: Goal[] = [{ id: "g", user_id: "u1", kind: "weight", exercise_name: null, target_kg: 78, start_kg: 80, created_at: "" }];
 const HABITS = [{ id: "h1" }, { id: "h2" }] as HabitSummary[];
 
-/** By path, longest prefix first. `split: null` never answers. */
-function mockApi({ split = SPLIT as SplitConfig | null, targets = [target("2026-06-09")] } = {}) {
+/** By path, longest prefix first. `split: null` never answers; `"fail"` answers 500. */
+function mockApi({ split = SPLIT as SplitConfig | null | "fail", targets = [target("2026-06-09")] } = {}) {
   vi.spyOn(apiModule, "api").mockImplementation(async (path: string) => {
-    if (path.startsWith("/api/split")) return (split ?? new Promise(() => {})) as never;
+    if (path.startsWith("/api/split")) {
+      if (split === "fail") throw new ApiError(500, "Server error");
+      return (split ?? new Promise(() => {})) as never;
+    }
     if (path.startsWith("/api/nutrition/targets")) return targets as never;
     if (path.startsWith("/api/goals")) return GOALS as never;
     if (path.startsWith("/api/habits")) return HABITS as never;
@@ -33,13 +37,15 @@ function mockApi({ split = SPLIT as SplitConfig | null, targets = [target("2026-
 }
 
 function renderList() {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <MemoryRouter>
-      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <QueryClientProvider client={client}>
         <ShortcutList today={TODAY} />
       </QueryClientProvider>
     </MemoryRouter>,
   );
+  return client;
 }
 
 afterEach(() => vi.restoreAllMocks());
@@ -76,6 +82,16 @@ describe("ShortcutList", () => {
     mockApi({ split: null });
     renderList();
     // The others arrive; the split's row still says only its name.
+    expect(await screen.findByText("2 habits")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Gym split/ })).toHaveTextContent(/^Gym split$/);
+  });
+
+  // The same trap after a failure: the default split stands in and reads as real.
+  it("leaves the split's value blank when it failed to load", async () => {
+    mockApi({ split: "fail" });
+    const client = renderList();
+    // Blank while loading too, so wait for the failure itself before looking.
+    await waitFor(() => expect(client.getQueryState(["split", "u1"])?.status).toBe("error"));
     expect(await screen.findByText("2 habits")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Gym split/ })).toHaveTextContent(/^Gym split$/);
   });

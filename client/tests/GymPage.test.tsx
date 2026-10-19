@@ -126,6 +126,26 @@ describe("Gym's header (redesign part 3a, §2)", () => {
     expect(sheet.getByRole("button", { name: "Add set" })).toBeDisabled();
   });
 
+  // Housekeeping item 22: Add set clears the reps, and a failure used to leave
+  // them cleared, with only the toast saying the set was never saved.
+  it("gives a failed Add set its reps back", async () => {
+    freeze();
+    vi.spyOn(apiModule, "api").mockImplementation(async (path: string, init?: RequestInit) => {
+      if (init?.method === "POST" && path.startsWith("/api/workouts/sets")) throw new ApiError(500, "boom");
+      const hit = ROUTES.find(([p]) => path.startsWith(p));
+      if (!hit) throw new Error(`unmocked path: ${path}`);
+      return hit[1] as never;
+    });
+    renderPage();
+    await userEvent.click(await screen.findByText("Row & Press"));
+    const sheet = within(await screen.findByRole("dialog", { name: "Row & Press" }));
+    await userEvent.type(sheet.getByLabelText(/weight/i), "90");
+    await userEvent.type(sheet.getByLabelText(/reps/i), "6");
+    await userEvent.click(sheet.getByRole("button", { name: /add set 1/i }));
+    await waitFor(() => expect(sheet.getByLabelText(/reps/i)).toHaveValue(6));
+    expect(sheet.getByLabelText(/weight/i)).toHaveValue(90);
+  });
+
   // Final review, important 1: a FAILED load left the sheet sure there were no
   // sets, so Add set 1 was back, and sent once the signal returned.
   it("won't log a set when today's sets failed to load, and says why", async () => {
@@ -190,6 +210,18 @@ describe("Gym, when the split fails to load", () => {
     expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
     // One failure, one message: the page's line, not a toast as well.
     expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  // Housekeeping item 26.
+  it("offers Try again, which loads the split and names the day", async () => {
+    freeze();
+    let down = true;
+    mockSplit(() => { if (down) throw new ApiError(500, "boom"); return DEFAULT_SPLIT; });
+    renderPage();
+    expect(await screen.findByText("Couldn't load your split.")).toBeInTheDocument();
+    down = false;
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("Pull");
   });
 
   // Thursday is DEFAULT_SPLIT's rest day, where falling back to the last logged

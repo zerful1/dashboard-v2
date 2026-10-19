@@ -45,7 +45,8 @@ export function FoodBars({ days, target }: { days: ReviewDay[]; target: number |
   const scale = Math.max(target ?? 0, ...days.map((d) => d.kcal ?? 0));
   return (
     <span aria-hidden className="relative grid h-[30px] w-[70px] grid-cols-7 justify-items-center">
-      {target !== null && scale > 0 && (
+      {/* No target line over an empty week: it marked a level nothing reached. */}
+      {target !== null && scale > 0 && days.some((d) => d.kcal !== null) && (
         <span className="absolute inset-x-0 border-t border-dashed border-dim" style={{ bottom: `${(target / scale) * 100}%` }} />
       )}
       {days.map((d) => {

@@ -29,32 +29,36 @@ export function GoalsSheet({ open, onClose, historyNames }: { open: boolean; onC
   return (
     <Sheet open={open} onClose={onClose} title="Goals">
       <div className="space-y-5">
-        <div className="flex items-end gap-2">
-          <div className="flex-1">
-            <Field label="Target weight (kg)" htmlFor="goal-weight">
-              <Input
-                id="goal-weight"
-                inputMode="decimal"
-                value={weight}
-                placeholder={weightGoal ? String(weightGoal.target_kg) : "75"}
-                onChange={(e) => setWeight(e.target.value)}
-              />
-            </Field>
-          </div>
-          <Button
-            variant="ghost"
-            disabled={weightValue === null || weightValue <= 0}
-            onClick={() => {
-              if (weightValue) g.setWeight.mutate(weightValue, { onSuccess: () => setWeight("") });
-            }}
-          >
-            Save
-          </Button>
-          {weightGoal && (
-            <Button variant="ghost" onClick={() => g.remove.mutate(weightGoal.id)}>
-              Clear
+        <div className="space-y-1">
+          {/* Said in words: a placeholder is too faint to carry the current target. */}
+          {weightGoal && <p className="text-xs text-muted">Target now {weightGoal.target_kg} kg</p>}
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
+              <Field label="Target weight (kg)" htmlFor="goal-weight">
+                <Input
+                  id="goal-weight"
+                  inputMode="decimal"
+                  value={weight}
+                  placeholder={weightGoal ? String(weightGoal.target_kg) : "75"}
+                  onChange={(e) => setWeight(e.target.value)}
+                />
+              </Field>
+            </div>
+            <Button
+              variant="ghost"
+              disabled={weightValue === null || weightValue <= 0}
+              onClick={() => {
+                if (weightValue) g.setWeight.mutate(weightValue, { onSuccess: () => setWeight("") });
+              }}
+            >
+              Save
             </Button>
-          )}
+            {weightGoal && (
+              <Button variant="ghost" onClick={() => g.remove.mutate(weightGoal.id)}>
+                Clear
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="space-y-2">

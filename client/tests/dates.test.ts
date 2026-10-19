@@ -14,8 +14,9 @@ describe("rangeLabel", () => {
   it("names both months across a month boundary", () => {
     expect(rangeLabel("2026-09-28", "2026-10-04", "2026-10-07")).toBe("28 Sep – 4 Oct");
   });
-  it("adds the year that isn't today's across a year boundary", () => {
-    expect(rangeLabel("2025-12-29", "2026-01-04", "2026-10-07")).toBe("29 Dec 2025 – 4 Jan");
+  it("names the second year, and only it, across a year boundary", () => {
+    expect(rangeLabel("2025-12-29", "2026-01-04", "2026-10-17")).toBe("29 Dec – 4 Jan 2026");
+    expect(rangeLabel("2024-12-30", "2025-01-05", "2026-10-17")).toBe("30 Dec – 5 Jan 2025");
   });
   it("adds the year to a span wholly in another year", () => {
     expect(rangeLabel("2025-03-01", "2025-03-07", "2026-10-07")).toBe("1–7 Mar 2025");

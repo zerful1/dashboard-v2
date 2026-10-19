@@ -9,6 +9,28 @@ describe("sparklineRows", () => {
     ]);
     expect(rows.map((r) => r.kg)).toEqual([80, null, 81]);
   });
+
+  it("marks a point lone when a break or the end is on both sides of it, so it can be drawn as a dot", () => {
+    const rows = sparklineRows([
+      { date: "2026-09-01", kg: 80, gapBefore: false },
+      { date: "2026-09-02", kg: 80.4, gapBefore: false },
+      { date: "2026-09-20", kg: 81, gapBefore: true },
+    ]);
+    expect(rows.map((r) => r.lone)).toEqual([false, false, false, true]);
+  });
+
+  it("marks a lone point before a break too, and nothing in an unbroken run", () => {
+    const rows = sparklineRows([
+      { date: "2026-09-01", kg: 80, gapBefore: false },
+      { date: "2026-09-20", kg: 81, gapBefore: true },
+      { date: "2026-09-21", kg: 81.2, gapBefore: false },
+    ]);
+    expect(rows.map((r) => r.lone)).toEqual([true, false, false, false]);
+    expect(sparklineRows([
+      { date: "2026-09-01", kg: 80, gapBefore: false },
+      { date: "2026-09-02", kg: 80.4, gapBefore: false },
+    ]).map((r) => r.lone)).toEqual([false, false]);
+  });
 });
 
 const pt = (date: string, kg: number) => ({ date, kg });
@@ -53,6 +75,15 @@ describe("weightTicks", () => {
   });
   it("ticks a range that starts on the 1st at its start", () => {
     expect(weightTicks("2026-09-01", "2026-10-14", false)[0]).toEqual({ x: 0, label: "Sep" });
+  });
+  it("falls back to weekly ticks when a short All range holds no month start", () => {
+    // A brand-new account's All range: two weeks of history, and no 1st inside it.
+    expect(weightTicks("2026-10-03", "2026-10-17", false)).toEqual(weightTicks("2026-10-03", "2026-10-17", true));
+    expect(weightTicks("2026-10-03", "2026-10-17", false)).toHaveLength(3);
+  });
+  it("falls back to weekly ticks with only one month start, and keeps months with more", () => {
+    expect(weightTicks("2026-09-20", "2026-10-17", false)).toEqual(weightTicks("2026-09-20", "2026-10-17", true));
+    expect(weightTicks("2026-06-01", "2026-10-17", false).map((t) => t.label)).toEqual(["Jun", "Jul", "Aug", "Sep", "Oct"]);
   });
 });
 

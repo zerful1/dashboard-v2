@@ -187,9 +187,9 @@ describe("AuthProvider — the query cache does not survive an identity change",
   function ProfilePane() {
     const { data } = useQuery({
       queryKey: ["profile"],
-      queryFn: () => apiModule.api<{ display_name: string }>("/api/profile"),
+      queryFn: () => apiModule.api<{ timezone: string }>("/api/profile"),
     });
-    return <span data-testid="profile">{data ? data.display_name : "none"}</span>;
+    return <span data-testid="profile">{data ? data.timezone : "none"}</span>;
   }
 
   function IdentityProbe() {
@@ -212,7 +212,7 @@ describe("AuthProvider — the query cache does not survive an identity change",
       if (path === "/api/auth/logout") { session = null; return undefined; }
       if (!session) throw new ApiError(401, "Not authenticated");
       if (path === "/api/auth/me") return { id: session, email: `${session}@x.com` };
-      if (path === "/api/profile") return { display_name: session === "alice" ? "Alice" : "Bob" };
+      if (path === "/api/profile") return { timezone: session === "alice" ? "Europe/London" : "Asia/Tokyo" };
       throw new Error(`unexpected request: ${path}`);
     });
     return spy;
@@ -224,7 +224,7 @@ describe("AuthProvider — the query cache does not survive an identity change",
 
     // Alice signs in and her profile lands in the cache under ["profile"] —
     // a key with no identity in it.
-    await waitFor(() => expect(screen.getByTestId("profile")).toHaveTextContent("Alice"));
+    await waitFor(() => expect(screen.getByTestId("profile")).toHaveTextContent("Europe/London"));
 
     await act(async () => { screen.getByText("sign out").click(); });
     await waitFor(() => expect(screen.getByTestId("who")).toHaveTextContent("out"));
@@ -238,8 +238,8 @@ describe("AuthProvider — the query cache does not survive an identity change",
     await waitFor(() => expect(screen.getByTestId("who")).toHaveTextContent("bob@x.com"));
 
     // The whole finding in one line: Bob must never be shown Alice's data.
-    await waitFor(() => expect(screen.getByTestId("profile")).toHaveTextContent("Bob"));
-    expect(screen.queryByText("Alice")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId("profile")).toHaveTextContent("Asia/Tokyo"));
+    expect(screen.queryByText("Europe/London")).not.toBeInTheDocument();
   });
 
   it("a sign-in clears a cache left behind by a sign-out that never completed", async () => {
@@ -249,12 +249,12 @@ describe("AuthProvider — the query cache does not survive an identity change",
 
     // What a sign-out whose POST failed, or a tab closed mid-request, leaves
     // behind. Sign-in has to assume it can happen rather than trust sign-out.
-    qc.setQueryData(["profile"], { display_name: "Alice" });
+    qc.setQueryData(["profile"], { timezone: "Europe/London" });
 
     await act(async () => { screen.getByText("sign in as bob").click(); });
     await waitFor(() => expect(screen.getByTestId("who")).toHaveTextContent("bob@x.com"));
 
-    expect(qc.getQueryData(["profile"])).not.toEqual({ display_name: "Alice" });
-    await waitFor(() => expect(screen.getByTestId("profile")).toHaveTextContent("Bob"));
+    expect(qc.getQueryData(["profile"])).not.toEqual({ timezone: "Europe/London" });
+    await waitFor(() => expect(screen.getByTestId("profile")).toHaveTextContent("Asia/Tokyo"));
   });
 });

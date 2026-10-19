@@ -3,19 +3,21 @@ import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { BodyWeightEntry } from "@dashboard/shared";
 import { WeighInSheet, type WeighInTarget } from "../src/features/weight/WeighInSheet";
+import type { WeightInput } from "../src/api/weight";
 
 const TODAY = "2026-08-17";
 const entry = (date: string, kg: number, over: Partial<BodyWeightEntry> = {}): BodyWeightEntry => ({
   id: date, user_id: "u1", date, weight_kg: kg, notes: null, created_at: "", ...over,
 });
 
-function renderSheet(target: WeighInTarget, entries: BodyWeightEntry[] = []) {
+/** `failed`: the save mutation's last call, which failed. */
+function renderSheet(target: WeighInTarget, entries: BodyWeightEntry[] = [], failed?: WeightInput) {
   const save = vi.fn();
   const remove = vi.fn();
   const onClose = vi.fn();
   const props = {
     target, onClose, today: TODAY,
-    save: { mutate: save, isPending: false } as never,
+    save: { mutate: save, isPending: false, isError: !!failed, variables: failed } as never,
     remove: { mutate: remove, isPending: false } as never,
   };
   const view = render(<WeighInSheet {...props} entries={entries} />);
@@ -40,6 +42,18 @@ describe("WeighInSheet, opened by Log", () => {
     await userEvent.click(screen.getByRole("button", { name: "Log" }));
     expect(save).toHaveBeenCalledWith({ date: TODAY, weight_kg: 82.4, notes: null });
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("suggests the latest weigh-in as the placeholder, by date", () => {
+    // Out of order on purpose: the newest by date is 79.6, whatever the array's order.
+    renderSheet(LOG, [entry("2026-08-15", 79.6), entry("2026-08-10", 80.1), entry("2026-08-12", 80.0)].reverse());
+    expect(kg()).toHaveValue(null);
+    expect(kg()).toHaveAttribute("placeholder", "79.6");
+  });
+
+  it("falls back to 82.4 as the placeholder with no weigh-ins", () => {
+    renderSheet(LOG);
+    expect(kg()).toHaveAttribute("placeholder", "82.4");
   });
 
   it("saves on Enter", async () => {
@@ -110,6 +124,25 @@ describe("WeighInSheet, opened by Log", () => {
     await userEvent.type(kg(), "83.1");
     await userEvent.click(screen.getByRole("button", { name: "Log" }));
     expect(save).toHaveBeenCalledWith({ date: "2026-08-10", weight_kg: 83.1, notes: null });
+  });
+});
+
+// The deferred call from #44: the sheet closes on Log, so a failed save left
+// nothing of what was typed (Home's weigh-in and Gym's sets give it back).
+describe("WeighInSheet, after a failed save", () => {
+  it("gives back the weight and notes that failed", () => {
+    renderSheet(LOG, [entry(TODAY, 82.4)], { date: TODAY, weight_kg: 81.9, notes: "after a run" });
+    expect(kg()).toHaveValue(81.9);
+    expect(screen.getByLabelText("Notes")).toHaveValue("after a run");
+  });
+
+  it("only on the date that failed", async () => {
+    renderSheet(LOG, [entry(TODAY, 82.4), entry("2026-08-10", 83.1)], { date: "2026-08-10", weight_kg: 82.7 });
+    expect(kg()).toHaveValue(82.4);
+    pickDate("2026-08-10");
+    await waitFor(() => expect(kg()).toHaveValue(82.7));
+    pickDate(TODAY);
+    await waitFor(() => expect(kg()).toHaveValue(82.4));
   });
 });
 

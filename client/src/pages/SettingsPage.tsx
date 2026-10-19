@@ -86,9 +86,10 @@ export function SettingsPage() {
   //
   // Cleared from the promise `mutateAsync` returns rather than an `onSettled`
   // passed to `.mutate()`: if one save is still in flight when the next blur
-  // starts a second, that second call detaches the first call's observer — an `onSettled` passed to
-  // `.mutate()` for the first call would then silently never run. The
-  // returned promise itself still settles correctly either way.
+  // starts a second, that second call detaches the first call's observer —
+  // an `onSettled` passed to `.mutate()` for the first call would then
+  // silently never run. The returned promise itself still settles correctly
+  // either way.
   const [tzDraft, setTzDraft] = useState<string | null>(null);
   const [tzError, setTzError] = useState<string | undefined>(undefined);
 

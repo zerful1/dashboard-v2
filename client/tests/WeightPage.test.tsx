@@ -24,6 +24,7 @@ const GOAL: Goal = { id: "g", user_id: "u1", kind: "weight", exercise_name: null
 interface Routes {
   weights?: BodyWeightEntry[] | Error;
   goals?: Goal[] | Error | Promise<Goal[]>;
+  saveFails?: boolean;
 }
 
 /** By path, never by call order (CLAUDE.md). */
@@ -34,7 +35,10 @@ function mockApi(routes: Routes = {}) {
     const method = init?.method ?? "GET";
     const body = init?.body ? JSON.parse(String(init.body)) : undefined;
     calls.push({ method, path, body });
-    if (method === "POST" && path === "/api/weight") return entry(body.date, body.weight_kg) as never;
+    if (method === "POST" && path === "/api/weight") {
+      if (routes.saveFails) throw new ApiError(500, "boom");
+      return entry(body.date, body.weight_kg) as never;
+    }
     if (method === "DELETE" && path.startsWith("/api/weight/")) return undefined as never;
     if (path.startsWith("/api/weight")) {
       if (state.weights instanceof Error) throw state.weights;
@@ -176,6 +180,27 @@ describe("Weight page", () => {
     await waitFor(() =>
       expect(calls.find((c) => c.method === "POST")?.body).toEqual({ date: TODAY, weight_kg: 79.6, notes: null }),
     );
+  });
+
+  // No held failure needed (unlike Home's field): Log closes the sheet, so the
+  // form is gone however soon the save fails. Its exit animation keeps it
+  // mounted, though, and reopening mid-exit revives the old form with what was
+  // typed still in it, so the test waits for the sheet to finish closing.
+  it("gives a failed weigh-in back when Log is opened again", async () => {
+    mockApi({ saveFails: true });
+    const qc = renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "Log" }));
+    const field = screen.getByLabelText("Weight (kg)");
+    await userEvent.clear(field);
+    await userEvent.type(field, "79.6");
+    await userEvent.type(screen.getByLabelText("Notes"), "after a run");
+    await userEvent.click(screen.getByRole("button", { name: "Update" }));
+    await waitFor(() => expect(qc.getMutationCache().getAll()[0]?.state.status).toBe("error"));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+
+    await userEvent.click(screen.getByRole("button", { name: "Log" }));
+    expect(screen.getByLabelText("Weight (kg)")).toHaveValue(79.6);
+    expect(screen.getByLabelText("Notes")).toHaveValue("after a run");
   });
 
   it("says so, with no range, when there are no weigh-ins", async () => {

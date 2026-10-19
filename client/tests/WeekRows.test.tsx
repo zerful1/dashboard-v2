@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import type { ReviewDay, WeekNumbers, WeeklyReview } from "@dashboard/shared";
 import { WeekRows } from "../src/features/insights/WeekRows";
-import { foodBar, weightPoints } from "../src/features/insights/WeekStrips";
+import { FoodBars, foodBar, weightPoints } from "../src/features/insights/WeekStrips";
 
 const MON = "2026-09-21";
 const day = (i: number, over: Partial<ReviewDay> = {}): ReviewDay => ({
@@ -96,6 +96,17 @@ describe("foodBar", () => {
   // Review focus 4.
   it("scales to the largest day without a target, with nothing over", () => {
     expect(foodBar(1500, null, 3000)).toEqual({ fill: 50, over: 0 });
+  });
+});
+
+describe("FoodBars", () => {
+  it("draws no target line over a week with nothing logged", () => {
+    const { container } = render(<FoodBars days={[0, 1, 2, 3, 4, 5, 6].map((i) => day(i))} target={2402} />);
+    expect(container.querySelector(".border-dashed")).toBeNull();
+  });
+  it("draws the target line once a day is logged", () => {
+    const { container } = render(<FoodBars days={[0, 1, 2, 3, 4, 5, 6].map((i) => day(i, { kcal: i === 2 ? 2100 : null }))} target={2402} />);
+    expect(container.querySelectorAll(".border-dashed")).toHaveLength(1);
   });
 });
 

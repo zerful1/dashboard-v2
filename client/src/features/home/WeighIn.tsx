@@ -14,7 +14,13 @@ export function WeighIn({ latest, latestDate, today, save }: {
   today: string;
   save: ReturnType<typeof useWeights>["saveWeight"];
 }) {
-  const [kg, setKg] = useState("");
+  // A failed save gives back what was typed. The optimistic weigh-in unmounts
+  // this field and the rollback remounts it, so the value comes from the
+  // mutation, not from state; it already reads isError by then, since the
+  // rollback's re-render is scheduled after the error is recorded.
+  const [kg, setKg] = useState(() =>
+    save.isError && save.variables?.date === today ? String(save.variables.weight_kg) : "",
+  );
   const parsed = parseWeighIn(kg);
   const submit = (e: FormEvent) => {
     e.preventDefault();

@@ -41,8 +41,16 @@ export function WeighInSheet(props: Props) {
 function WeighInForm({ target, onClose, entries, today, save, remove }: Props & { target: WeighInTarget }) {
   const [date, setDate] = useState(target.mode === "edit" ? target.entry.date : today);
   const existing = entries.find((e) => e.date === date) ?? (target.mode === "edit" ? target.entry : null);
-  const [kg, setKg] = useState(existing?.weight_kg.toString() ?? "");
-  const [notes, setNotes] = useState(existing?.notes ?? "");
+  // A failed save gives back what was typed, on its date: Log closed the sheet,
+  // so the form that held it is gone (Home's weigh-in does the same).
+  const failed = save.isError && save.variables?.date === date ? save.variables : null;
+  const fields = failed
+    ? { kg: String(failed.weight_kg), notes: failed.notes ?? "" }
+    : { kg: existing?.weight_kg.toString() ?? "", notes: existing?.notes ?? "" };
+  const [kg, setKg] = useState(fields.kg);
+  const [notes, setNotes] = useState(fields.notes);
+  // The latest weigh-in by date is the likeliest next one; "82.4" only with none.
+  const latest = entries.reduce<BodyWeightEntry | null>((a, e) => (a === null || e.date > a.date ? e : a), null);
 
   /**
    * Reload the fields when the DATE changes, and only then. Depending on
@@ -50,8 +58,8 @@ function WeighInForm({ target, onClose, entries, today, save, remove }: Props & 
    * typed (the log card's rule, carried over).
    */
   useEffect(() => {
-    setKg(existing?.weight_kg.toString() ?? "");
-    setNotes(existing?.notes ?? "");
+    setKg(fields.kg);
+    setNotes(fields.notes);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date]);
 
@@ -79,7 +87,7 @@ function WeighInForm({ target, onClose, entries, today, save, remove }: Props & 
           inputMode="decimal"
           step="0.1"
           min="0"
-          placeholder="82.4"
+          placeholder={latest ? latest.weight_kg.toFixed(1) : "82.4"}
           value={kg}
           onChange={(e) => setKg(e.target.value)}
         />

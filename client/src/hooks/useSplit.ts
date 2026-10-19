@@ -51,6 +51,7 @@ export function useSplit() {
     split: query.data ?? DEFAULT_SPLIT,
     isPending: query.isPending,
     failed: query.isError && query.data === undefined,
+    refetch: query.refetch,
     saveSplit,
   };
 }
