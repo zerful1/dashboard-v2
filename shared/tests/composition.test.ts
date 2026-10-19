@@ -57,12 +57,25 @@ describe('compositionLine', () => {
     expect(compositionLine(fit(-0.4), lifts(1, 1, 1), CUT)).not.toBeNull()
   })
 
-  it('words the detail', () => {
+  it('words the detail, naming every group there is', () => {
     const detail = (m: number, s: number, b: number) => compositionLine(fit(-0.4), lifts(m, s, b), CUT)?.detail
     expect(detail(6, 0, 1)).toBe('6 lifts climbing, 1 slipping')
-    expect(detail(1, 3, 2)).toBe('1 lift climbing, 2 slipping')
+    expect(detail(1, 3, 2)).toBe('1 lift climbing, 3 holding, 2 slipping')
     expect(detail(0, 4, 0)).toBe('4 lifts holding')
-    expect(detail(0, 1, 3)).toBe('3 lifts slipping')
-    expect(detail(2, 5, 0)).toBe('2 lifts climbing')
+    expect(detail(0, 1, 3)).toBe('1 lift holding, 3 slipping')
+    expect(detail(2, 5, 0)).toBe('2 lifts climbing, 5 holding')
+  })
+
+  // The final review: leaving holding out paired a green "keeping strength"
+  // with only "2 lifts slipping", the usual state on a cut.
+  it('shows the holding lifts a verdict rests on', () => {
+    expect(compositionLine(fit(-0.4), lifts(0, 3, 2), CUT)).toMatchObject({
+      verdict: 'Losing fat, keeping strength',
+      detail: '3 lifts holding, 2 slipping',
+    })
+    expect(compositionLine(fit(0.01), lifts(1, 2, 1), CUT)).toMatchObject({
+      verdict: 'Weight steady, lifts holding',
+      detail: '1 lift climbing, 2 holding, 1 slipping',
+    })
   })
 })

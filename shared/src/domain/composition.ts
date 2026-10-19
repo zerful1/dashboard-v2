@@ -46,14 +46,19 @@ export function compositionLine(
   return climbingLed ? line('Gaining, lifts climbing', rateTone(fit, goal)) : line('Gaining, lifts not keeping up', 'caution')
 }
 
-/** "6 lifts climbing, 1 slipping": the non-zero groups, holding only when it is the only one. */
+/**
+ * "6 lifts climbing, 1 slipping": every non-zero group, holding included, so a
+ * verdict that rests on the holding lifts ("keeping strength", "lifts
+ * holding") has them beside it (the final review on PR 3).
+ */
 function detailOf(climbing: number, holding: number, slipping: number): string {
-  const moving: [number, string][] = [
+  const groups: [number, string][] = [
     [climbing, 'climbing'],
+    [holding, 'holding'],
     [slipping, 'slipping'],
   ]
-  const groups = moving.filter(([n]) => n > 0)
-  return (groups.length > 0 ? groups : [[holding, 'holding'] as [number, string]])
+  return groups
+    .filter(([n]) => n > 0)
     .map(([n, word], i) => (i === 0 ? `${n} ${n === 1 ? 'lift' : 'lifts'} ${word}` : `${n} ${word}`))
     .join(', ')
 }
