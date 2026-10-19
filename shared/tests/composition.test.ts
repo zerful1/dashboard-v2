@@ -16,16 +16,16 @@ const tone = (...a: Parameters<typeof compositionLine>) => compositionLine(...a)
 // and the strength side from Gym's lift statuses.
 describe('compositionLine', () => {
   it.each([
-    [fit(-0.4), lifts(6, 0, 1), CUT, 'Losing fat, keeping strength', 'good'],
-    [fit(-0.4), lifts(1, 1, 2), CUT, 'Losing weight, strength slipping', 'caution'],
-    [fit(0.4), lifts(3, 1, 1), BULK, 'Gaining, lifts climbing', 'good'],
-    [fit(0.4), lifts(1, 1, 1), BULK, 'Gaining, lifts not keeping up', 'caution'],
-    [fit(0.01), lifts(3, 1, 1), CUT, 'Weight steady, lifts climbing', 'good'],
-    [fit(0.01), lifts(1, 2, 1), CUT, 'Weight steady, lifts holding', 'neutral'],
+    { f: fit(-0.4), l: lifts(6, 0, 1), g: CUT, verdict: 'Losing fat, keeping strength', tone: 'good' },
+    { f: fit(-0.4), l: lifts(1, 1, 2), g: CUT, verdict: 'Losing weight, strength slipping', tone: 'caution' },
+    { f: fit(0.4), l: lifts(3, 1, 1), g: BULK, verdict: 'Gaining, lifts climbing', tone: 'good' },
+    { f: fit(0.4), l: lifts(1, 1, 1), g: BULK, verdict: 'Gaining, lifts not keeping up', tone: 'caution' },
+    { f: fit(0.01), l: lifts(3, 1, 1), g: CUT, verdict: 'Weight steady, lifts climbing', tone: 'good' },
+    { f: fit(0.01), l: lifts(1, 2, 1), g: CUT, verdict: 'Weight steady, lifts holding', tone: 'neutral' },
     // R2, the user's call: "lifts holding" would sit beside "2 slipping".
-    [fit(0.01), lifts(0, 1, 2), CUT, 'Weight steady, strength slipping', 'caution'],
-  ] as const)('reads every row of the table: %#', (f, l, g, v, t) => {
-    expect(compositionLine(f, [...l], g)).toMatchObject({ verdict: v, tone: t })
+    { f: fit(0.01), l: lifts(0, 1, 2), g: CUT, verdict: 'Weight steady, strength slipping', tone: 'caution' },
+  ] as const)('reads the table: "$verdict", $tone', ({ f, l, g, verdict, tone }) => {
+    expect(compositionLine(f, [...l], g)).toMatchObject({ verdict, tone })
   })
 
   it('is green on the weight only toward the goal', () => {

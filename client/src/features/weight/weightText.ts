@@ -1,4 +1,4 @@
-import { PROJECTION_RULES, projectGoal, rateTone, shiftISO, type Goal, type Projection, type TrendFit } from "@dashboard/shared";
+import { isFlatRate, projectGoal, rateTone, shiftISO, type Goal, type Projection, type TrendFit } from "@dashboard/shared";
 import { dayMonth, signed } from "@/features/insights/format";
 
 export type RateLine =
@@ -15,7 +15,7 @@ export type RateLine =
  */
 export function rateLine(fit: TrendFit, goal: Pick<Goal, "target_kg" | "start_kg"> | null): RateLine {
   if (fit.status === "not-enough-data") return { kind: "none", have: fit.have, need: fit.need };
-  if (Math.abs(fit.ratePerWeek) < PROJECTION_RULES.weight.flatPerWeek) return { kind: "flat" };
+  if (isFlatRate("weight", fit.ratePerWeek)) return { kind: "flat" };
   return {
     kind: "rate",
     arrow: fit.ratePerWeek < 0 ? "▼" : "▲",
