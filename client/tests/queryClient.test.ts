@@ -92,6 +92,17 @@ describe("writes made offline", () => {
     }
   });
 
+  // Housekeeping item 28: a write that gave up after 15 s says so, in the same
+  // words as the offline one, rather than the bare "Timed out".
+  it("say a timed-out write was not saved", async () => {
+    const observer = new MutationObserver(createQueryClient(), {
+      mutationFn: () => Promise.reject(new ApiError(0, "Timed out", "timeout")),
+      retry: false,
+    });
+    await observer.mutate(undefined).catch(() => {});
+    expect(toast.error).toHaveBeenCalledWith("Timed out — not saved");
+  });
+
   it("keep the general message for a network failure while online", async () => {
     const observer = new MutationObserver(createQueryClient(), {
       mutationFn: () => Promise.reject(new TypeError("Failed to fetch")),
