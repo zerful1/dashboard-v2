@@ -118,6 +118,15 @@ describe("WeightHeadline, the composition line", () => {
     expect(screen.getByText("Losing fat, keeping strength")).toHaveClass("text-caution");
   });
 
+  // The rate line says "No weigh-in in 7 days" then; this line must not still
+  // assert a direction beside it.
+  it("hides it, as the rate, with no weigh-in in 7 days", () => {
+    const stale = Array.from({ length: 20 }, (_, i) => e(shiftISO(TODAY, -8 - i), 80 + (0.5 * i) / 7));
+    show(stale, { goal: goal(78), composition: line("good") });
+    expect(screen.getByText("No weigh-in in 7 days")).toBeInTheDocument();
+    expect(screen.queryByText("Losing fat, keeping strength")).toBeNull();
+  });
+
   it("draws nothing without one", () => {
     show(daily(14, 80, -0.5), { goal: goal(78) });
     expect(screen.queryByText(/lifts? (climbing|holding|slipping)/)).toBeNull();
