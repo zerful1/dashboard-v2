@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { periodRows } from "@dashboard/shared";
+import { compositionLine, periodRows } from "@dashboard/shared";
 import { useAuth } from "@/auth/AuthProvider";
 import { useWeights } from "@/hooks/useWeights";
 import { goalsQueryOptions } from "@/hooks/useGoals";
+import { useLiftProgress } from "@/hooks/useLiftStats";
 import { useToday } from "@/hooks/useToday";
 import { Spinner } from "@/components/ui/Spinner";
 import { Card } from "@/components/ui/Card";
@@ -39,6 +40,8 @@ export function WeightPage() {
   const { user } = useAuth();
   const { entries, isPending, isError, hasData, saveWeight, deleteWeight } = useWeights();
   const goals = useQuery(goalsQueryOptions(user?.id));
+  // Gym's lift statuses, for the composition line: an extra the page never waits for.
+  const liftQuery = useLiftProgress(today);
   const [range, setRange] = useState<RangeId>("3M");
   const [open, setOpen] = useState<string | null>(null);
   const [target, setTarget] = useState<WeighInTarget | null>(null);
@@ -79,6 +82,12 @@ export function WeightPage() {
 
   const goal = goals.data?.find((g) => g.kind === "weight") ?? null;
   const goalsFailed = !goals.data && (goals.isError || goals.fetchStatus === "paused");
+  // No lifts while pending, or failed or offline with nothing cached: no line,
+  // and no error, as it's an extra. Offline on a new day, yesterday's statuses
+  // stand in, as on Stats.
+  const composition = liftQuery.lifts
+    ? compositionLine(summary.fit, liftQuery.lifts.map((l) => l.status), goal)
+    : null;
 
   return (
     <div className="space-y-6">
@@ -88,7 +97,7 @@ export function WeightPage() {
         <Button onClick={() => setTarget({ mode: "log" })}>Log</Button>
       </div>
 
-      <WeightHeadline summary={summary} today={today} goal={goal} goalsFailed={goalsFailed} />
+      <WeightHeadline summary={summary} today={today} goal={goal} goalsFailed={goalsFailed} composition={composition} />
 
       {summary.points.length > 0 && (
         <>

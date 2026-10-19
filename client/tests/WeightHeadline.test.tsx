@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { shiftISO, type BodyWeightEntry, type Goal } from "@dashboard/shared";
+import { shiftISO, type BodyWeightEntry, type CompositionLine, type Goal } from "@dashboard/shared";
 import { WeightHeadline } from "../src/features/weight/WeightHeadline";
 import { deriveWeightSummary } from "../src/features/weight/deriveWeight";
 
@@ -13,9 +13,15 @@ const goal = (target_kg: number, start_kg: number | null = 84): Goal => ({
   id: "g", user_id: "u1", kind: "weight", exercise_name: null, target_kg, start_kg, created_at: "",
 });
 
-function show(entries: BodyWeightEntry[], opts: { goal?: Goal | null; goalsFailed?: boolean } = {}) {
+function show(entries: BodyWeightEntry[], opts: { goal?: Goal | null; goalsFailed?: boolean; composition?: CompositionLine | null } = {}) {
   return render(
-    <WeightHeadline summary={deriveWeightSummary(entries, TODAY)} today={TODAY} goal={opts.goal ?? null} goalsFailed={opts.goalsFailed ?? false} />,
+    <WeightHeadline
+      summary={deriveWeightSummary(entries, TODAY)}
+      today={TODAY}
+      goal={opts.goal ?? null}
+      goalsFailed={opts.goalsFailed ?? false}
+      composition={opts.composition ?? null}
+    />,
   );
 }
 
@@ -86,5 +92,34 @@ describe("WeightHeadline", () => {
   it("shows no goal line without a goal", () => {
     show(daily(14, 80, -0.5));
     expect(screen.queryByText(/^Goal /)).toBeNull();
+  });
+});
+
+// Housekeeping PR 3: what the weight is made of, one line under the goal (mockup 1A).
+describe("WeightHeadline, the composition line", () => {
+  const line = (tone: CompositionLine["tone"]): CompositionLine => ({
+    verdict: "Losing fat, keeping strength",
+    detail: "6 lifts climbing, 1 slipping",
+    tone,
+  });
+
+  it("adds the composition line after the goal line, its verdict in its tone", () => {
+    show(daily(14, 80, -0.5), { goal: goal(78), composition: line("good") });
+    const verdict = screen.getByText("Losing fat, keeping strength");
+    expect(verdict).toHaveAttribute("data-tone", "good");
+    expect(verdict).toHaveClass("text-good");
+    expect(verdict.closest("p")).toHaveTextContent("Losing fat, keeping strength · 6 lifts climbing, 1 slipping");
+    const goalLine = screen.getByText(/^Goal 78 kg/);
+    expect(goalLine.compareDocumentPosition(verdict) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("draws a warning amber", () => {
+    show(daily(14, 80, -0.5), { composition: line("caution") });
+    expect(screen.getByText("Losing fat, keeping strength")).toHaveClass("text-caution");
+  });
+
+  it("draws nothing without one", () => {
+    show(daily(14, 80, -0.5), { goal: goal(78) });
+    expect(screen.queryByText(/lifts? (climbing|holding|slipping)/)).toBeNull();
   });
 });
