@@ -25,9 +25,9 @@ import { MAX_AGE } from "@/lib/persister";
  * unexplained fault (#17 review 53).
  */
 function writeFailureMessage(err: unknown): string {
-  // api() gave up waiting (dead wifi, a captive portal): the offline message's words.
-  // Not "not saved": a slow write can still land after the app gave up, and
-  // the refetch on settle shows whether it did.
+  // api() gave up waiting (dead wifi, a captive portal). Not "not saved", as
+  // offline: a slow write can still land after the app gave up, and the
+  // refetch on settle shows whether it did.
   if (err instanceof ApiError && err.code === "timeout") return "Timed out — may not have saved";
   if (err instanceof ApiError) return err.message;
   // onlineManager changes only on an online/offline event, and createQueryClient

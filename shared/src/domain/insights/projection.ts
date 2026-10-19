@@ -99,7 +99,6 @@ export function projectGoal(
   points: ProjectionPoint[],
   today: string,
 ): Projection {
-  const rule = PROJECTION_RULES[goal.kind]
   // Reaching a lift goal is a fact - a set at the target - not a trend, so it
   // needs no minimum number of sessions. `current` is that best set.
   const window = inWindow(goal.kind, points, today)
