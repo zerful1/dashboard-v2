@@ -25,6 +25,8 @@ interface Props {
   todayPending?: boolean;
   /** Today's sets failed to load: still unknown, and the sheet says why it waits. */
   todayFailed?: boolean;
+  /** An Add set that failed to save: its reps go back in, if it was this exercise's. */
+  failedSet?: { exercise_name: string; reps: number | { left: number; right: number } } | null;
   onClose: () => void;
   onLogSet: (
     weightKg: number,
@@ -42,7 +44,7 @@ const NO_SETS: WorkoutSet[] = [];
  * set, with the set being logged as a highlighted block between them.
  */
 export function ExerciseSheet({
-  exercise, todaySets, last, lastPending = false, todayPending = false, todayFailed = false,
+  exercise, todaySets, last, lastPending = false, todayPending = false, todayFailed = false, failedSet = null,
   onClose, onLogSet, onDeleteSet,
 }: Props) {
   const lastSets = last?.sets ?? NO_SETS;
@@ -85,6 +87,20 @@ export function ExerciseSheet({
       weightTouched.current = false;
     }
   }, [exercise]);
+
+  // A failed Add set gives back the reps it cleared, and only to the sheet they
+  // were typed in. After the reset above, so it wins on the same render. Once
+  // per failure: the page memoises it on the mutation's variables.
+  useEffect(() => {
+    if (!failedSet || failedSet.exercise_name !== exercise?.exercise_name) return;
+    if (typeof failedSet.reps === "number") {
+      setReps(String(failedSet.reps));
+    } else {
+      setLeft(String(failedSet.reps.left));
+      setRight(String(failedSet.reps.right));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [failedSet]);
 
   // The weight starts from today's previous set, which can arrive after the
   // sheet opens: so on open, and again once today's sets are in, unless typed.
@@ -133,8 +149,9 @@ export function ExerciseSheet({
   };
 
   // Until last time has loaded the sheet claims nothing about it (CLAUDE.md,
-  // isPending not isLoading): "not loaded yet" is not "never done".
-  const first = !lastPending && !last && todaySets.length === 0;
+  // isPending not isLoading): "not loaded yet" is not "never done". Today's
+  // sets the same: they may hold this exercise already.
+  const first = !lastPending && !todayPending && !last && todaySets.length === 0;
   const showHeader = !!last || rows.above.length > 0;
 
   // One column plan for both tables, so the rows below the block line up with

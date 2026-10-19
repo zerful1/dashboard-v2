@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useToday } from "@/hooks/useToday";
 import { useHomeDay } from "@/hooks/useHomeDay";
+import { useHabits } from "@/hooks/useHabits";
 import { longDate } from "@/lib/dates";
 import { Spinner } from "@/components/ui/Spinner";
 import { TodayHabitsCard } from "@/features/habits/TodayHabitsCard";
@@ -20,6 +21,9 @@ export function HomePage() {
   // Kept current: an app left open overnight rolls to the new day.
   const today = useToday();
   const home = useHomeDay(today);
+  // Started here, with the rest of the day, rather than when the card mounts
+  // after the spinner: it was the last thing to arrive. The card reads the same entry.
+  useHabits();
   const [adding, setAdding] = useState(false);
   const openAdd = () => setAdding(true);
 

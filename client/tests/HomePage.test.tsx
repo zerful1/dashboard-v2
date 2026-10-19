@@ -68,6 +68,8 @@ interface Overrides {
   targets?: unknown[];
   habits?: unknown[];
   cardio?: unknown[];
+  /** Answers POST /api/weight in its place, e.g. a failure the test releases. */
+  weighInResult?: () => Promise<unknown>;
 }
 
 /**
@@ -93,6 +95,7 @@ function mockApi(o: Overrides = {}) {
     ["GET /api/exercises", () => o.exercises ?? [exercise("Squat"), exercise("Lunge")]],
     ["GET /api/cardio", () => o.cardio ?? []],
     ["POST /api/weight", (body) => {
+      if (o.weighInResult) return o.weighInResult();
       const e = weighIn(body!.date, body!.weight_kg);
       state.weights = [e, ...(Array.isArray(state.weights) ? state.weights : [])];
       return e;
@@ -173,6 +176,38 @@ describe("HomePage, today at a glance", () => {
     await userEvent.click(screen.getByRole("button", { name: "Log" }));
     expect(calls.find((c) => c.key === "POST /api/weight")?.body).toEqual({ date: WED, weight_kg: 80.6 });
     expect(await screen.findByRole("link", { name: /start workout/i })).toBeInTheDocument();
+  });
+
+  // Housekeeping item 22. The optimistic weigh-in hands the slot to the workout,
+  // unmounting the field; the rollback hands it back, and the field remounts.
+  // The failure is held until the field has gone: one that rejects at once rolls
+  // back before React draws the optimistic weigh-in, so the field never unmounts
+  // and the test passed with no fix at all.
+  it("gives a failed weigh-in its typed value back", async () => {
+    freeze(WED);
+    let fail!: () => void;
+    mockApi({
+      weights: [weighIn("2026-08-25", 81)],
+      weighInResult: () => new Promise((_, reject) => (fail = () => reject(new ApiError(500, "boom")))),
+    });
+    renderPage();
+    await userEvent.type(await screen.findByLabelText("Today's weight (kg)"), "80.4");
+    await userEvent.click(screen.getByRole("button", { name: "Log" }));
+    expect(await screen.findByRole("link", { name: /start workout/i })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Today's weight (kg)")).toBeNull();
+    await act(async () => fail());
+    await waitFor(() => expect(screen.getByLabelText("Today's weight (kg)")).toHaveValue("80.4"));
+  });
+
+  // Housekeeping item 27: the habits card mounts after the spinner, so its
+  // query started last and the card popped in after everything else.
+  it("starts today's habits with the rest of the day, not after it", async () => {
+    freeze(WED);
+    const calls = mockApi({ weights: [weighIn(WED)], splitNeverResolves: true });
+    renderPage();
+    await waitFor(() => expect(calls.some((c) => c.key === "GET /api/split")).toBe(true));
+    expect(screen.getByLabelText(/loading your day/i)).toBeInTheDocument();
+    await waitFor(() => expect(calls.map((c) => c.key)).toContain(`GET /api/habits?today=${WED}`));
   });
 
   it("puts the workout on top once weighed in, with its progress", async () => {

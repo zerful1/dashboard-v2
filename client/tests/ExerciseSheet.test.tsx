@@ -175,6 +175,40 @@ describe("ExerciseSheet, last time (redesign part 3a, §3)", () => {
     expect(onDeleteSet).toHaveBeenCalledWith("s1");
   });
 
+  // Housekeeping item 22, review focus 3: the reps come back only to the sheet
+  // they were typed in.
+  it("refills the reps when Add set fails, for that exercise only", async () => {
+    mockCoaching(null);
+    const { update } = renderSheet();
+    await userEvent.type(weight(), "100");
+    await userEvent.type(reps(), "5");
+    await userEvent.click(screen.getByRole("button", { name: /add set 1/i }));
+    expect(reps()).toHaveValue(null);
+    update({ failedSet: { exercise_name: "Bench Press", reps: 5 } });
+    expect(reps()).toHaveValue(null);
+    update({ failedSet: { exercise_name: "Squat", reps: 5 } });
+    expect(reps()).toHaveValue(5);
+  });
+
+  it("refills both sides when a set logged per side fails", async () => {
+    mockCoaching(null);
+    const { update } = renderSheet();
+    await userEvent.click(sidesToggle());
+    update({ failedSet: { exercise_name: "Squat", reps: { left: 7, right: 8 } } });
+    expect(screen.getByLabelText("Left")).toHaveValue(7);
+    expect(screen.getByLabelText("Right")).toHaveValue(8);
+  });
+
+  // Housekeeping item 23: "nothing last time" is not "First time" while today's
+  // sets may still hold this exercise.
+  it("says nothing about a first time while today's sets load", () => {
+    mockCoaching(null);
+    const { update } = renderSheet({ todayPending: true });
+    expect(screen.queryByText(/First time/)).toBeNull();
+    update({ todayPending: false });
+    expect(screen.getByText("First time on this one. Nothing to compare yet.")).toBeInTheDocument();
+  });
+
   it("shows only the set-1 block the first time", () => {
     mockCoaching(null);
     renderSheet();

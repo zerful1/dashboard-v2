@@ -23,6 +23,7 @@ import { StatsTab } from "./StatsTab";
 import { HistoryTab } from "./HistoryTab";
 import { cn } from "@/lib/cn";
 import { Spinner } from "@/components/ui/Spinner";
+import { Button } from "@/components/ui/Button";
 
 type SubTab = "log" | "stats" | "history";
 
@@ -34,7 +35,7 @@ const SUB_TABS: { key: SubTab; label: string }[] = [
 
 export function GymPage() {
   const { user } = useAuth();
-  const { split, isPending: splitPending, failed: splitFailed } = useSplit();
+  const { split, isPending: splitPending, failed: splitFailed, refetch: refetchSplit } = useSplit();
 
   // The most recently logged day, for the rest-day fallback in useGymDay.
   const { data: lastLogged } = useQuery({
@@ -68,6 +69,14 @@ export function GymPage() {
     [lastTimes],
   );
   const historyNames = useHistoryExerciseNames();
+  // A failed Add set, for the sheet to give its reps back. Memoised on the
+  // mutation's own variables, so the sheet refills once per failure rather
+  // than on every render, over whatever is typed next.
+  const failedSet = useMemo(() => {
+    const v = logSet.isError ? logSet.variables : undefined;
+    if (!v) return null;
+    return { exercise_name: v.exercise_name, reps: "reps" in v ? v.reps : { left: v.reps_left, right: v.reps_right } };
+  }, [logSet.isError, logSet.variables]);
 
   const [tab, setTab] = useState<SubTab>("log");
   const [editMode, setEditMode] = useState(false);
@@ -87,7 +96,16 @@ export function GymPage() {
   // query for it, then again for the real one.
   if (splitPending) return <Spinner label="Loading your split" />;
   // Not the default split in its place: that names the wrong day, and logs to it.
-  if (splitFailed) return <p className="py-6 text-center text-sm text-muted">Couldn't load your split.</p>;
+  if (splitFailed) {
+    return (
+      <div className="py-6 text-center">
+        <p className="text-sm text-muted">Couldn't load your split.</p>
+        <Button variant="ghost" className="mt-2" onClick={() => void refetchSplit()}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -163,6 +181,7 @@ export function GymPage() {
         todayFailed={setsFailed}
         last={active ? (lastTimes[active.exercise_name] ?? null) : null}
         lastPending={lastPending}
+        failedSet={failedSet}
         onClose={() => setActive(null)}
         onLogSet={(weightKg, reps, isBodyweight, setNumber) => {
           if (!active) return;
