@@ -59,4 +59,10 @@ describe("AppSection, the project page", () => {
     renderSection();
     expect(screen.getByRole("link", { name: "About this project" })).toHaveAttribute("href", "/about");
   });
+
+  // ShortcutList's rows are py-3 (44 px); this one was 32 px to tap.
+  it("gives the row a full-height tap area", () => {
+    renderSection();
+    expect(screen.getByRole("link", { name: "About this project" })).toHaveClass("py-3");
+  });
 });

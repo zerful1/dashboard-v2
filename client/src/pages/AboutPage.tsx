@@ -2,11 +2,9 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { ApiError } from "@/lib/api";
-import { cn } from "@/lib/cn";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClass } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { FormError } from "@/components/ui/FormError";
-import { PILL } from "@/components/ui/pill";
 
 const DOES = [
   "Logs gym sessions set by set, and suggests the next set from your history",
@@ -55,19 +53,26 @@ export function AboutPage() {
 
   return (
     <main className="mx-auto w-full max-w-md px-5 py-10">
-      <div className="lbl">Project info</div>
+      <div className="lbl text-accent">Project info</div>
       <h1 className="mt-1 text-2xl font-semibold tracking-tight">Dashboard</h1>
       <p className="mt-2 text-sm leading-relaxed text-text">
         A personal tracker for training, body weight, food and habits: my own single-user app, rebuilt as a full-stack,
         multi-user web app.
       </p>
 
-      {/* Empty while the session is checked, at its own height: a signed-in
-          visitor must not see the demo flash before "Open the app". A check
-          that failed outright offers the signed-out actions, as /login does. */}
+      {/* Only a quiet spinner while the session is checked, at the row's own
+          height: a signed-in visitor must not see the demo flash before "Open
+          the app". A check that failed outright offers the signed-out actions,
+          as /login does. */}
       <div className="mt-5 flex min-h-11 flex-wrap gap-2">
-        {loading ? null : user ? (
-          <Link to="/" className={cn(PILL, "bg-accent px-4 py-2.5 text-bg hover:brightness-90")}>
+        {loading ? (
+          <span
+            role="status"
+            aria-label="Checking your session"
+            className="h-4 w-4 self-center animate-spin rounded-full border-2 border-muted border-t-transparent"
+          />
+        ) : user ? (
+          <Link to="/" className={buttonClass("primary")}>
             Open the app
           </Link>
         ) : (
@@ -75,7 +80,7 @@ export function AboutPage() {
             <Button loading={demoBusy} onClick={onDemo}>
               Try the demo
             </Button>
-            <Link to="/login" className={cn(PILL, "border border-edge px-4 py-2.5 text-text hover:bg-accent/5")}>
+            <Link to="/login" className={buttonClass("ghost")}>
               Sign in
             </Link>
           </>

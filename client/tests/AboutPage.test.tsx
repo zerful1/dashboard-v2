@@ -1,11 +1,12 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes, RouterProvider, createMemoryRouter } from "react-router-dom";
+import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { AboutPage } from "../src/pages/AboutPage";
-import { routes } from "../src/router";
+import { routes } from "../src/routes";
+import { Button } from "../src/components/ui/Button";
 import { AuthProvider } from "../src/auth/AuthProvider";
 import * as apiModule from "../src/lib/api";
 import { ApiError } from "../src/lib/api";
@@ -41,34 +42,39 @@ const providers = (children: ReactNode) => (
 );
 
 function renderPage() {
-  render(
-    providers(
-      <MemoryRouter initialEntries={["/about"]}>
-        <Routes>
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/" element={<p>home</p>} />
-        </Routes>
-      </MemoryRouter>,
-    ),
+  const router = createMemoryRouter(
+    [
+      { path: "/about", element: <AboutPage /> },
+      { path: "/", element: <p>home</p> },
+    ],
+    { initialEntries: ["/about"] },
   );
+  render(providers(<RouterProvider router={router} />));
+  return router;
 }
 
 /** The real route table: a public page must sit outside ProtectedRoute. */
 function renderRoutes(path: string) {
-  render(providers(<RouterProvider router={createMemoryRouter(routes, { initialEntries: [path] })} />));
+  const router = createMemoryRouter(routes, { initialEntries: [path] });
+  render(providers(<RouterProvider router={router} />));
+  return router;
 }
 
 const whitePills = () => document.querySelectorAll(".bg-accent").length;
 const never = new Promise<never>(() => {});
 
+// jsdom has no scrolling; the page scrolls to the top on mount.
+beforeEach(() => vi.spyOn(window, "scrollTo").mockImplementation(() => {}));
 afterEach(() => vi.restoreAllMocks());
 
 // Housekeeping PR 4 (spec §5): the public project page.
 describe("AboutPage", () => {
   it("opens for a signed-out visitor with no API call but the session check", async () => {
     const calls = mockApi();
-    renderRoutes("/about");
+    const router = renderRoutes("/about");
     expect(await screen.findByRole("button", { name: "Try the demo" })).toBeInTheDocument();
+    // The path, not just the button: /login has a "Try the demo" too.
+    expect(router.state.location.pathname).toBe("/about");
     expect(screen.getByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
     expect(calls).toEqual(["GET /api/auth/me"]);
   });
@@ -96,6 +102,8 @@ describe("AboutPage", () => {
     mockApi({ me: never });
     renderPage();
     expect(screen.getByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
+    // Something is coming: a quiet spinner in the row the actions will take.
+    expect(screen.getByRole("status", { name: "Checking your session" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Try the demo" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Sign in" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Open the app" })).toBeNull();
@@ -116,6 +124,31 @@ describe("AboutPage", () => {
     expect(calls).toContain("POST /api/auth/demo");
   });
 
+  // R4: pushed, so Back returns here, now offering the app.
+  it("comes back to the page, signed in, on Back", async () => {
+    mockApi();
+    const router = renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "Try the demo" }));
+    await screen.findByText("home");
+    await router.navigate(-1);
+    expect(await screen.findByRole("link", { name: "Open the app" })).toBeInTheDocument();
+  });
+
+  // Drawn with Button's own look, so a change to Button can't leave them behind.
+  it("draws its link pills with Button's look", async () => {
+    mockApi();
+    renderPage();
+    const signIn = await screen.findByRole("link", { name: "Sign in" });
+    const { container } = render(<Button variant="ghost">x</Button>);
+    expect(signIn.className).toBe(container.querySelector("button")!.className);
+  });
+
+  it("draws the eyebrow white, as the app's page eyebrows are", async () => {
+    mockApi();
+    renderPage();
+    expect(screen.getByText("Project info")).toHaveClass("text-accent");
+  });
+
   it("says so when the demo can't be opened", async () => {
     mockApi({ demo: new ApiError(503, "The demo is unavailable") });
     renderPage();
@@ -128,10 +161,9 @@ describe("AboutPage", () => {
   // navigation keeps the scroll, so a small phone opened this page past its title.
   it("opens at the top of the page", async () => {
     mockApi();
-    const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
     renderPage();
     await screen.findByRole("button", { name: "Try the demo" });
-    expect(scrollTo).toHaveBeenCalledWith(0, 0);
+    expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
   });
 
   it("says what the spec says", async () => {

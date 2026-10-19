@@ -45,7 +45,7 @@ export function AppSection() {
             ? "Couldn't reach the server, so nothing was cleared."
             : "For when it looks out of date. Your data stays on the server."}
       </p>
-      <Link to="/about" className="mt-3 flex items-center justify-between border-t border-raised pt-3 text-sm">
+      <Link to="/about" className="mt-3 flex items-center justify-between border-t border-raised py-3 text-sm">
         About this project
         {/* Decoration: the row is the link. */}
         <ChevronRight size={16} aria-hidden className="shrink-0 text-dim" />

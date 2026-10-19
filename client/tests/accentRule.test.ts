@@ -11,7 +11,7 @@ const SRC = clientPath("src");
  */
 const ALLOWED: Record<string, string> = {
   "components/ui/Button.tsx": "the primary variant: the one action",
-  "features/home/WorkoutSection.tsx": "the Start/Continue workout link (a primary action outside Button), its progress bar (data ink) and the done tick",
+  "features/home/WorkoutSection.tsx": "its progress bar (data ink) and the done tick",
   "features/home/FoodSection.tsx": "the kcal bar's fill: data ink",
   "features/home/WeekLine.tsx": "week dots: small done marks",
   "features/gym/ExerciseRow.tsx": "the set-done tick",
@@ -23,7 +23,6 @@ const ALLOWED: Record<string, string> = {
   "features/nutrition/WeekStrip.tsx": "the bars' fill (data ink) and the protein dot (a small done mark)",
   "features/weight/PeriodList.tsx": "week dots: small done marks",
   "features/insights/WeekStrips.tsx": "days trained (small done marks) and the food bars' fill (data ink)",
-  "pages/AboutPage.tsx": "the Open the app link: the one action, a link outside Button",
 };
 
 /**
