@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { mondayOf, shiftISO } from "@dashboard/shared";
 import { Button } from "@/components/ui/Button";
@@ -33,7 +33,14 @@ export function InsightsPage() {
   // The weight change is coloured by the goal: wait for it, or its failure (isPending, CLAUDE.md).
   // Not while paused offline with nothing saved, though: that would spin for good,
   // so the rows draw uncoloured until the goals arrive (the Weight page's rule).
+  // And only until the week has drawn once: the signal returning starts the
+  // goals' fetch (pending again), and spinning then hid a drawn week (Weight's `drawn`).
   const goalsSettled = !goals.isPending || goals.isPaused;
+  const [drawn, setDrawn] = useState(false);
+  const showWeek = !!review.data && (goalsSettled || drawn);
+  useEffect(() => {
+    if (showWeek) setDrawn(true);
+  }, [showWeek]);
   const goalKg = goals.goals.find((g) => g.kind === "weight")?.target_kg ?? null;
   const all = records.data ?? [];
 
@@ -43,7 +50,7 @@ export function InsightsPage() {
 
       <section aria-label="The week">
         <div className="flex items-center justify-between">
-          <span className="lbl">{week === latest ? "Last week" : "Week"}</span>
+          <h2 className="lbl">{week === latest ? "Last week" : "Week"}</h2>
           <div className="flex items-center gap-1">
             <button aria-label="Previous week" onClick={() => setWeek(shiftISO(week, -7))} className="rounded-full p-1.5 text-muted hover:text-text">
               <ChevronLeft size={16} />
@@ -60,7 +67,7 @@ export function InsightsPage() {
           </div>
         </div>
         {review.data && review.isError && <p className="mt-2 text-xs text-muted">{SAVED}</p>}
-        {review.data && goalsSettled ? (
+        {review.data && showWeek ? (
           <div className="mt-2">
             <WeekRows review={review.data} goalKg={goalKg} />
           </div>

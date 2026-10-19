@@ -80,7 +80,7 @@ describe("Insights: the week", () => {
     renderPage();
     expect(await screen.findByText("21–27 Sep")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Insights" })).toBeInTheDocument();
-    expect(screen.getByText("Last week")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Last week" })).toBeInTheDocument();
     expect(calls).toContain("/api/insights/review?week=2026-09-21");
     expect(await screen.findByText("38 sets · 9,120 kg (+6%)")).toBeInTheDocument();
     expect(screen.getByText("of 2,402 · 168 of 180 g protein · 3 days logged")).toBeInTheDocument();
@@ -151,6 +151,24 @@ describe("Insights: the week", () => {
     onlineManager.setOnline(false);
     renderPage(client);
     expect(await screen.findByText("38 sets · 9,120 kg (+6%)")).toBeInTheDocument();
+  });
+
+  // #40's deferred minor: drawn without the goals offline, the signal returning
+  // starts their fetch (pending again), and the week spun until it settled.
+  it("stays drawn when the signal returns and the goals start loading", async () => {
+    freeze();
+    mockApi({ goals: () => new Promise<Goal[]>(() => {}) });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    client.setQueryData(["insightsReview", "u1", "2026-09-21"], review("2026-09-21"));
+    onlineManager.setOnline(false);
+    renderPage(client);
+    expect(await screen.findByText("38 sets · 9,120 kg (+6%)")).toBeInTheDocument();
+
+    await act(async () => onlineManager.setOnline(true));
+    await waitFor(() => expect(client.getQueryState(["goals", "u1"])?.fetchStatus).toBe("fetching"));
+    await act(async () => {}); // let the page re-render on that state
+    expect(screen.queryByRole("status", { name: "Loading the week" })).toBeNull();
+    expect(screen.getByText("38 sets · 9,120 kg (+6%)")).toBeInTheDocument();
   });
 
   it("shows an error card with Retry when the week cannot load", async () => {

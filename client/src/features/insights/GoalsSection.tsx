@@ -33,7 +33,8 @@ export function GoalsSection({ today, historyNames }: { today: string; historyNa
       <div className="flex items-center justify-between">
         <h2 className="lbl">Goals</h2>
         {g.hasData && (
-          <Button variant="subtle" className="px-0 py-0 text-sm" onClick={() => setOpen(true)}>
+          // min-h-6: a tap area of 24 px, where the padding is zeroed to sit in the heading's line.
+          <Button variant="subtle" className="min-h-6 px-0 py-0 text-sm" onClick={() => setOpen(true)}>
             {g.goals.length ? "Change" : "Set goals"}
           </Button>
         )}
