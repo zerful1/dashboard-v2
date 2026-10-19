@@ -368,10 +368,12 @@ on the phase, and the goal already says what progress is.
 projection all come from `trendFit` in shared: a least-squares line through the
 last 56 days, at least 14 weigh-ins, "flat" under 0.05 kg a week. The Weight
 page's composition line reads the same fit, and takes its colour from the rate
-line's own rule (`rateTone` in shared), so it can't read green beside a white
-rate. The user chose agreement over a faster-turning smoothed rate (2026-10-12),
-so changing the method in one place makes two screens contradict each other. The
-figure above it is a different number on purpose: the 7-day average.
+line's own rule (`rateTone` in shared), so a moving weight can't read green
+beside a white rate. A steady weight reads green only for its lifts ("Weight
+steady, lifts climbing"), which is right. The user chose agreement over a
+faster-turning smoothed rate (2026-10-12), so changing the method in one place
+makes two screens contradict each other. The figure above it is a different
+number on purpose: the 7-day average.
 
 **No boxes.** Grouping is `Card` (content under a hairline) or `List` (rows
 between hairlines). `rounded-card` is for media only (the barcode camera). The
