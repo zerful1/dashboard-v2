@@ -26,7 +26,9 @@ import { MAX_AGE } from "@/lib/persister";
  */
 function writeFailureMessage(err: unknown): string {
   // api() gave up waiting (dead wifi, a captive portal): the offline message's words.
-  if (err instanceof ApiError && err.code === "timeout") return "Timed out — not saved";
+  // Not "not saved": a slow write can still land after the app gave up, and
+  // the refetch on settle shows whether it did.
+  if (err instanceof ApiError && err.code === "timeout") return "Timed out — may not have saved";
   if (err instanceof ApiError) return err.message;
   // onlineManager changes only on an online/offline event, and createQueryClient
   // syncs it only at startup, so navigator.onLine false is checked here too: it
@@ -79,7 +81,9 @@ export function createQueryClient(): QueryClient {
     defaultOptions: {
       queries: {
         staleTime: 30_000,
-        retry: 1,
+        // Once, but not after a timeout: dead wifi already waited 15 s, and a
+        // retry doubled it before saying so.
+        retry: (failures, err) => failures < 1 && !(err instanceof ApiError && err.code === "timeout"),
         // Must be >= the persister maxAge. Below it, a query is garbage collected
         // from memory before its persisted copy expires, and the restored cache
         // silently comes back empty.
