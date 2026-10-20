@@ -414,8 +414,8 @@ the `locateFile` override instead and the ponyfill fetches from jsDelivr: a
 third-party request at scan time. A future Content Security Policy must allow
 `'wasm-unsafe-eval'`.
 
-**Breakpoint conditions must be exact complements.** `xl:hidden` against
-`xl:flex`, same threshold. A mismatched pair does not fail loudly; it opens a
+**Breakpoint conditions must be exact complements.** `lg:hidden` against
+`lg:flex`, same threshold (the rail takes over at 1024 px). A mismatched pair does not fail loudly; it opens a
 band of viewport widths with no navigation at all, and jsdom never evaluates
 media queries so no test will catch it.
 

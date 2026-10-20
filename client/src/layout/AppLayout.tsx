@@ -28,15 +28,17 @@ export function AppLayout() {
 
   // Two layouts, not three. BottomTabs and the More sheet below (the same
   // mobile affordance — the sheet is what the tab bar's "More" button opens)
-  // are visible below 1280px; NavRail is visible at 1280px and up. Both
-  // `xl:hidden` occurrences here must stay the exact complement of NavRail's
-  // `xl:flex`: the same threshold, not just the same breakpoint name. A
-  // mismatched pair — say one of these reverting to a smaller breakpoint's
-  // hidden-utility while the other two stay put — doesn't fail loudly, it
+  // are visible below 1024px; NavRail is visible at 1024px and up (moved down
+  // from 1280px on 2026-10-20: a laptop window that wasn't full screen got the
+  // phone's tab bar stretched across it). The More sheet's `lg:hidden` here
+  // and BottomTabs' must stay the exact complement of NavRail's `lg:flex`:
+  // the same threshold, not just the same breakpoint name. A mismatched
+  // pair — say one of these reverting to another breakpoint's hidden-utility
+  // while the other two stay put — doesn't fail loudly, it
   // opens a band of viewport widths with no nav at all (or, the other
   // direction, both rail and tab bar at once). jsdom never evaluates media
-  // queries, so no test will catch that drift; this has to
-  // be caught by whoever next touches one of these three classes.
+  // queries, so navBreakpoints.test reads the classes instead: every
+  // hidden/flex breakpoint in the three layout files must be the same one.
   return (
     <div className="flex h-dvh flex-col bg-bg">
       <div className="flex min-h-0 flex-1">
@@ -54,9 +56,9 @@ export function AppLayout() {
           </div>
           {/* One centred column at every width, Home's rule (its redesign spec)
               applied to every page on 2026-10-20. No page has a desktop layout
-              of its own, and without the cap at 1280px+ every row stretched
+              of its own, and without the cap on a wide screen every row stretched
               across the screen, a lift's name a screen's width from its number. */}
-          <div className="mx-auto w-full max-w-2xl px-4 py-5 xl:px-6">
+          <div className="mx-auto w-full max-w-2xl px-4 py-5 lg:px-6">
             {/* Every page inside the shell is a lazy chunk, and this is the one
                 boundary they all share. It sits INSIDE the layout deliberately:
                 the nav and sign-out stay on screen while a chunk loads, so a
@@ -73,7 +75,7 @@ export function AppLayout() {
 
       {moreOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-end bg-black/60 xl:hidden"
+          className="fixed inset-0 z-50 flex items-end bg-black/60 lg:hidden"
           onClick={() => setMoreOpen(false)}
         >
           <div

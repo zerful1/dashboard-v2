@@ -1,8 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
+import { readFileSync } from "node:fs";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { BottomTabs } from "../src/layout/BottomTabs";
 import { NavRail } from "../src/layout/NavRail";
+import { clientPath } from "./clientRoot";
 
 vi.mock("@/auth/AuthProvider", () => ({
   useAuth: () => ({ user: { id: "u1", email: "a@b.com" }, loading: false, logout: vi.fn() }),
@@ -18,8 +20,19 @@ describe("navigation", () => {
         <NavRail />
       </MemoryRouter>,
     );
-    expect(container.querySelector("nav")).toHaveClass("xl:hidden");
-    expect(container.querySelector("aside")).toHaveClass("hidden", "xl:flex");
+    expect(container.querySelector("nav")).toHaveClass("lg:hidden");
+    expect(container.querySelector("aside")).toHaveClass("hidden", "lg:flex");
+  });
+
+  // The More sheet's overlay is the third class, in AppLayout, which needs the
+  // whole app to render: read every layout file's hidden/flex breakpoints instead.
+  it("uses one breakpoint for every hidden/flex switch in the layout", () => {
+    const used = ["AppLayout.tsx", "BottomTabs.tsx", "NavRail.tsx"].flatMap(
+      (f) => readFileSync(clientPath(`src/layout/${f}`), "utf8").match(/\b(?:sm|md|lg|xl|2xl):(?:hidden|flex)\b/g) ?? [],
+    );
+    // Comments that name a class count too, so one left naming an old breakpoint fails.
+    expect(new Set(used.map((u) => u.split(":")[0]))).toEqual(new Set(["lg"]));
+    expect(used).toEqual(expect.arrayContaining(["lg:hidden", "lg:flex"]));
   });
 
   it("labels the tabs in sentence case and marks the current one", () => {

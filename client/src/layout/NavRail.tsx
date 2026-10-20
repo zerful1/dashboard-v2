@@ -9,7 +9,7 @@ export function NavRail() {
   const { logout } = useAuth();
 
   return (
-    <aside className="hidden w-[168px] shrink-0 flex-col border-r border-raised p-3 xl:flex">
+    <aside className="hidden w-[168px] shrink-0 flex-col border-r border-raised p-3 lg:flex">
       <div className="flex items-center gap-2 px-2 pb-4 text-sm font-semibold text-accent">
         <Mark size={18} />
         Dashboard
@@ -30,8 +30,8 @@ export function NavRail() {
           {label}
         </NavLink>
       ))}
-      {/* Sign-out lives at both breakpoints or neither. Below 1280px it is in
-          the More sheet; without this the only one at 1280px and up was the
+      {/* Sign-out lives at both breakpoints or neither. Below 1024px it is in
+          the More sheet; without this the only one at 1024px and up was the
           button on the settings page — behind the profile query, so a user
           whose profile failed to load could not sign out from inside the app
           at all. `mt-auto` is what the column layout on the aside is for. */}
