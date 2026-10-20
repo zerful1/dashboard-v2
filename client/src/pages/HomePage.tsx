@@ -28,7 +28,7 @@ export function HomePage() {
   const openAdd = () => setAdding(true);
 
   return (
-    <div className="mx-auto max-w-xl space-y-4">
+    <div className="space-y-4">
       <div>
         <div className="lbl text-accent">{longDate(today)}</div>
         <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">Today</h1>

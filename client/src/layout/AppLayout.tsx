@@ -52,9 +52,11 @@ export function AppLayout() {
             <DemoBanner />
             <OfflineBanner />
           </div>
-          {/* Single column below 1280px; two-pane layouts are introduced
-              per-feature from phase 4, only where a detail view exists. */}
-          <div className="mx-auto w-full max-w-2xl px-4 py-5 xl:max-w-none xl:px-6">
+          {/* One centred column at every width, Home's rule (its redesign spec)
+              applied to every page on 2026-10-20. No page has a desktop layout
+              of its own, and without the cap at 1280px+ every row stretched
+              across the screen, a lift's name a screen's width from its number. */}
+          <div className="mx-auto w-full max-w-2xl px-4 py-5 xl:px-6">
             {/* Every page inside the shell is a lazy chunk, and this is the one
                 boundary they all share. It sits INSIDE the layout deliberately:
                 the nav and sign-out stay on screen while a chunk loads, so a
