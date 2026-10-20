@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useDataSummary } from "@/hooks/useDataSummary";
 import { dayMonthYear } from "@/lib/dates";
+import { RestoreSheet } from "./RestoreSheet";
 
 /** Hands the browser a file to save, through a temporary link. */
 function saveJson(filename: string, data: unknown) {
@@ -58,6 +59,7 @@ function SummaryLine({ s }: { s: DataSummary }) {
  */
 export function YourDataCard() {
   const [busy, setBusy] = useState(false);
+  const [restoring, setRestoring] = useState(false);
   const summary = useDataSummary();
 
   async function onDownload() {
@@ -79,6 +81,10 @@ export function YourDataCard() {
       <Button variant="ghost" loading={busy} onClick={() => void onDownload()} className="w-full">
         Download my data
       </Button>
+      <Button variant="ghost" onClick={() => setRestoring(true)} className="w-full">
+        Restore…
+      </Button>
+      <RestoreSheet open={restoring} onClose={() => setRestoring(false)} />
     </Card>
   );
 }

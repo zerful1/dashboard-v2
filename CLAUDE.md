@@ -91,6 +91,17 @@ and fails until the new one is listed. Secrets are excluded by name there, the w
 `server/tests/setup.ts` too. Nothing fails if you forget, but its rows then leak
 from one test into the next.
 
+**It then needs a restore decision too.** Settings' restore reads the same
+download, and `tests/restore.test.ts` fails until every exported table is in
+`RESTORED_TABLES` (shared, in insert order: parents first) or in
+`NOT_RESTORED` (`server/src/repositories/restore.ts`). A child table also needs
+its parent in `CHILD` there, or its rows go in pointing at a parent the account
+may hold under another id. **Old downloads must stay restorable:** a column
+added to a restored table must be nullable. The insert fills a key the file
+lacks with NULL, not with the column's default, so even a `NOT NULL DEFAULT`
+column fails every older file with "This file couldn't be restored". **Preview is the restore, rolled back**, so the two
+can't disagree; keep it that way rather than counting separately.
+
 ---
 
 ## The demo is read-only because no GET writes

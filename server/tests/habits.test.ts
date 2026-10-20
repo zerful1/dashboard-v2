@@ -98,6 +98,18 @@ describe("habits", () => {
     await agent.post("/api/habits/reorder").send({ ids: [a.id, b.id, a.id] }).expect(400);
   });
 
+  // A restore adds habits back without the 12 limit (redesign part 8, §6.4), so
+  // the list can be longer; reordering it must still work.
+  it("reorders a list longer than 12, as a restore can leave", async () => {
+    const agent = await signedIn(alice);
+    for (let i = 0; i < 12; i++) await add(agent, `H${i}`);
+    const { rows } = await pool.query<{ user_id: string }>(`SELECT user_id FROM ${T.habits} LIMIT 1`);
+    await pool.query(`INSERT INTO ${T.habits} (user_id, name, sort_order) VALUES ($1, 'Restored', 12)`, [rows[0]!.user_id]);
+    const ids = (await list(agent)).map((h) => h.id).reverse();
+    await agent.post("/api/habits/reorder").send({ ids }).expect(204);
+    expect((await list(agent))[0]!.name).toBe("Restored");
+  });
+
   it("deletes a habit with its history", async () => {
     const agent = await signedIn(alice);
     const h = await add(agent, "Skincare");

@@ -45,7 +45,9 @@ habitsRouter.post("/", validate({ body: addBody }), async (req, res, next) => {
 
 habitsRouter.post(
   "/reorder",
-  validate({ body: z.object({ ids: z.array(z.string().uuid()).max(MAX_HABITS) }) }),
+  // No MAX_HABITS cap: a restore can leave more (redesign part 8, §6.4), and
+  // reorderHabits already refuses anything but the full list.
+  validate({ body: z.object({ ids: z.array(z.string().uuid()) }) }),
   async (req, res, next) => {
     try {
       // 400 without saying which id was wrong: a foreign id isn't confirmed to exist.
