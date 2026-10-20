@@ -190,8 +190,10 @@ describe("AboutPage", () => {
       "Designed and directed by me, built with Claude Code as an AI pair programmer. Every change started as a written spec, was built test-first and reviewed before merging.",
     ];
     for (const text of copy) expect(screen.getByText(text)).toBeInTheDocument();
-    // R1: the mockup's grouping, 8 chips.
-    const chips = ["TypeScript", "React 19", "TanStack Query", "Tailwind 4", "Node · Express", "PostgreSQL · Supabase", "Vitest", "Vercel"];
+    // R1: the mockup's grouping, 7 chips. Vitest left at the user's call (2026-10-20):
+    // the chips are the stack a visitor would recognise, not the tooling.
+    const chips = ["TypeScript", "React 19", "TanStack Query", "Tailwind 4", "Node · Express", "PostgreSQL · Supabase", "Vercel"];
     expect(chips.map((c) => screen.getAllByText(c).length)).toEqual(chips.map(() => 1));
+    expect(screen.queryByText("Vitest")).toBeNull();
   });
 });
