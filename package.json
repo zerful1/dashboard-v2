@@ -20,10 +20,6 @@
     "dev:web:lan": "npm run dev -w @dashboard/client -- --host",
     "migrate": "npm run migrate -w @dashboard/server",
     "import-v1": "tsx server/src/db/importV1.ts",
-    "verify-v1": "tsx server/src/db/verifyV1.ts",
-    "drift": "tsx server/src/db/driftReport.ts",
-    "delta-v1": "tsx server/src/db/deltaV1.ts",
-    "check-v1": "tsx server/src/db/importV1.checks.ts",
     "import-cofid": "tsx server/src/db/importCofid.ts",
     "import-workouts": "tsx server/src/db/importWorkouts.ts"
   },
