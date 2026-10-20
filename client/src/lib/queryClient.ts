@@ -24,7 +24,7 @@ import { MAX_AGE } from "@/lib/persister";
  * says changes won't save, and "Something went wrong" read as a different,
  * unexplained fault (#17 review 53).
  */
-function writeFailureMessage(err: unknown): string {
+export function writeFailureMessage(err: unknown): string {
   // api() gave up waiting (dead wifi, a captive portal). Not "not saved", as
   // offline: a slow write can still land after the app gave up, and the
   // refetch on settle shows whether it did.

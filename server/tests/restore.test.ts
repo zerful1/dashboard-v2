@@ -193,6 +193,35 @@ describe("restoreUserData", () => {
     expect(await count(T.workoutSets, a)).toBe(0);
   });
 
+  // Safe only because the insert never updates on a clash: a "refresh edited rows"
+  // change (DO UPDATE) would rewrite Bob's rows from Alice's file. This fails first.
+  it("leaves another user's row alone when the file names its id", async () => {
+    const a = await signedIn(alice);
+    const b = await signedIn(bob);
+    const bobsWeighIn = await weighIn(b, "2026-10-01", 90);
+    const bobsSession = await session(b, "2026-10-02", [1]);
+    const alicesSession = await session(a, "2026-10-02", []);
+    const at = "2026-10-02T08:00:00+00:00";
+
+    const added = await restoreUserData(
+      a,
+      {
+        body_weight: [{ id: bobsWeighIn, user_id: a, date: "2026-10-05", weight_kg: 50, notes: null, created_at: at }],
+        // Bob's id, on a date and day type Alice has too: its set goes to Alice's own session.
+        workout_sessions: [{ id: bobsSession, user_id: a, date: "2026-10-02", day_type: 3, day_name: "Push", notes: null, created_at: at }],
+        workout_sets: [{ id: randomUUID(), user_id: a, session_id: bobsSession, exercise_name: "Bench Press", set_number: 2, weight_kg: 80, reps: 8, is_bodyweight: false }],
+      },
+      { dryRun: false },
+    );
+
+    expect(added).toEqual({ ...zero, workout_sets: 1 });
+    const bobs = await q(`SELECT user_id, date::text, weight_kg::float AS kg FROM ${T.bodyWeight} WHERE id = $1`, [bobsWeighIn]);
+    expect(bobs.rows).toEqual([{ user_id: b, date: "2026-10-01", kg: 90 }]);
+    expect((await q(`SELECT user_id FROM ${T.workoutSessions} WHERE id = $1`, [bobsSession])).rows).toEqual([{ user_id: b }]);
+    expect(await count(T.workoutSets, b)).toBe(1);
+    expect((await q(`SELECT count(*)::int AS n FROM ${T.workoutSets} WHERE session_id = $1`, [alicesSession])).rows[0].n).toBe(1);
+  });
+
   it("rewrites user_id, whatever the file says", async () => {
     const a = await signedIn(alice);
     const b = await signedIn(bob);

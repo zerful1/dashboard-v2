@@ -116,6 +116,25 @@ describe("RestoreSheet", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  // Both mutations opt out of the toast, so the sheet words these as the toast would.
+  it("says it's offline in words, not the browser's", async () => {
+    vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+    vi.mocked(restoreApi.preview).mockRejectedValue(new TypeError("Failed to fetch"));
+    renderSheet();
+    await pick();
+    expect(await screen.findByRole("alert")).toHaveTextContent("You're offline — not saved");
+    vi.restoreAllMocks();
+  });
+
+  it("says a timed-out restore may not have saved", async () => {
+    vi.mocked(restoreApi.preview).mockResolvedValue({ added: { ...zero, body_weight: 1 } });
+    vi.mocked(restoreApi.restore).mockRejectedValue(new ApiError(0, "Timed out", "timeout"));
+    renderSheet();
+    await pick();
+    await userEvent.click(await screen.findByRole("button", { name: "Add them back" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Timed out — may not have saved");
+  });
+
   it("tells the demo it can't restore", async () => {
     vi.mocked(restoreApi.preview).mockRejectedValue(new ApiError(403, "This is a read-only demo — nothing you change is saved"));
     renderSheet();

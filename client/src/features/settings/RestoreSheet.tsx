@@ -6,11 +6,17 @@ import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormError";
 import { ApiError } from "@/lib/api";
+import { writeFailureMessage } from "@/lib/queryClient";
 import { missingParts, packBody, readDownload, total, type PackedBody } from "./restoreFile";
 
+/**
+ * The toast's own words, since both mutations opt out of it: offline and
+ * timed out read as the rest of the app says them, not as the browser's
+ * "Failed to fetch". demoReadOnly's words are about saving; this says what
+ * can't happen here.
+ */
 const message = (err: Error) =>
-  // demoReadOnly's own words are about saving; this says what can't happen here.
-  err instanceof ApiError && err.status === 403 ? "The demo can't restore downloads." : err.message;
+  err instanceof ApiError && err.status === 403 ? "The demo can't restore downloads." : writeFailureMessage(err);
 
 /**
  * The sheet's body. It lives inside the Sheet, which unmounts it on close, so
