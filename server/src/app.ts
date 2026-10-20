@@ -16,6 +16,7 @@ import { insightsRouter } from "./routes/insights";
 import { goalsRouter } from "./routes/goals";
 import { exportRouter } from "./routes/export";
 import { habitsRouter } from "./routes/habits";
+import { restoreRouter } from "./routes/restore";
 import { pool } from "./db/pool";
 import { config } from "./config";
 import { parseSignupPolicy, type SignupPolicy } from "./signups";
@@ -44,7 +45,9 @@ export function createApp(options: { signups?: SignupPolicy } = {}): Express {
   // removal that used to be explicit above.
   app.use(helmet({ contentSecurityPolicy: false }));
 
-  app.use(express.json({ limit: "1mb" }));
+  // Restore reads a whole download, so it brings its own larger parser.
+  const json = express.json({ limit: "1mb" });
+  app.use((req, res, next) => (req.path.startsWith("/api/restore") ? next() : json(req, res, next)));
 
   // Credentialed CORS: the origin must be echoed exactly — a wildcard is rejected
   // by browsers when Allow-Credentials is true, and the session cookie would never
@@ -98,6 +101,7 @@ export function createApp(options: { signups?: SignupPolicy } = {}): Express {
   app.use("/api/goals", goalsRouter);
   app.use("/api/export", exportRouter);
   app.use("/api/habits", habitsRouter);
+  app.use("/api/restore", restoreRouter);
 
   app.use(errorHandler);
   return app;
