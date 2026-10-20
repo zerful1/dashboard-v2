@@ -252,6 +252,24 @@ describe("restoreUserData", () => {
     expect(await count(T.bodyWeight, a.id)).toBe(1);
   });
 
+  // Their old sort_order would tie with a habit added since (Floss and Walk, both 3).
+  it("puts restored habits after the account's own, in the file's order", async () => {
+    const id = await signedIn(alice);
+    const add = (name: string, sort: number) =>
+      q(`INSERT INTO ${T.habits} (user_id, name, sort_order) VALUES ($1, $2, $3)`, [id, name, sort]);
+    await add("Read", 1);
+    await add("Stretch", 2);
+    await add("Floss", 3);
+    const file = await exportUserData(id);
+    await q(`DELETE FROM ${T.habits} WHERE user_id = $1 AND name <> 'Stretch'`, [id]);
+    await add("Walk", 3);
+
+    expect((await restoreUserData(id, file.tables, { dryRun: false })).habits).toBe(2);
+    const { rows } = await q(`SELECT name, sort_order FROM ${T.habits} WHERE user_id = $1 ORDER BY sort_order, created_at`, [id]);
+    expect(rows.map((r) => r.name)).toEqual(["Stretch", "Walk", "Read", "Floss"]);
+    expect(new Set(rows.map((r) => r.sort_order)).size).toBe(4);
+  });
+
   it("ignores table keys it doesn't know", async () => {
     const a = await aliceWithData();
     const file = await exportUserData(a.id);

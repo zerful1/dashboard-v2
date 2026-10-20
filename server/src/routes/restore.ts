@@ -1,5 +1,6 @@
 import express, { Router, type ErrorRequestHandler, type Request, type Response, type NextFunction } from "express";
 import { z } from "zod";
+import { RESTORE_MAX_BYTES } from "@dashboard/shared";
 import { requireAuth } from "../middleware/requireAuth";
 import { restoreUserData } from "../repositories/restore";
 import { findUserById } from "../repositories/users";
@@ -22,7 +23,7 @@ restoreRouter.use(requireAuth);
 // client sends the file gzipped (a 0.5 MB download is about 60 KB, under
 // Vercel's 4.5 MB request cap); body-parser inflates it and applies this limit
 // to the unpacked size.
-restoreRouter.use(express.json({ limit: "50mb" }));
+restoreRouter.use(express.json({ limit: RESTORE_MAX_BYTES }));
 
 /** A pg error from a value or a constraint, rather than from the connection. */
 const isDataError = (err: unknown) =>
@@ -31,10 +32,11 @@ const isDataError = (err: unknown) =>
 function restoreRoute(dryRun: boolean) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
+      // Only a download of another version is told so. Anything else, including
+      // a body that isn't JSON (the parser leaves it {}), can't be restored.
       const body = req.body as Record<string, unknown>;
-      if (body?.format !== "dashboard-export" || body?.version !== 1) {
-        throw new BadRequest("This download is from a different version of the app.");
-      }
+      if (body?.format !== "dashboard-export") throw new BadRequest(COULDNT);
+      if (body.version !== 1) throw new BadRequest("This download is from a different version of the app.");
       const parsed = envelope.safeParse(body);
       if (!parsed.success) throw new BadRequest(COULDNT);
       const user = await findUserById(req.userId);

@@ -99,7 +99,15 @@ describe("POST /api/restore/preview and /api/restore", () => {
   it("refuses a file that isn't a download", async () => {
     const a = await aliceMissingAWeighIn();
     const res = await send(a.agent, "/api/restore/preview", gz({ ...a.file, format: "x" })).expect(400);
-    expect(res.body.message).toBe(VERSION);
+    expect(res.body.message).toBe(COULDNT);
+  });
+
+  // The parser skips a body that isn't JSON, which then isn't "a different version".
+  it("refuses a body that isn't JSON the same way", async () => {
+    const a = await aliceMissingAWeighIn();
+    const res = await a.agent.post("/api/restore/preview").set("Content-Type", "text/plain").send(JSON.stringify(a.file));
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe(COULDNT);
   });
 
   it("answers a bad row with nothing changed", async () => {

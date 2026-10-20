@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { restoreApi } from "@/api/restore";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormError";
 import { ApiError } from "@/lib/api";
 import { writeFailureMessage } from "@/lib/queryClient";
-import { missingParts, packBody, readDownload, total, type PackedBody } from "./restoreFile";
+import { cantSend, missingParts, packBody, readDownload, total, type PackedBody } from "./restoreFile";
 
 /**
  * The toast's own words, since both mutations opt out of it: offline and
@@ -25,7 +25,9 @@ const message = (err: Error) =>
 function RestoreBody({ onDone }: { onDone: () => void }) {
   const qc = useQueryClient();
   const [packed, setPacked] = useState<PackedBody | null>(null);
-  const [notADownload, setNotADownload] = useState(false);
+  // Why a picked file was never sent: not a download, or too large.
+  const [refused, setRefused] = useState<string | null>(null);
+  const picks = useRef(0);
 
   // Both show their failure here, never as a toast (redesign part 8, §6.1).
   const preview = useMutation({ mutationFn: (p: PackedBody) => restoreApi.preview(p), meta: { errorToast: false } });
@@ -36,22 +38,29 @@ function RestoreBody({ onDone }: { onDone: () => void }) {
       void qc.invalidateQueries();
       onDone();
       const n = total(added);
-      toast.success(`Added back ${n} ${n === 1 ? "thing" : "things"}`);
+      // Another device can restore the same file between the preview and this.
+      toast.success(
+        n === 0 ? "Everything in this file is already here" : `Added back ${n} ${n === 1 ? "thing" : "things"}`,
+      );
     },
   });
 
   async function onPick(file: File | undefined) {
+    // Reading and packing take a moment, so a newer pick can overtake this
+    // one; whichever finishes last must not put the older file on screen.
+    const pick = ++picks.current;
     preview.reset();
     restore.reset();
     setPacked(null);
-    setNotADownload(false);
+    setRefused(null);
     if (!file) return;
-    const text = await readDownload(file);
-    if (text === null) {
-      setNotADownload(true);
-      return;
-    }
-    const body = await packBody(text);
+    const read = await readDownload(file);
+    if (pick !== picks.current) return;
+    if ("refused" in read) return setRefused(read.refused);
+    const body = await packBody(read.text);
+    if (pick !== picks.current) return;
+    const unsendable = cantSend(body);
+    if (unsendable) return setRefused(unsendable);
     setPacked(body);
     preview.mutate(body);
   }
@@ -69,13 +78,16 @@ function RestoreBody({ onDone }: { onDone: () => void }) {
           id="restore-file"
           type="file"
           accept="application/json,.json"
+          // A restore still running would finish after a new pick, and close
+          // the sheet on a file it never sent.
+          disabled={restore.isPending}
           onChange={(e) => void onPick(e.target.files?.[0])}
           className="block w-full text-sm text-muted file:mr-3 file:rounded-full file:border file:border-edge
                      file:bg-transparent file:px-3 file:py-1.5 file:text-sm file:text-text"
         />
       </div>
 
-      {notADownload && <FormError>This isn't a dashboard download</FormError>}
+      {refused && <FormError>{refused}</FormError>}
       {preview.isPending && <p className="text-sm text-muted">Checking the file…</p>}
       {error && <FormError>{message(error)}</FormError>}
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { toast } from "sonner";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -8,18 +8,19 @@ import { createQueryClient } from "../src/lib/queryClient";
 import { ApiError } from "../src/lib/api";
 import { restoreApi } from "../src/api/restore";
 import { RestoreSheet } from "../src/features/settings/RestoreSheet";
+import { REQUEST_CAP_BYTES, packBody, type PackedBody } from "../src/features/settings/restoreFile";
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock("../src/api/restore", () => ({ restoreApi: { preview: vi.fn(), restore: vi.fn() } }));
 // Packing is restoreFile.test's; here the body only has to reach the API unchanged.
 vi.mock("../src/features/settings/restoreFile", async (orig) => ({
   ...(await orig<typeof import("../src/features/settings/restoreFile")>()),
-  packBody: vi.fn(async (text: string) => ({ body: text, gzipped: false })),
+  packBody: vi.fn(async (text: string) => ({ body: text, gzipped: false, bytes: text.length })),
 }));
 
 const zero = Object.fromEntries(RESTORED_TABLES.map((t) => [t, 0])) as RestoreCounts;
 const DOWNLOAD = JSON.stringify({ format: "dashboard-export", version: 1, tables: {} });
-const PACKED = { body: DOWNLOAD, gzipped: false };
+const PACKED = { body: DOWNLOAD, gzipped: false, bytes: DOWNLOAD.length };
 const download = (text = DOWNLOAD) => new File([text], "download.json", { type: "application/json" });
 
 function renderSheet(open = true) {
@@ -152,6 +153,62 @@ describe("RestoreSheet", () => {
     await waitFor(() => expect(add).toBeDisabled());
     await userEvent.click(add);
     expect(restoreApi.restore).toHaveBeenCalledTimes(1);
+  });
+
+  // Another device restored the same file between the preview and the button.
+  it("says everything's already here when the restore adds nothing", async () => {
+    vi.mocked(restoreApi.preview).mockResolvedValue({ added: { ...zero, body_weight: 1 } });
+    vi.mocked(restoreApi.restore).mockResolvedValue({ added: zero });
+    const { onClose } = renderSheet();
+    await pick();
+    await userEvent.click(await screen.findByRole("button", { name: "Add them back" }));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Everything in this file is already here"));
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("says a file is too large for this browser to send, and sends nothing", async () => {
+    vi.mocked(packBody).mockResolvedValueOnce({ body: DOWNLOAD, gzipped: false, bytes: REQUEST_CAP_BYTES + 1 });
+    renderSheet();
+    await pick();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "This browser can't send a file this large. Try an up-to-date browser.",
+    );
+    expect(restoreApi.preview).not.toHaveBeenCalled();
+  });
+
+  // Packing the first file outlasts reading and previewing the second.
+  it("keeps the newer file when an older pick finishes after it", async () => {
+    const older = JSON.stringify({ format: "dashboard-export", version: 1, tables: {}, which: "older" });
+    let release!: () => void;
+    vi.mocked(packBody).mockImplementationOnce(
+      (text) =>
+        new Promise<PackedBody>((resolve) => {
+          release = () => resolve({ body: text, gzipped: false, bytes: text.length });
+        }),
+    );
+    vi.mocked(restoreApi.preview).mockImplementation(async ({ body }) => ({
+      added: body === older ? { ...zero, body_weight: 5 } : { ...zero, habits: 1 },
+    }));
+    renderSheet();
+    await pick(download(older));
+    await waitFor(() => expect(packBody).toHaveBeenCalledWith(older));
+    await pick();
+    expect(await screen.findByText("Habits 1")).toBeInTheDocument();
+
+    await act(async () => release());
+    expect(screen.getByText("Habits 1")).toBeInTheDocument();
+    expect(screen.queryByText("Weigh-ins 5")).toBeNull();
+    expect(restoreApi.preview).toHaveBeenCalledTimes(1);
+  });
+
+  it("can't pick another file while a restore is running", async () => {
+    vi.mocked(restoreApi.preview).mockResolvedValue({ added: { ...zero, body_weight: 1 } });
+    vi.mocked(restoreApi.restore).mockReturnValue(new Promise(() => {}));
+    renderSheet();
+    await pick();
+    expect(screen.getByLabelText("Your download")).toBeEnabled();
+    await userEvent.click(await screen.findByRole("button", { name: "Add them back" }));
+    await waitFor(() => expect(screen.getByLabelText("Your download")).toBeDisabled());
   });
 
   it("starts clean when reopened", async () => {

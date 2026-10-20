@@ -45,6 +45,26 @@ const CHILD: Partial<Record<RestoredTable, { column: string; parent: Parent; orp
   habit_completions: { column: "habit_id", parent: "habits", orphan: "drop" },
 };
 
+/**
+ * Moves the habits the account lacks after the ones it has, keeping the file's
+ * order among them. Their old sort_order would otherwise tie with, or slot
+ * between, habits added since; renumbering those instead would change the
+ * account, which a restore never does. Habits that already come after keep
+ * their numbers, so an account with none gets back exactly what it had.
+ */
+async function afterCurrentHabits(client: PoolClient, userId: string, rows: Row[]): Promise<Row[]> {
+  const { rows: mine } = await client.query<{ id: string; sort_order: number }>(
+    `SELECT id, sort_order FROM ${T.habits} WHERE user_id = $1`,
+    [userId],
+  );
+  const have = new Set(mine.map((h) => h.id));
+  const top = Math.max(...mine.map((h) => h.sort_order));
+  const low = Math.min(...rows.filter((r) => !have.has(String(r.id))).map((r) => Number(r.sort_order)));
+  // Not a clash (or nothing to compare, or a value Postgres will refuse anyway).
+  if (!(low <= top)) return rows;
+  return rows.map((r) => ({ ...r, sort_order: Number(r.sort_order) + top - low + 1 }));
+}
+
 /** Thrown at the end of a preview so its transaction rolls back, carrying what it counted. */
 class DryRun extends Error {
   constructor(readonly counts: RestoreCounts) {
@@ -105,6 +125,7 @@ export async function restoreUserData(
       const counts = {} as RestoreCounts;
       for (const table of RESTORED_TABLES) {
         let rows: Row[] = (tables[table] ?? []).map((r) => ({ ...r, user_id: userId }));
+        if (table === "habits") rows = await afterCurrentHabits(client, userId, rows);
         const child = CHILD[table];
         if (child) {
           const refs = [...new Set(rows.map((r) => r[child.column]).filter((v): v is string => typeof v === "string"))];

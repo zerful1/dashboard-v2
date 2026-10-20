@@ -20,3 +20,10 @@ export type RestoredTable = (typeof RESTORED_TABLES)[number];
 
 /** Rows a restore added (or, from a preview, would add), per table. */
 export type RestoreCounts = Record<RestoredTable, number>;
+
+/**
+ * The largest download a restore takes, unpacked: the server's parser limit,
+ * and the size past which the sheet refuses a file without reading it. A
+ * year's download is far under it (the owner's was 0.5 MB).
+ */
+export const RESTORE_MAX_BYTES = 50 * 1024 * 1024;
