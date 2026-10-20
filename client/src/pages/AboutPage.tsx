@@ -13,7 +13,7 @@ const DOES = [
   "Reviews each week, and keeps daily habits",
 ];
 
-const STACK = ["TypeScript", "React 19", "TanStack Query", "Tailwind 4", "Node · Express", "PostgreSQL · Supabase", "Vitest", "Vercel"];
+const STACK = ["TypeScript", "React 19", "TanStack Query", "Tailwind 4", "Node · Express", "PostgreSQL · Supabase", "Vercel"];
 
 const WORTH_A_LOOK = [
   "Every query is scoped to its user, with an ownership test per table",
