@@ -380,6 +380,13 @@ is a third-party request on every first visit. `tests/fonts.test.ts` fails on a
 remote `@import`, `@font-face` source or font `<link>` on any host, in `src/`,
 `public/` or `rsbuild.config.ts`.
 
+**A shared link's card names the production domain.** `og:image` and `og:url`
+in `src/index.html` must be absolute, so they spell out
+`dashboard-v2-nine-phi.vercel.app`. A new domain means editing both, and nothing
+fails if you don't: the card just loses its picture. `public/og.png` is rendered
+from `scripts/og-image.html` (the command is in its comment); redraw it there,
+not by hand, and keep it the 1200 × 630 the tags declare (`linkPreview.test`).
+
 **Nothing may reach past the screen's edge, fixed elements included.** iOS pans
 the whole page sideways for a fixed element that overflows; Chromium does not,
 so no desktop check sees it. sonner's phone toaster did exactly that (`width:
