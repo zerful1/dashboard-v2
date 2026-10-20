@@ -60,8 +60,8 @@ const SAFE_SCHEMA = /^[a-z_][a-z0-9_]*$/;
 /**
  * Refuses by shape before touching anything, like importCofid and seedDev. The
  * schema is named on the command line, never read from DB_SCHEMA where a stale
- * .env could supply it; app_test belongs to the tests and public to the retired
- * v1 app. Without --apply nothing is written.
+ * .env could supply it; app_test belongs to the tests, and nothing of ours
+ * belongs in public (v1's, until 2026-10-20). Without --apply nothing is written.
  */
 export function parseArgs(argv: string[]): ImportArgs {
   const usage = 'Usage: npm run import-workouts -- "<file.xlsx>" --email <address> --schema <name> [--apply]';

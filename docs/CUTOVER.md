@@ -6,15 +6,18 @@
 ## Retired
 
 v1's 19 tables in `public` were backed up and dropped on 2026-10-20. **There is
-no rollback to v1 any more**, and the comparison tooling below (`drift`,
-`delta-v1`, `verify-v1`, `check-v1`) was deleted with them. The rest of this file
+no rollback to v1 any more**, and the comparison tooling (`drift`, `delta-v1`,
+`verify-v1`, `check-v1`) was deleted with them. The rest of this file
 is the record of the cutover.
 
 - **Drift, run first:** nothing in v1 was missing from v2 except v1's 28
   exercise-template rows, which v2 no longer holds because its template was
   cleared on 2026-10-03 for refilling. Logged sets carry the exercise name, so
-  no history depended on them. The demo's weigh-ins and one session showed as
-  conflicting, as expected.
+  no history depended on them. Of the 17 conflicting weigh-ins, 16 were the
+  demo's (v2's value differs) and one was 2026-08-16, logged in both apps
+  (identical); the one conflicting session was the demo's. `missing` was 1 on
+  `body_weight`, that same 2026-08-16 row, so no real weigh-in hid behind the
+  demo's negative `unaccounted`.
 - **Backup:** `backups/v1-public-2026-10-20.json` (git-ignored, 4,299 rows), written
   by Postgres's own `json_agg` so dates stay `YYYY-MM-DD` strings, and checked
   against the live tables before the drop: every count, and sampled dates.
@@ -46,14 +49,14 @@ is the record of the cutover.
 2. Bookmark the v2 URL and remove the v1 bookmark, so muscle memory does not
    quietly reintroduce drift.
 
-## After
+## After (historical: v1 is gone)
 
 - **v1 stays deployed and read-only** for at least a fortnight. It costs
   nothing and it is the rollback path.
 - **Do not drop `public`** until v2 has been the daily driver for two weeks with
   no data problems. Dropping it is irreversible and buys only tidiness.
 
-## Rollback
+## Rollback (historical: no longer possible)
 
 If something is badly wrong with v2:
 

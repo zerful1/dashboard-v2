@@ -27,8 +27,8 @@ import { shiftISO } from "@dashboard/shared";
  *    by set_number; both only show up against data shaped like this.
  *
  * NEVER writes to `public`, and refuses to run against any schema whose name
- * does not end in `_dev`. `DB_SCHEMA=app npx tsx …` is an established habit in
- * this repo for read-only checks, and this script is not read-only.
+ * does not end in `_dev`. `DB_SCHEMA=app` in front of a command reaches
+ * production (CLAUDE.md), and this script is not read-only.
  *
  * Usage. It seeds an account that already exists and never creates one, so
  * register in the local app first and pass that address:
@@ -526,7 +526,7 @@ async function main(): Promise<void> {
   if (!SEEDABLE_SCHEMA.test(config.DB_SCHEMA)) {
     throw new Error(
       `Refusing to seed DB_SCHEMA=${config.DB_SCHEMA} - this script WRITES, and only a ` +
-        `schema ending in _dev may be written to. v1 in public, production in app and ` +
+        `schema ending in _dev may be written to. public, production in app and ` +
         `the app_test fixtures are all off limits.`,
     );
   }

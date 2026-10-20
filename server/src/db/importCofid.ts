@@ -13,7 +13,8 @@ export interface ImportArgs {
  * Refuses by SHAPE before touching anything, like seedDev and tests/setup.ts.
  * The schema must be named on the command line - never read from DB_SCHEMA,
  * where a stale .env could supply the wrong one - and must not be app_test
- * (tests own their fixtures) or public (the retired v1 app: never written to).
+ * (tests own their fixtures) or public (where v1 lived until 2026-10-20; nothing
+ * of ours belongs there).
  * Without --apply nothing is written at all.
  */
 export function parseArgs(argv: string[]): ImportArgs {

@@ -16,7 +16,8 @@ describe("npm scripts", () => {
       scripts: Record<string, string>;
     };
     const targets = Object.entries(scripts).flatMap(([name, cmd]) =>
-      [...cmd.matchAll(/\btsx (?:watch )?(\S+\.ts)\b/g)].map((m) => ({ name, path: m[1] })),
+      // `tsx`, then `watch` or any flags, then the file.
+      [...cmd.matchAll(/\btsx(?:\s+(?:watch|-\S+))*\s+(\S+\.[cm]?[jt]s)\b/g)].map((m) => ({ name, path: m[1] })),
     );
     expect(targets.length).toBeGreaterThan(0);
     const missing = targets.filter((t) => !existsSync(resolve(dir, t.path))).map((t) => t.name);
