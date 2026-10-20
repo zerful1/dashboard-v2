@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { ApiError } from "@/lib/api";
 import { AuthShell } from "@/layout/AuthShell";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Field } from "@/components/ui/Field";
 import { FormError } from "@/components/ui/FormError";
+import { List } from "@/components/ui/List";
 
 export function LoginPage() {
   const { user, loading, login, enterDemo } = useAuth();
@@ -14,6 +16,7 @@ export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [demoError, setDemoError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [demoBusy, setDemoBusy] = useState(false);
 
@@ -36,34 +39,43 @@ export function LoginPage() {
   }
 
   async function onDemo() {
-    setError(null);
+    setDemoError(null);
     setDemoBusy(true);
     try {
       await enterDemo();
       navigate("/", { replace: true });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not open the demo");
+      setDemoError(err instanceof ApiError ? err.message : "Could not open the demo");
     } finally {
       setDemoBusy(false);
     }
   }
 
+  // Most visitors are strangers (the CV links here), and sign-ups are closed, so
+  // the demo is the one action; the form is the owner's, and a password manager
+  // fills it (sign-in redesign, 2026-10-20).
   return (
-    <AuthShell
-      title="Sign in"
-      subtitle="Track your training, food and habits."
-      footer={
-        <>
-          No account? <Link to="/register" className="text-text underline underline-offset-4">Create one</Link>
-          <div className="mt-3">
-            <Link to="/about" className="text-text underline underline-offset-4">
-              About this project
-            </Link>
-          </div>
-        </>
-      }
-    >
-      <form onSubmit={onSubmit} className="space-y-4" noValidate>
+    <AuthShell title="Track your training, food and habits" footer="Sign-ups are by invite only.">
+      <Button type="button" loading={demoBusy} className="w-full" onClick={onDemo}>
+        Try the demo
+      </Button>
+      <p className="mt-2 text-center text-xs text-muted">Browse with made-up data. Nothing can be changed.</p>
+      {demoError && (
+        <div className="mt-3">
+          <FormError>{demoError}</FormError>
+        </div>
+      )}
+
+      <List className="my-6">
+        <Link to="/about" className="flex items-center gap-3 py-3">
+          <span className="text-sm">About this project</span>
+          <span className="flex-1 text-right text-xs text-muted">How it's built</span>
+          {/* Decoration: the row is the link. */}
+          <ChevronRight size={16} aria-hidden className="shrink-0 text-dim" />
+        </Link>
+      </List>
+
+      <form onSubmit={onSubmit} aria-label="Sign in" className="space-y-4" noValidate>
         <Field label="Email" htmlFor="email">
           <Input
             id="email"
@@ -88,7 +100,7 @@ export function LoginPage() {
 
         {error && <FormError>{error}</FormError>}
 
-        <Button type="submit" loading={busy} className="w-full">
+        <Button type="submit" variant="ghost" loading={busy} className="w-full">
           Sign in
         </Button>
 
@@ -98,13 +110,6 @@ export function LoginPage() {
           </Link>
         </div>
       </form>
-
-      <div className="mt-6 border-t border-raised pt-4">
-        <Button type="button" variant="ghost" loading={demoBusy} className="w-full" onClick={onDemo}>
-          Try the demo
-        </Button>
-        <p className="mt-2 text-center text-xs text-muted">Browse with made-up data. Nothing can be changed.</p>
-      </div>
     </AuthShell>
   );
 }

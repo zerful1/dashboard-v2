@@ -39,7 +39,7 @@ export function RegisterPage() {
   return (
     <AuthShell
       title="Create an account"
-      subtitle="Your data is private to you."
+      subtitle="Sign-ups are by invite only. Your data is private to you."
       footer={
         <>
           Already have one? <Link to="/login" className="text-text underline underline-offset-4">Sign in</Link>

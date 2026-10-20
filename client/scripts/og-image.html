@@ -1,0 +1,43 @@
+<!doctype html>
+<!--
+  The source of public/og.png, the picture a shared link shows (index.html's
+  og:image). Rendered at exactly 1200 × 630, the size the tags declare, from the
+  repository root:
+
+    npx playwright screenshot --browser webkit --viewport-size "1200, 630" \
+      client/scripts/og-image.html client/public/og.png
+
+  The PNG is committed, like the icons from generate-icons.mjs. sharp can't make
+  this one: it draws SVG text in system fonts, and the words must be the app's
+  bundled Inter. The mark is favicon.svg's line and dot.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      @font-face {
+        font-family: "Inter Variable";
+        font-weight: 100 900;
+        src: url("../../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2") format("woff2");
+      }
+      html, body { margin: 0; width: 1200px; height: 630px; background: #000; overflow: hidden; }
+      body { display: flex; flex-direction: column; justify-content: center; padding-left: 112px;
+             font-family: "Inter Variable", sans-serif; color: #fff; }
+      /* The mark's square is mostly margin (its rounded line starts 5.7/32 in),
+         and the T below has a side bearing: -14px lines up their drawn edges. */
+      .name { display: flex; align-items: center; gap: 26px; margin-left: -14px;
+              font-size: 78px; font-weight: 600; letter-spacing: -0.02em; }
+      .line { margin-top: 34px; font-size: 50px; font-weight: 400; color: #8a8a8a; letter-spacing: -0.01em; }
+    </style>
+  </head>
+  <body>
+    <div class="name">
+      <svg width="96" height="96" viewBox="0 0 32 32" aria-hidden="true">
+        <polyline points="7,22 12.5,16.5 17,19 24.5,10.5" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></polyline>
+        <circle cx="24.5" cy="10.5" r="2.9" fill="#ffffff"></circle>
+      </svg>
+      Dashboard
+    </div>
+    <div class="line">Track your training, food and habits</div>
+  </body>
+</html>
