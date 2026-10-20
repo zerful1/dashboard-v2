@@ -1,6 +1,29 @@
 # Cutover: v1 → v2
 
 **Cut over on:** 2026-08-25
+**v1 retired on:** 2026-10-20 (housekeeping 5)
+
+## Retired
+
+v1's 19 tables in `public` were backed up and dropped on 2026-10-20. **There is
+no rollback to v1 any more**, and the comparison tooling below (`drift`,
+`delta-v1`, `verify-v1`, `check-v1`) was deleted with them. The rest of this file
+is the record of the cutover.
+
+- **Drift, run first:** nothing in v1 was missing from v2 except v1's 28
+  exercise-template rows, which v2 no longer holds because its template was
+  cleared on 2026-10-03 for refilling. Logged sets carry the exercise name, so
+  no history depended on them. The demo's weigh-ins and one session showed as
+  conflicting, as expected.
+- **Backup:** `backups/v1-public-2026-10-20.json` (git-ignored, 4,299 rows), written
+  by Postgres's own `json_agg` so dates stay `YYYY-MM-DD` strings, and checked
+  against the live tables before the drop: every count, and sampled dates.
+  `cofid_foods` 2,849 · `workout_sets` 993 · `exercises` 202 (every v1 account) ·
+  `cardio_sessions` 84 · `workout_sessions` 69 · `body_weight` 59 ·
+  `food_log_entries` 19 · `food_items` 16 · `habit_completions` 4 · `habits` 2 ·
+  `nutrition_targets` 2 · and 0 in `chess_sessions`, `learning_log`, `media`,
+  `media_seasons`, `portfolio_items`, `progress_photos`, `projects`,
+  `workout_split`.
 
 ## Before
 
@@ -40,24 +63,6 @@ If something is badly wrong with v2:
    about an hour to write it.
 3. There is no time pressure: both schemas are in one database and neither
    expires.
-
-## Running the tooling after cutover
-
-All three read production through a one-command override. **Never edit `.env`** —
-`dotenv` does not overwrite an existing process variable, so isolation returns on
-its own when the command ends.
-
-```bash
-DB_SCHEMA=app npm run drift                                    # read-only
-DB_SCHEMA=app npm run delta-v1 -- --email <you> --dry-run      # rolled back
-DB_SCHEMA=app npm run verify-v1 -- --email <you>               # read-only
-```
-
-`delta-v1` is idempotent — every statement ends in a bare `ON CONFLICT DO
-NOTHING` with **no conflict target**, so it skips on a primary-key collision and
-on a natural-key collision alike. Naming a constraint would abort the whole
-transaction on the other, and both kinds have occurred. Do not "make it more
-explicit" by adding a target.
 
 ## Known gaps at cutover
 

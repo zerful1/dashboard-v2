@@ -8,3 +8,6 @@ coverage/
 .DS_Store
 .vercel
 .superpowers
+
+# v1 backup (health data), housekeeping 5
+backups/

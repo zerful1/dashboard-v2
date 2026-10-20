@@ -129,7 +129,7 @@ What the demo code won't tell you:
   `app`, `app_dev` and `app_test`, which share a database. A test run can delay
   a production entry by about a second.
 - **Two accounts in production.** Anything that counts or compares rows without
-  a user filter now includes the demo. `driftReport` does this; see below.
+  a user filter now includes the demo.
 - **Deleting it is harmless.** The next click recreates the account.
 
 ---
@@ -142,13 +142,17 @@ What the demo code won't tell you:
 | `MIGRATION_DATABASE_URL` | 5432, session pooler | migrations, one-off scripts | holds one backend, so `SET search_path` persists and DDL can stay unqualified |
 
 Schemas in one database: **`app`** is production, **`app_dev`** local,
-**`app_test`** tests. `public` is the retired v1 app, kept read-only as the
-rollback path.
+**`app_test`** tests. `public` held the v1 app; its 19 tables were backed up and
+dropped on 2026-10-20 (housekeeping 5, `docs/CUTOVER.md`), so it now holds only
+Supabase's own objects (`rls_auto_enable`, behind its `ensure_rls` event
+trigger). Nothing of ours belongs there, and no migration may name it: the test
+setup migrates `app_test` in this same database, so a migration that touched
+`public` would touch the real one on the next test run.
 
 ### Reaching production is a one-command override, never an edit
 
 ```bash
-DB_SCHEMA=app npm run drift
+DB_SCHEMA=app npm run migrate
 ```
 
 `dotenv` does not overwrite an existing process variable, so isolation returns
@@ -180,23 +184,11 @@ than that someone remembered not to. New writing scripts get the same treatment.
 
 ## `importV1.ts` is a historical record, not live code
 
-It produced the migrated data on 2026-08-15 and will not run again. It keeps
-**private copies of `V1_USER` and `JUNK_SET_RULE` on purpose.**
-
-`v1Source.ts` is the shared source for everything else — `verifyV1`, `deltaV1`,
-`driftReport` — and a duplicate-constant sweep will find the restated copies in
-`importV1.ts` and want to consolidate them. Doing that would mean the file no
-longer matches what actually ran, and **nothing would fail to tell you.** It is
-a landmine triggered by good instinct, which is the only reason it is written
-down here.
-
-**`driftReport` scopes the v1 side to the owner but counts every v2 row.** That
-was right while production had one account. Since the demo, the demo's
-weigh-ins and sessions appear as CONFLICTING on any date v1 also has, and
-"unaccounted" can go negative. It is misleading, not damage: the delta is
-`ON CONFLICT DO NOTHING`. The overlap ends around 2026-12-06, when the demo's
-16-week window moves past v1's last dates. Excluding the demo user's rows is the
-fix if drift is needed before then.
+It produced the migrated data on 2026-08-15, and cannot run again: the
+`public` tables it reads were dropped on 2026-10-20. It keeps **private copies
+of `V1_USER` and `JUNK_SET_RULE`**, and its comments name `verifyV1`, which was
+deleted with the rest of the v1 tooling. Leave both: editing the file means it
+no longer matches what actually ran, and **nothing would fail to tell you.**
 
 ---
 
