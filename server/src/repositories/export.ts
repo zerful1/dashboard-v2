@@ -27,6 +27,9 @@ const TABLES: { name: string; ref: string; orderBy: string }[] = [
   { name: "habit_completions", ref: T.habitCompletions, orderBy: "t.completed_date, t.id" },
 ];
 
+/** The tables a download holds, by name. Restore's table split is held to this list. */
+export const EXPORT_TABLE_NAMES = TABLES.map((t) => t.name);
+
 /**
  * Everything the user owns, for their backup, written as JSON text one table
  * at a time so the route can stream it. Vercel caps a response sent in one
