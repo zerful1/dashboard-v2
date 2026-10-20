@@ -74,6 +74,14 @@ describe("YourDataCard", () => {
     expect(toast.error).not.toHaveBeenCalled();
   });
 
+  it("opens the restore sheet from Restore…", async () => {
+    mockApi(async () => FILE);
+    renderCard();
+    expect(screen.queryByRole("dialog", { name: "Restore from a download" })).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "Restore…" }));
+    expect(screen.getByRole("dialog", { name: "Restore from a download" })).toBeInTheDocument();
+  });
+
   // Review focus 5.
   it("says so when the download fails, saves nothing, and can be tried again", async () => {
     mockApi(async () => {
