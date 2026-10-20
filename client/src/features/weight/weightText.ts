@@ -52,13 +52,17 @@ function goalStatus(p: Projection, today: string): string | null {
 /**
  * "Goal 80 kg · around 16 Nov". projectGoal itself, run over the weigh-ins the
  * page holds: Insights runs the same function on the server over the same rows,
- * so the two pages say the same thing.
+ * so the two pages say the same thing. `stale` (no weigh-in in 7 days) keeps
+ * only the target: every status after it comes from the trend.
  */
 export function goalLine(
   goal: Pick<Goal, "id" | "kind" | "target_kg" | "start_kg">,
   points: { date: string; kg: number }[],
   today: string,
+  stale = false,
 ): string {
-  const status = goalStatus(projectGoal(goal, points.map((p) => ({ date: p.date, value: p.kg })), today), today);
+  const status = stale
+    ? null
+    : goalStatus(projectGoal(goal, points.map((p) => ({ date: p.date, value: p.kg })), today), today);
   return `Goal ${goal.target_kg} kg${status ? ` · ${status}` : ""}`;
 }

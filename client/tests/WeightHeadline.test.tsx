@@ -84,6 +84,15 @@ describe("WeightHeadline", () => {
     expect(screen.getByText("Goal 79 kg · around 26 Oct")).toBeInTheDocument();
   });
 
+  // Every status after the target comes from the trend, which "No weigh-in in
+  // 7 days" treats as stale: the line keeps the target and drops the rest.
+  it("keeps only the target with no weigh-in in 7 days", () => {
+    const stale = Array.from({ length: 20 }, (_, i) => e(shiftISO(TODAY, -8 - i), 80 + (0.5 * i) / 7));
+    show(stale, { goal: goal(78) });
+    expect(screen.getByText("No weigh-in in 7 days")).toBeInTheDocument();
+    expect(screen.getByText("Goal 78 kg")).toBeInTheDocument();
+  });
+
   it("says the goal could not be loaded", () => {
     show(daily(14, 80, -0.5), { goalsFailed: true });
     expect(screen.getByText("Couldn't load your goal")).toBeInTheDocument();

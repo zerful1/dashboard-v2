@@ -72,7 +72,7 @@ export function WeightHeadline({ summary, today, goal, goalsFailed, composition 
       {goalsFailed ? (
         <p className="mt-1 text-xs text-muted">Couldn't load your goal</p>
       ) : (
-        goal && <p className="tnum mt-1 text-xs text-muted">{goalLine(goal, summary.points, today)}</p>
+        goal && <p className="tnum mt-1 text-xs text-muted">{goalLine(goal, summary.points, today, summary.average7 === null)}</p>
       )}
 
       {/* Not beside "No weigh-in in 7 days": the rate holds back, so this does too. */}
