@@ -21,6 +21,15 @@ export const PROJECTION_RULES = {
 } as const
 
 
+/**
+ * Whether a rate counts as flat for its kind: under the threshold, either way.
+ * One test, so the rate line's "Flat", the composition line's "Weight steady"
+ * and the projection's "no date at this rate" always agree.
+ */
+export function isFlatRate(kind: Goal['kind'], ratePerWeek: number): boolean {
+  return Math.abs(ratePerWeek) < PROJECTION_RULES[kind].flatPerWeek
+}
+
 /** The least-squares line a projection draws on, or why there is none. `slope` is per day. */
 export type TrendFit =
   | { status: 'fit'; ratePerWeek: number; current: number; slope: number }
@@ -90,7 +99,6 @@ export function projectGoal(
   points: ProjectionPoint[],
   today: string,
 ): Projection {
-  const rule = PROJECTION_RULES[goal.kind]
   // Reaching a lift goal is a fact - a set at the target - not a trend, so it
   // needs no minimum number of sessions. `current` is that best set.
   const window = inWindow(goal.kind, points, today)
@@ -111,7 +119,7 @@ export function projectGoal(
   const direction = goal.kind === 'lift' ? 1 : Math.sign(target - (goal.start_kg ?? current))
   const reached = goal.kind === 'weight' && weightGoalReached(goal, current)
   if (reached) return { goalId: goal.id, status: 'reached', current }
-  if (Math.abs(ratePerWeek) < rule.flatPerWeek) return { goalId: goal.id, status: 'flat', ratePerWeek, current }
+  if (isFlatRate(goal.kind, ratePerWeek)) return { goalId: goal.id, status: 'flat', ratePerWeek, current }
   if (Math.sign(ratePerWeek) !== direction) return { goalId: goal.id, status: 'away', ratePerWeek, current }
 
   // A lift's trend can sit above a target no session has actually lifted yet:

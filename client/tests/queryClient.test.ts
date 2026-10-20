@@ -92,15 +92,16 @@ describe("writes made offline", () => {
     }
   });
 
-  // Housekeeping item 28: a write that gave up after 15 s says so, in the same
-  // words as the offline one, rather than the bare "Timed out".
-  it("say a timed-out write was not saved", async () => {
+  // Housekeeping item 28: a write that gave up after 15 s says so, rather than
+  // the bare "Timed out". Not "not saved": a slow write can still land after
+  // the app gave up, and the refetch on settle shows whether it did.
+  it("say a timed-out write may not have saved", async () => {
     const observer = new MutationObserver(createQueryClient(), {
       mutationFn: () => Promise.reject(new ApiError(0, "Timed out", "timeout")),
       retry: false,
     });
     await observer.mutate(undefined).catch(() => {});
-    expect(toast.error).toHaveBeenCalledWith("Timed out — not saved");
+    expect(toast.error).toHaveBeenCalledWith("Timed out — may not have saved");
   });
 
   it("keep the general message for a network failure while online", async () => {
@@ -151,5 +152,22 @@ describe("an app opened with no signal", () => {
     } finally {
       unsubscribe();
     }
+  });
+});
+
+// A query on dead wifi took about 31 s to fail: 15 s, a retry, and 15 s more.
+describe("createQueryClient's retry", () => {
+  const fetchCount = async (err: Error) => {
+    const queryFn = vi.fn(() => Promise.reject(err));
+    await createQueryClient().fetchQuery({ queryKey: ["x"], queryFn, retryDelay: 0 }).catch(() => {});
+    return queryFn.mock.calls.length;
+  };
+
+  it("doesn't retry a query that timed out", async () => {
+    expect(await fetchCount(new ApiError(0, "Timed out", "timeout"))).toBe(1);
+  });
+
+  it("still retries any other failure once", async () => {
+    expect(await fetchCount(new ApiError(500, "boom"))).toBe(2);
   });
 });

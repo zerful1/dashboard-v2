@@ -66,11 +66,12 @@ function mockApi(routes: Routes = {}) {
   return { state, calls };
 }
 
-function renderPage(opts: { seed?: BodyWeightEntry[]; offline?: boolean } = {}) {
+function renderPage(opts: { seed?: BodyWeightEntry[]; offline?: boolean; lifts?: { date: string; data: LiftProgress[] } } = {}) {
   const qc = createQueryClient();
   const def = qc.getDefaultOptions();
   qc.setDefaultOptions({ ...def, queries: { ...def.queries, retry: false } });
   if (opts.seed) qc.setQueryData(["weight", "u1"], opts.seed);
+  if (opts.lifts) qc.setQueryData(["liftProgress", "u1", opts.lifts.date], opts.lifts.data);
   if (opts.offline) onlineManager.setOnline(false);
   render(
     <QueryClientProvider client={qc}>
@@ -242,6 +243,14 @@ describe("Weight page, the composition line", () => {
     expect(await screen.findByText("7-day average", { selector: ".lbl" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Log" })).toBeInTheDocument();
     expect(screen.queryByText(/lifts? (climbing|holding|slipping)/)).toBeNull();
+  });
+
+  // R4: offline on a new day, yesterday's statuses stand in, as on Stats.
+  it("reads yesterday's lift statuses offline on a new day", async () => {
+    mockApi();
+    renderPage({ seed: HISTORY, offline: true, lifts: { date: shiftISO(TODAY, -1), data: SIX_UP_ONE_BACK } });
+    const verdict = await screen.findByText("Losing fat, keeping strength");
+    expect(verdict.closest("p")).toHaveTextContent("6 lifts climbing, 1 slipping");
   });
 
   it("hides the line, and says nothing, when the lifts fail", async () => {

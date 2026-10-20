@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { projectGoal, rateTone, trendFit, weightGoalReached, type ProjectionPoint } from '../src/domain/insights/projection'
+import { isFlatRate, projectGoal, rateTone, trendFit, weightGoalReached, type ProjectionPoint } from '../src/domain/insights/projection'
 import { shiftISO } from '../src/domain/date'
 
 const TODAY = '2026-09-30' // a Wednesday: +14 and +15 days fall in the same week
@@ -143,5 +143,18 @@ describe('rateTone', () => {
   it('is neutral once the goal is reached, even drifting back toward it', () => {
     expect(rateTone(fit(-0.5, 77.9), goal(78))).toBe('neutral')
     expect(rateTone(fit(0.2, 77.5), goal(78))).toBe('neutral')
+  })
+})
+
+// One "flat" test for the rate line, the composition line and the projection,
+// so "Flat", "Weight steady" and "no date at this rate" always agree.
+describe('isFlatRate', () => {
+  it("is flat under the kind's threshold, and moving at it", () => {
+    expect(isFlatRate('weight', -0.049)).toBe(true)
+    expect(isFlatRate('weight', 0.049)).toBe(true)
+    expect(isFlatRate('weight', -0.05)).toBe(false)
+    expect(isFlatRate('weight', 0.05)).toBe(false)
+    expect(isFlatRate('lift', 0.099)).toBe(true)
+    expect(isFlatRate('lift', 0.1)).toBe(false)
   })
 })

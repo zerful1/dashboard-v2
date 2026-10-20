@@ -265,7 +265,8 @@ still runs the fetch, and the fetch **fails** — or hangs with no answer, which
 "timeout")`. Only the wait for the answer to *start* is timed, never the body:
 `/api/export` streams the user's only backup through `api()`, and a timer over
 the whole request would cut it off on a slow connection while it is still
-arriving. `placeholderData` covers only the pending case.
+arriving. A query that timed out is not retried (other failures are, once): dead
+wifi has already waited 15 s. `placeholderData` covers only the pending case.
 
 - **Stats and History's grid** show yesterday's answer as `placeholderData` from
   `newestCached`, scoped by the user id in the key prefix. They cover only the
@@ -332,9 +333,10 @@ offline and replays it on reconnect, so it looks saved and is lost if the app
 closes first. A hook inherits the rule unless it sets its own `networkMode`,
 and none should. Its tests use `createQueryClient()`, because a bare
 `new QueryClient()` in a test does not have it. The global toast then says
-**"You're offline — not saved"** (`writeFailureMessage`, same file), so it agrees
-with the banner rather than reading as some other fault; a write that timed out
-says **"Timed out — not saved"** in the same words.
+**"You're offline — not saved"** (`writeFailureMessage`, same file), so it
+agrees with the banner rather than reading as some other fault; a write that
+timed out says **"Timed out — may not have saved"**, because a slow write can
+still land after the app gave up.
 
 ---
 

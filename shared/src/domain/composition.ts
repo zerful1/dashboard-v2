@@ -1,5 +1,5 @@
 import type { Goal } from '../types'
-import { PROJECTION_RULES, rateTone, type TrendFit } from './insights/projection'
+import { isFlatRate, rateTone, type TrendFit } from './insights/projection'
 import type { LiftStatus } from './liftProgress'
 
 export interface CompositionLine {
@@ -36,7 +36,7 @@ export function compositionLine(
   const detail = detailOf(climbing, holding, slipping)
   const line = (verdict: string, tone: CompositionLine['tone']): CompositionLine => ({ verdict, detail, tone })
 
-  if (Math.abs(fit.ratePerWeek) < PROJECTION_RULES.weight.flatPerWeek) {
+  if (isFlatRate('weight', fit.ratePerWeek)) {
     if (climbingLed) return line('Weight steady, lifts climbing', 'good')
     return losing ? line('Weight steady, strength slipping', 'caution') : line('Weight steady, lifts holding', 'neutral')
   }
