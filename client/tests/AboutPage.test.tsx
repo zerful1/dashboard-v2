@@ -64,7 +64,9 @@ const whitePills = () => document.querySelectorAll(".bg-accent").length;
 const never = new Promise<never>(() => {});
 
 // jsdom has no scrolling; the page scrolls to the top on mount.
-beforeEach(() => vi.spyOn(window, "scrollTo").mockImplementation(() => {}));
+beforeEach(() => {
+  vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+});
 afterEach(() => vi.restoreAllMocks());
 
 // Housekeeping PR 4 (spec §5): the public project page.

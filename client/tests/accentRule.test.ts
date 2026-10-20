@@ -10,7 +10,7 @@ const SRC = clientPath("src");
  * else filled white reads as a second action.
  */
 const ALLOWED: Record<string, string> = {
-  "components/ui/Button.tsx": "the primary variant: the one action",
+  "components/ui/Button.tsx": "the primary variant (Button, and buttonClass on a Link): the one action",
   "features/home/WorkoutSection.tsx": "its progress bar (data ink) and the done tick",
   "features/home/FoodSection.tsx": "the kcal bar's fill: data ink",
   "features/home/WeekLine.tsx": "week dots: small done marks",
