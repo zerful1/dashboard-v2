@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
 import { AppSection } from "../src/features/settings/AppSection";
 import { versionText } from "../src/lib/buildInfo";
 import * as refresh from "../src/lib/refreshApp";
@@ -9,7 +10,9 @@ import * as refresh from "../src/lib/refreshApp";
 const renderSection = () =>
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <AppSection />
+      <MemoryRouter>
+        <AppSection />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
 
@@ -47,5 +50,19 @@ describe("AppSection", () => {
     act(() => void window.dispatchEvent(new Event("offline")));
     expect(screen.getByRole("button", { name: "Refresh the app" })).toBeDisabled();
     expect(screen.getByText("Needs a connection")).toBeInTheDocument();
+  });
+});
+
+// Housekeeping PR 4: the project page is linked from Settings' App section.
+describe("AppSection, the project page", () => {
+  it("links to the project page", () => {
+    renderSection();
+    expect(screen.getByRole("link", { name: "About this project" })).toHaveAttribute("href", "/about");
+  });
+
+  // ShortcutList's rows are py-3 (44 px); this one was 32 px to tap.
+  it("gives the row a full-height tap area", () => {
+    renderSection();
+    expect(screen.getByRole("link", { name: "About this project" })).toHaveClass("py-3");
   });
 });

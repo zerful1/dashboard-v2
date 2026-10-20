@@ -157,7 +157,7 @@ describe("SettingsPage, redesigned (part 8)", () => {
     mockWithDelete();
     const { container } = renderPage();
     await screen.findByRole("heading", { level: 1, name: "Settings" });
-    const white = [...container.querySelectorAll("button.bg-accent")].map((b) => b.textContent);
+    const white = [...container.querySelectorAll("button.bg-accent, a.bg-accent")].map((b) => b.textContent);
     expect(white).toEqual(["Change password"]);
   });
 

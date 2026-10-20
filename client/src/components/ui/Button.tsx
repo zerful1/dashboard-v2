@@ -29,25 +29,33 @@ const VARIANTS: Record<Variant, string> = {
   danger: "bg-negative/12 text-negative hover:bg-negative/20",
 };
 
+/**
+ * Button's look, for a Link that should read as one: it navigates, so it is a
+ * link. One source, so a change here reaches those links too.
+ */
+export function buttonClass(variant: Variant = "primary", className?: string): string {
+  return cn(
+    "inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5",
+    "text-sm font-semibold transition",
+    // outline-hidden (not outline-none): both suppress the native outline so the
+    // ring below is the only indicator in normal rendering, but outline-hidden
+    // keeps a forced-colors-mode fallback outline — needed here because the ring
+    // is a box-shadow, which forced-colors mode does not paint at all.
+    "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg",
+    // Dark grey, not a faded white: a disabled primary must not read as the action.
+    "disabled:pointer-events-none disabled:border-transparent disabled:bg-raised disabled:text-dim",
+    VARIANTS[variant],
+    className,
+  );
+}
+
 export function Button({ variant = "primary", loading, disabled, className, children, ...rest }: Props) {
   return (
     <button
       {...rest}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5",
-        "text-sm font-semibold transition",
-        // outline-hidden (not outline-none): both suppress the native outline so the
-        // ring below is the only indicator in normal rendering, but outline-hidden
-        // keeps a forced-colors-mode fallback outline — needed here because the ring
-        // is a box-shadow, which forced-colors mode does not paint at all.
-        "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg",
-        // Dark grey, not a faded white: a disabled primary must not read as the action.
-        "disabled:pointer-events-none disabled:border-transparent disabled:bg-raised disabled:text-dim",
-        VARIANTS[variant],
-        className,
-      )}
+      className={buttonClass(variant, className)}
     >
       {loading && (
         <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />

@@ -341,17 +341,17 @@ says **"Timed out — not saved"** in the same words.
 ## Frontend conventions
 
 **White is the only accent, and it has four roles** (the 2026-10-06 redesign
-replaced terracotta). A filled white **pill** (`bg-accent text-bg`, the
-`primary` Button) is *the one action to take* — at most one per screen. Tinted
-(`bg-accent/10 text-accent`, a grey pill on black) is *the selected item in a
-set* — a state, never an action. A small filled white **circle** (24 px or
-less: a set tick, a habit tick, a week dot) is a *done mark*, a state its shape
-keeps from reading as a button. And identity chrome: the wordmark, the page
-eyebrow, the active tab. White as *data ink* — a macro bar's fill, a chart's
-line — is the data itself, not a shape, so it is not a fifth role.
-`tests/accentRule.test.ts` lists every file allowed a solid white fill
-(`bg-accent`, and `bg-text`/`bg-white`, which are white too), with its reason;
-adding one is a decision, not a convenience.
+replaced terracotta). A filled white **pill** (`bg-accent text-bg`: the
+`primary` Button, or `buttonClass("primary")` on a link) is *the one action to
+take* — at most one per screen. Tinted (`bg-accent/10 text-accent`, a grey pill
+on black) is *the selected item in a set* — a state, never an action. A small
+filled white **circle** (24 px or less: a set tick, a habit tick, a week dot) is
+a *done mark*, a state its shape keeps from reading as a button. And identity
+chrome: the wordmark, the page eyebrow, the active tab. White as *data ink* — a
+macro bar's fill, a chart's line — is the data itself, not a shape, so it is not
+a fifth role. `tests/accentRule.test.ts` lists every file allowed a solid white
+fill (`bg-accent`, and `bg-text`/`bg-white`, which are white too), with its
+reason; adding one is a decision, not a convenience.
 
 **`dim` is decoration, never words.** `dim` (#555) is 2.8:1 on black: chevrons,
 placeholders, disabled text, an empty "—". Anything a person reads — hints,
