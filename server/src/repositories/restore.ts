@@ -104,7 +104,7 @@ export async function restoreUserData(
     return await withTransaction(async (client) => {
       const counts = {} as RestoreCounts;
       for (const table of RESTORED_TABLES) {
-        let rows = (tables[table] ?? []).map((r) => ({ ...r, user_id: userId }));
+        let rows: Row[] = (tables[table] ?? []).map((r) => ({ ...r, user_id: userId }));
         const child = CHILD[table];
         if (child) {
           const refs = [...new Set(rows.map((r) => r[child.column]).filter((v): v is string => typeof v === "string"))];
