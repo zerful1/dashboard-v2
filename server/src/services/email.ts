@@ -13,6 +13,12 @@ const client = config.RESEND_API_KEY ? new Resend(config.RESEND_API_KEY) : null;
  */
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<void> {
   if (!client) {
+    // In production the link is a live credential for someone's account, and
+    // the logs are not the place for it.
+    if (config.isProduction) {
+      console.error("[email] RESEND_API_KEY is not set; a password reset was not sent");
+      return;
+    }
     console.log(`[email] password reset for ${to}: ${resetUrl}`);
     return;
   }

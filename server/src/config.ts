@@ -23,7 +23,13 @@ const schema = z.object({
   SESSION_SECRET: z.string().min(32, "must be at least 32 characters"),
   RESEND_API_KEY: z.string().default(""),
   RESEND_FROM: z.string().default("Dashboard <onboarding@resend.dev>"),
-  APP_ORIGIN: z.string().url().default("http://localhost:5173"),
+  // Reduced to the bare origin: a trailing slash in the env var otherwise reaches
+  // reset links as "//reset-password" and the CORS header as a non-origin.
+  APP_ORIGIN: z
+    .string()
+    .url()
+    .default("http://localhost:5173")
+    .transform((u) => new URL(u).origin),
   /** Who may register: empty = nobody new, "*" = anyone, or a list. See signups.ts. */
   SIGNUP_ALLOWLIST: z.string().default(""),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
