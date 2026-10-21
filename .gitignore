@@ -8,6 +8,8 @@ coverage/
 .DS_Store
 .vercel
 .superpowers
+.claude/
+.playwright-mcp/
 
 # v1 backup (health data), housekeeping 5
 backups/
