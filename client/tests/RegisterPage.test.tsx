@@ -60,3 +60,12 @@ describe("RegisterPage", () => {
     expect(screen.getAllByRole("alert")).toHaveLength(1);
   });
 });
+
+// Sign-ups are closed except for invited addresses, which still register here.
+describe("RegisterPage, with sign-ups closed", () => {
+  it("says sign-ups are by invite before anyone fills it in", async () => {
+    vi.spyOn(apiModule, "api").mockRejectedValue(new ApiError(401, "Not authenticated"));
+    renderPage();
+    expect(await screen.findByText("Sign-ups are by invite only. Your data is private to you.")).toBeInTheDocument();
+  });
+});

@@ -86,6 +86,49 @@ describe("LoginPage, the project page", () => {
     // Only the session check is called, and it says signed out.
     vi.spyOn(apiModule, "api").mockRejectedValue(new ApiError(401, "Not authenticated"));
     renderPage();
-    expect(await screen.findByRole("link", { name: "About this project" })).toHaveAttribute("href", "/about");
+    expect(await screen.findByRole("link", { name: /^About this project/ })).toHaveAttribute("href", "/about");
+  });
+});
+
+// The sign-in redesign: strangers (the CV links here) get the demo and the
+// project page; sign-ups are closed, so nothing offers an account.
+describe("LoginPage, for a visitor", () => {
+  const signedOut = () => vi.spyOn(apiModule, "api").mockRejectedValue(new ApiError(401, "Not authenticated"));
+
+  it("makes the demo the one primary button, with sign-in outlined", async () => {
+    signedOut();
+    renderPage();
+    const demo = await screen.findByRole("button", { name: "Try the demo" });
+    const signIn = screen.getByRole("button", { name: "Sign in" });
+    expect(demo).toHaveClass("bg-accent");
+    expect(signIn).not.toHaveClass("bg-accent");
+    expect(signIn).toHaveClass("border");
+  });
+
+  it("says sign-ups are by invite, and offers no account", async () => {
+    signedOut();
+    renderPage();
+    expect(await screen.findByText("Sign-ups are by invite only.")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /create/i })).toBeNull();
+    expect(screen.queryByRole("link", { name: /register|sign up/i })).toBeNull();
+  });
+
+  it("names the app in its heading and keeps the form findable as Sign in", async () => {
+    signedOut();
+    renderPage();
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("Track your training, food and habits");
+    expect(screen.getByRole("form", { name: "Sign in" })).toContainElement(screen.getByLabelText("Password"));
+  });
+
+  it("shows a failed demo under its own button, not in the form", async () => {
+    vi.spyOn(apiModule, "api").mockImplementation(async (path: string) => {
+      if (path === "/api/auth/demo") throw new ApiError(503, "The demo is unavailable");
+      throw new ApiError(401, "Not authenticated");
+    });
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "Try the demo" }));
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("The demo is unavailable");
+    expect(screen.getByRole("form", { name: "Sign in" })).not.toContainElement(alert);
   });
 });
