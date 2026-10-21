@@ -16,6 +16,17 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
 
+  // The client's own fault, raised before any route ran: express.json() rejecting
+  // a malformed or oversized body. Answered as a 4xx, and never logged whole —
+  // body-parser keeps the raw text on `err.body`, and on /login that is a password.
+  if (isClientError(err)) {
+    res.status(err.status).json({
+      error: err.status === 413 ? "payload_too_large" : "bad_request",
+      message: err.status === 413 ? "Request body too large" : "Malformed request body",
+    });
+    return;
+  }
+
   // Unexpected: log server-side, tell the client nothing useful. Leaking a stack
   // trace or a database message is how schema details escape into the wild.
   console.error("Unhandled error:", err);
@@ -24,3 +35,10 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     message: config.isProduction ? "Something went wrong" : String(err),
   });
 };
+
+/** An http-errors 4xx marked safe to show the client, as body-parser raises. */
+function isClientError(err: unknown): err is { status: number } {
+  if (typeof err !== "object" || err === null) return false;
+  const { status, expose } = err as { status?: unknown; expose?: unknown };
+  return typeof status === "number" && status >= 400 && status < 500 && expose === true;
+}
