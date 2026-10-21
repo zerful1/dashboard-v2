@@ -1,4 +1,4 @@
-import type { NutritionTarget, GoalMode } from '../../types'
+import type { NutritionTarget } from '../../types'
 
 export function latestActiveTarget(
   rows: NutritionTarget[],
