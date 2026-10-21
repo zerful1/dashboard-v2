@@ -4,7 +4,7 @@ import { FOCUS } from "@/lib/focus";
 import { DateEyebrow } from "@/components/ui/DateEyebrow";
 
 /**
- * Gym's header (redesign part 3a, layout B): the date as the eyebrow and the
+ * Gym's header: the date as the eyebrow and the
  * day as the title, like Home's, each of them the control that changes it.
  */
 export function GymHeader({

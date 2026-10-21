@@ -54,7 +54,7 @@ export function AppLayout() {
             <DemoBanner />
             <OfflineBanner />
           </div>
-          {/* One centred column at every width, Home's rule (its redesign spec)
+          {/* One centred column at every width, Home's rule
               applied to every page on 2026-10-20. No page has a desktop layout
               of its own, and without the cap on a wide screen every row stretched
               across the screen, a lift's name a screen's width from its number. */}

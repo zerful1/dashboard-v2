@@ -21,10 +21,10 @@ export function App() {
         // Bump on ANY change to a cached query shape. Without it a restored
         // cache from the previous deploy is handed to components expecting the
         // new shape, which fails far from the cause.
-        // v2: Profile gained the body-detail fields (nutrition, phase 1).
+        // v2: Profile gained the body-detail fields (nutrition).
         // v3: WorkoutSet gained reps_left / reps_right (single-sided sets).
-        // v4: /api/workouts/stats returns LiftSetRow[] (Gym Stats, redesign part 3b).
-        // v5: WeeklyReview gained days (Insights, redesign part 6).
+        // v4: /api/workouts/stats returns LiftSetRow[] (Gym Stats).
+        // v5: WeeklyReview gained days (Insights).
         buster: "v5",
         dehydrateOptions: { shouldDehydrateQuery: shouldPersistQuery },
       }}
@@ -35,7 +35,7 @@ export function App() {
           theme="dark"
           position="top-center"
           // The kit's toast: a raised black panel and a hairline edge, with the
-          // signal colour only in the icon (redesign spec §5.7). sonner reads
+          // signal colour only in the icon. sonner reads
           // these variables; richColors would flood the whole toast instead.
           style={
             {

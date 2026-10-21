@@ -7,10 +7,10 @@ export type RateLine =
   | { kind: "none"; have: number; need: number };
 
 /**
- * The rate as Weight and Home word it (redesign part 5, §3): Insights' own fit,
+ * The rate as Weight and Home word it: Insights' own fit,
  * "flat" under its own threshold, and green only toward the goal (trendTone,
  * from where the line stood a week ago to where it stands today). Once the goal
- * is reached, carrying on is not progress (§9): neutral, by the same rule that
+ * is reached, carrying on is not progress: neutral, by the same rule that
  * makes the goal line say "reached".
  */
 export function rateLine(fit: TrendFit, goal: Pick<Goal, "target_kg" | "start_kg"> | null): RateLine {

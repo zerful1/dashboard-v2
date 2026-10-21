@@ -67,7 +67,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("Gym's header (redesign part 3a, §2)", () => {
+describe("Gym's header", () => {
   it("shows the date as the eyebrow and the day as the title", async () => {
     freeze();
     mockByPath();
@@ -77,7 +77,7 @@ describe("Gym's header (redesign part 3a, §2)", () => {
     expect(screen.queryByRole("button", { name: "Back to today" })).toBeNull();
   });
 
-  // Final review, important 3: on a swapped day Home names the day trained, so
+  // On a swapped day Home names the day trained, so
   // its button must open that day rather than the scheduled one.
   it("opens on the day Home's button sent it to", async () => {
     freeze();
@@ -126,7 +126,7 @@ describe("Gym's header (redesign part 3a, §2)", () => {
     expect(sheet.getByRole("button", { name: "Add set" })).toBeDisabled();
   });
 
-  // Housekeeping item 22: Add set clears the reps, and a failure used to leave
+  // Add set clears the reps, and a failure used to leave
   // them cleared, with only the toast saying the set was never saved.
   it("gives a failed Add set its reps back", async () => {
     freeze();
@@ -146,7 +146,7 @@ describe("Gym's header (redesign part 3a, §2)", () => {
     expect(sheet.getByLabelText(/weight/i)).toHaveValue(90);
   });
 
-  // Final review, important 1: a FAILED load left the sheet sure there were no
+  // A FAILED load left the sheet sure there were no
   // sets, so Add set 1 was back, and sent once the signal returned.
   it("won't log a set when today's sets failed to load, and says why", async () => {
     freeze();
@@ -165,7 +165,7 @@ describe("Gym's header (redesign part 3a, §2)", () => {
     expect(sheet.getByRole("button", { name: "Add set" })).toBeDisabled();
   });
 
-  // Review focus 3: logging on a past date compares against the days before IT.
+  // Logging on a past date compares against the days before IT.
   it("asks for last time before the date being logged", async () => {
     freeze();
     const calls = mockByPath();
@@ -179,7 +179,7 @@ describe("Gym's header (redesign part 3a, §2)", () => {
 
 // Deferred from #31: useSplit falls back to DEFAULT_SPLIT, so a split that failed
 // with nothing cached named the default split's day, and logged against it.
-// Settings' shortcut (redesign part 8, §3). Gym spins until the split loads,
+// Settings' shortcut. Gym spins until the split loads,
 // so this also pins the hook sitting above the early returns.
 describe("Gym, opened from Settings", () => {
   it("opens the split editor from ?open=split, after the split loads", async () => {
@@ -212,7 +212,6 @@ describe("Gym, when the split fails to load", () => {
     expect(toast.error).not.toHaveBeenCalled();
   });
 
-  // Housekeeping item 26.
   it("offers Try again, which loads the split and names the day", async () => {
     freeze();
     let down = true;

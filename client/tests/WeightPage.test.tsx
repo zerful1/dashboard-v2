@@ -119,7 +119,7 @@ describe("Weight page", () => {
     expect(await screen.findByText("Couldn't load your goal")).toBeInTheDocument();
   });
 
-  // Review focus 1: offline, with weigh-ins saved and goals never loaded.
+  // Offline, with weigh-ins saved and goals never loaded.
   it("draws without the goal while offline with none saved, rather than spinning", async () => {
     mockApi();
     renderPage({ seed: HISTORY, offline: true });
@@ -127,7 +127,7 @@ describe("Weight page", () => {
     expect(screen.getByText("7-day average", { selector: ".lbl" })).toBeInTheDocument();
   });
 
-  // Final review: once drawn without the goals, the signal returning starts
+  // Once drawn without the goals, the signal returning starts
   // their fetch (pending again). Spinning then would unmount an open sheet and
   // lose what was being typed, so the page waits for the goals only once.
   it("stays drawn, with an open sheet, when the signal returns and the goals start loading", async () => {
@@ -224,7 +224,7 @@ describe("Weight page", () => {
   });
 });
 
-// Housekeeping PR 3: the composition line, from the rate and Gym's lift statuses.
+// The composition line, from the rate and Gym's lift statuses.
 describe("Weight page, the composition line", () => {
   const SIX_UP_ONE_BACK = [...["A", "B", "C", "D", "E", "F"].map((n) => lift(n, "moving")), lift("G", "back")];
 

@@ -22,7 +22,7 @@ interface Props {
 }
 
 /**
- * Logging and editing a weigh-in (redesign part 5, §5). Replaces the inline
+ * Logging and editing a weigh-in. Replaces the inline
  * log card and the edit sheet: Log opens it on today with the date free to
  * change; a weigh-in opens it with the date fixed.
  */

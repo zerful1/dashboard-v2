@@ -23,7 +23,7 @@ const WORTH_A_LOOK = [
 ];
 
 /**
- * The project page (housekeeping spec §5): public, beside /login and outside
+ * The project page: public, beside /login and outside
  * ProtectedRoute, for someone arriving from a link rather than to use the app.
  * It reads only the session, so a signed-out visit makes no other request.
  */

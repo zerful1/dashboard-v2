@@ -6,7 +6,7 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 
 // The barcode scanner's ZXing decoder (barcodeDetector.ts), served by this app
-// rather than a CDN (spec: no third-party fetch at scan time). The file name
+// rather than a CDN: no third-party fetch at scan time. The file name
 // carries zxing-wasm's version, which is also the ponyfill's ZXING_WASM_VERSION,
 // so the service worker's cache-first /static/ rule can keep it for good.
 // zxing-wasm is resolved from the ponyfill's own location, not ours: it is the

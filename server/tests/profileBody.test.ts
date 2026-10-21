@@ -33,7 +33,7 @@ describe("profile body details", () => {
     await agent.patch("/api/profile").send({ activity_level: "athlete" }).expect(400);
   });
 
-  // #17 review (11): a body detail could be changed but never cleared.
+  // A body detail could be changed but never cleared.
   it("clears a body detail sent as null, and leaves the ones not mentioned", async () => {
     const agent = request.agent(app);
     await agent.post("/api/auth/register").send({ email: "clear@example.com", password: "correct-horse-9" }).expect(201);

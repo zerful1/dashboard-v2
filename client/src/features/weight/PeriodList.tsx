@@ -34,7 +34,7 @@ function spokenChange(row: Extract<PeriodRow, { kind: "period" }>): string {
 }
 
 /**
- * The history by week or by month (redesign part 5, §4): each period's
+ * The history by week or by month: each period's
  * average and its change from the one before, green only toward the goal. A
  * row opens onto its weigh-ins; each of those opens the weigh-in sheet.
  */

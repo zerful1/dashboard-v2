@@ -35,7 +35,7 @@ describe("EditEntrySheet", () => {
     expect(remove.mutate).toHaveBeenCalledWith("e1");
   });
 
-  // #17 review (8): a second tap during the exit animation deleted again, and
+  // #17: a second tap during the exit animation deleted again, and
   // the server answered "Entry not found".
   it("deletes once, however many times Delete is tapped", async () => {
     const remove = fake();

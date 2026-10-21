@@ -6,7 +6,7 @@ export default defineConfig({
     include: ["tests/**/*.test.ts"],
     // Deliberately NOT pinning TZ.
     //
-    // The plan called for TZ: 'Europe/London' as belt-and-braces, but the suite was
+    // TZ: 'Europe/London' would be belt-and-braces, but the suite was
     // verified to pass unchanged under Pacific/Auckland (+12), America/Anchorage (-9)
     // and UTC — no test reads the process timezone. Pinning it now would be actively
     // harmful: a future test that *did* depend on local time would pass on every

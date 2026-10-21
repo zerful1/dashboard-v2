@@ -111,7 +111,7 @@ describe("TargetsSheet", () => {
     });
   });
 
-  // Final review: when the band hides an implausible estimate, the hint still
+  // When the band hides an implausible estimate, the hint still
   // promised "after 14 logged days this uses your own numbers" to someone past 14.
   it("says why its own numbers aren't used after 14 days, rather than promising them", async () => {
     mockApi({ formula: { kcal: 2759, weight_kg: 80, age: 30 }, adaptive: null, days_logged: 21 });
@@ -127,7 +127,7 @@ describe("TargetsSheet", () => {
     expect(screen.queryByText(/log food for 14 days/)).not.toBeInTheDocument();
   });
 
-  // Final review: the form sends all four details, so saving before the profile
+  // The form sends all four details, so saving before the profile
   // has loaded would clear the ones it had not shown yet.
   it("waits for the profile before saving details", async () => {
     vi.spyOn(apiModule, "api").mockImplementation(async (path: string) => {
@@ -141,7 +141,7 @@ describe("TargetsSheet", () => {
     expect(screen.getByRole("button", { name: "Save details" })).toBeDisabled();
   });
 
-  // #17 review (12): with no targets yet, every render passed a fresh [] and the
+  // With no targets yet, every render passed a fresh [] and the
   // reset effect wiped what had been typed.
   it("keeps what's typed when the page re-renders before any target exists", async () => {
     mockApi({ formula: null, adaptive: null, days_logged: 0 });
@@ -157,7 +157,7 @@ describe("TargetsSheet", () => {
     expect(screen.getByLabelText("Calories (kcal)")).toHaveValue("2200");
   });
 
-  // #17 review (11): details could not be cleared, an unreadable height was
+  // Details could not be cleared, an unreadable height was
   // dropped while the rest saved, and a refusal was a toast.
   it("clears a body detail left blank", async () => {
     const calls = mockApi(

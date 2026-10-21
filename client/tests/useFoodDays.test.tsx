@@ -72,7 +72,7 @@ describe("useFoodDays", () => {
     expect(result.current.isPending).toBe(false);
   });
 
-  // Review focus 1: any other window would read its missing days as "nothing logged".
+  // Any other window would read its missing days as "nothing logged".
   it("never borrows another window for a past week", () => {
     mockDays(() => new Promise(() => {}));
     const qc = client();
@@ -100,7 +100,7 @@ describe("useFoodDays", () => {
     expect(result.current.days).toBeUndefined();
   });
 
-  // #35's final review: a fetch that FAILS rather than pauses takes the placeholder
+  // From #35: a fetch that FAILS rather than pauses takes the placeholder
   // with it. Since #36 that is a device reporting online with no internet.
   it("shows yesterday's seven days when today's fetch fails with nothing to show", async () => {
     mockDays(() => {
@@ -135,7 +135,6 @@ describe("useFoodDays", () => {
     expect(toast.error).not.toHaveBeenCalled();
   });
 
-  // Review focus 4.
   it("keeps the last good days when a refresh fails", async () => {
     let down = false;
     mockDays(() => {

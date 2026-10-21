@@ -22,9 +22,9 @@ export const ITEM_COLS = [
 
 /**
  * Serving data is replaced whole or kept whole. A text-search hit brings none,
- * so the stored serving stays (#17 review 9); a barcode lookup brings a whole
+ * so the stored serving stays; a barcode lookup brings a whole
  * serving, which replaces the old one entirely, so its unknown label values
- * never keep the previous serving's (part 1 final review, M3).
+ * never keep the previous serving's.
  */
 const SERVING_COLUMNS = new Set<string>(
   NUTRITION_COLUMNS.filter((c) => c === "serving_description" || c === "serving_grams" || c.endsWith("_per_serving")),
@@ -64,7 +64,7 @@ export async function upsertFoodItem(client: PoolClient, userId: string, food: F
 
 /**
  * A UPC-A code's two spellings: 12 digits as a scanner reads it, 13 with a
- * leading 0 as Open Food Facts files it (final review I3). Every other code has one.
+ * leading 0 as Open Food Facts files it. Every other code has one.
  */
 function barcodeSpellings(code: string): string[] {
   if (code.length === 12) return [code, `0${code}`];

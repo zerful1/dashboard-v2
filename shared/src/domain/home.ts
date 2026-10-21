@@ -95,16 +95,15 @@ export interface WorkoutProgress {
   started: boolean
   /**
    * Every listed exercise has a set; with an empty list, any set at all. Or
-   * cardio with no sets: a cardio day, done (the user's call, 2026-10-06).
+   * cardio with no sets: a cardio day, done (decided 2026-10-06).
    */
   finished: boolean
 }
 
 /**
- * How far through today's workout (redesign part 2, §3; part 3a, §5).
- * `loggedNames` holds one entry per set logged today, its exercise_name, so its
- * length is the set count. Names match exactly, as the Gym page's own done
- * count does.
+ * How far through today's workout. `loggedNames` holds one entry per set
+ * logged today, its exercise_name, so its length is the set count. Names
+ * match exactly, as the Gym page's own done count does.
  */
 export function workoutProgress(exerciseNames: string[], loggedNames: string[], cardio = 0): WorkoutProgress {
   const logged = new Set(loggedNames)
@@ -127,10 +126,10 @@ export interface TodaysWorkout {
 }
 
 /**
- * Which workout Home shows today (redesign part 3a, §5). `scheduled` is the
- * split's day, or null on a rest day. A session already logged today wins: the
- * scheduled day's first, then the newest of any other, under its own
- * snapshotted name, because day_type is reused across split eras.
+ * Which workout Home shows today. `scheduled` is the split's day, or null on a
+ * rest day. A session already logged today wins: the scheduled day's first,
+ * then the newest of any other, under its own snapshotted name, because
+ * day_type is reused across split eras.
  */
 export function todaysWorkout(
   scheduled: TodaysWorkout | null,

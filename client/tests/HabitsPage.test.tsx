@@ -45,7 +45,7 @@ const keys = (calls: { key: string }[]) => calls.map((c) => c.key);
 afterEach(() => vi.restoreAllMocks());
 
 describe("HabitsPage", () => {
-  // Redesign part 7: a plain title, as on Weight and Insights.
+  // A plain title, as on Weight and Insights.
   it("is headed Habits", async () => {
     mockApi(async () => [habit({})]);
     renderPage();
@@ -108,7 +108,7 @@ describe("HabitsPage", () => {
     );
   });
 
-  // Final review: Done unmounted the rows and dropped an unsaved rename.
+  // Done once unmounted the rows and dropped an unsaved rename.
   it("keeps a rename when Done is tapped", async () => {
     const calls = mockApi(async () => [habit({})]);
     renderPage();
@@ -134,7 +134,7 @@ describe("HabitsPage", () => {
     );
   });
 
-  // Final review: a just-added habit has no server id yet, and every action on
+  // A just-added habit has no server id yet, and every action on
   // it - or a reorder carrying its temporary id - failed with "Validation failed".
   it("holds a just-added habit's controls until the server has saved it", async () => {
     mockApi(async () => [], () => new Promise(() => {}));

@@ -4,7 +4,7 @@ import { LiftsOverview } from "./stats/LiftsOverview";
 import { LiftDetailView } from "./stats/LiftDetailView";
 
 /**
- * Gym's Stats (redesign part 3b): every lift by trend, and one lift in detail
+ * Gym's Stats: every lift by trend, and one lift in detail
  * within the tab. The search, the Not lately fold and the list's scroll
  * position live here, so coming back from a lift returns you to your place.
  */

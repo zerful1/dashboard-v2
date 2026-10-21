@@ -4,14 +4,14 @@ import { dayMonth, lastFullWeek, percentChange, signed, weekLabel } from "../src
 const TODAY = "2026-10-03";
 
 describe("insights formatting", () => {
-  // Review focus 1: a week across a month end names both months.
+  // A week across a month end names both months.
   it("labels a week, naming both months when it spans two", () => {
     expect(weekLabel("2026-09-21", TODAY)).toBe("21–27 Sep");
     expect(weekLabel("2026-09-28", TODAY)).toBe("28 Sep – 4 Oct");
     expect(weekLabel("2026-12-28", "2027-01-10")).toBe("28 Dec – 3 Jan");
   });
 
-  // Review finding: records reach back to 2025, so a date from another year
+  // Records reach back to 2025, so a date from another year
   // must say so, or a 2025 record reads as this year's.
   it("adds the year to a date or week outside the current year", () => {
     expect(weekLabel("2025-09-22", TODAY)).toBe("22–28 Sep 2025");
@@ -34,7 +34,7 @@ describe("insights formatting", () => {
     expect(percentChange(106, 100)).toBe("+6%");
     expect(percentChange(90, 100)).toBe("−10%");
     expect(percentChange(50, 0)).toBeNull();
-    // Spec section 4: no change when either week is 0. A bodyweight-only week
+    // No change when either week is 0. A bodyweight-only week
     // has 0 kg of volume, and "−100%" would read as a collapse.
     expect(percentChange(0, 100)).toBeNull();
   });

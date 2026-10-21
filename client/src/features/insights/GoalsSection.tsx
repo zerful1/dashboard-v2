@@ -18,7 +18,7 @@ function GoalRow({ goal, projection, today }: { goal: Goal; projection?: Project
   );
 }
 
-/** Each goal with when it is reached; the forms live behind Change (redesign part 6, §5). */
+/** Each goal with when it is reached; the forms live behind Change. */
 export function GoalsSection({ today, historyNames }: { today: string; historyNames: string[] }) {
   const g = useGoals();
   const projections = useProjections(today);

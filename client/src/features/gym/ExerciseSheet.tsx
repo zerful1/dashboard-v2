@@ -14,7 +14,7 @@ import { cn } from "@/lib/cn";
 interface Props {
   exercise: Exercise | null;
   todaySets: WorkoutSet[];
-  /** The last time this exercise was done, on any day (redesign part 3a, §4). */
+  /** The last time this exercise was done, on any day. */
   last: LastTime | null;
   /** Last time is still loading: claim nothing about it until it has. */
   lastPending?: boolean;
@@ -40,8 +40,8 @@ interface Props {
 const NO_SETS: WorkoutSet[] = [];
 
 /**
- * Logging one exercise (redesign part 3a, §3): today against last time, set by
- * set, with the set being logged as a highlighted block between them.
+ * Logging one exercise: today against last time, set by set, with the set
+ * being logged as a highlighted block between them.
  */
 export function ExerciseSheet({
   exercise, todaySets, last, lastPending = false, todayPending = false, todayFailed = false, failedSet = null,
@@ -66,7 +66,7 @@ export function ExerciseSheet({
 
   const { data: coaching, isLoading } = useCoaching(exercise?.exercise_name ?? null);
 
-  // The user's rule (2026-10-03): on for a "Unilateral …" name, or when last
+  // The rule (decided 2026-10-03): on for a "Unilateral …" name, or when last
   // time was logged per side; the switch overrides it either way. Today's sets
   // count too, so reopening the sheet mid-workout keeps the choice made.
   const sidedByDefault =

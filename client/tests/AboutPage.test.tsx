@@ -69,7 +69,7 @@ beforeEach(() => {
 });
 afterEach(() => vi.restoreAllMocks());
 
-// Housekeeping PR 4 (spec §5): the public project page.
+// The public project page.
 describe("AboutPage", () => {
   it("opens for a signed-out visitor with no API call but the session check", async () => {
     const calls = mockApi();
@@ -99,7 +99,7 @@ describe("AboutPage", () => {
     expect(screen.queryByRole("link", { name: "Sign in" })).toBeNull();
   });
 
-  // R3: a signed-in visitor on a slow check must not see the demo flash first.
+  // A signed-in visitor on a slow check must not see the demo flash first.
   it("shows no actions while the session is being checked", async () => {
     mockApi({ me: never });
     renderPage();
@@ -126,7 +126,7 @@ describe("AboutPage", () => {
     expect(calls).toContain("POST /api/auth/demo");
   });
 
-  // R4: pushed, so Back returns here, now offering the app.
+  // Pushed, so Back returns here, now offering the app.
   it("comes back to the page, signed in, on Back", async () => {
     mockApi();
     const router = renderPage();
@@ -159,7 +159,7 @@ describe("AboutPage", () => {
     expect(screen.getByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
   });
 
-  // The final review: the login page's link is the last thing on it, and a
+  // The login page's link is the last thing on it, and a
   // navigation keeps the scroll, so a small phone opened this page past its title.
   it("opens at the top of the page", async () => {
     mockApi();
@@ -168,7 +168,7 @@ describe("AboutPage", () => {
     expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
   });
 
-  it("says what the spec says", async () => {
+  it("says what the page should say", async () => {
     mockApi();
     renderPage();
     await screen.findByRole("button", { name: "Try the demo" });
@@ -190,7 +190,7 @@ describe("AboutPage", () => {
       "Designed and directed by me, built with Claude Code as an AI pair programmer. Every change started as a written spec, was built test-first and reviewed before merging.",
     ];
     for (const text of copy) expect(screen.getByText(text)).toBeInTheDocument();
-    // R1: the mockup's grouping, 7 chips. Vitest left at the user's call (2026-10-20):
+    // Seven chips, grouped. Vitest left out (decided 2026-10-20):
     // the chips are the stack a visitor would recognise, not the tooling.
     const chips = ["TypeScript", "React 19", "TanStack Query", "Tailwind 4", "Node · Express", "PostgreSQL · Supabase", "Vercel"];
     expect(chips.map((c) => screen.getAllByText(c).length)).toEqual(chips.map(() => 1));

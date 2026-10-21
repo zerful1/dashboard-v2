@@ -2,7 +2,7 @@ import { shiftISO } from '../date'
 import { latestActiveTarget } from './queries'
 import type { DayTotal, NutritionTarget } from '../../types'
 
-/** One day on Food's 7-day strip (redesign part 4, §3). */
+/** One day on Food's 7-day strip. */
 export interface StripDay {
   date: string
   /** Rounded, like the day's own figure. Null: nothing logged, never 0. */

@@ -4,7 +4,7 @@ import type { LiftSetRow, WorkoutSet, CardioEntry } from "@dashboard/shared";
 
 /**
  * Every set, or one exercise's, with its session's date, oldest first: what the
- * lift stats read (redesign part 3b, §6). No aggregation here; the rule lives
+ * lift stats read. No aggregation here; the rule lives
  * in shared, where it is tested.
  */
 export async function liftRows(userId: string, exerciseName?: string): Promise<LiftSetRow[]> {

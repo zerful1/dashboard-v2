@@ -14,7 +14,7 @@ export type Projection =
   | { goalId: string; status: 'away' | 'flat'; ratePerWeek: number; current: number }
   | { goalId: string; status: 'over-a-year'; ratePerWeek: number; current: number }
 
-/** The spec's thresholds. Lifts need 6 sessions, not 14: the user's call. */
+/** The thresholds. Lifts need 6 sessions, not 14. */
 export const PROJECTION_RULES = {
   weight: { windowDays: 56, minPoints: 14, flatPerWeek: 0.05 },
   lift: { windowDays: 84, minPoints: 6, flatPerWeek: 0.1 },
@@ -44,7 +44,7 @@ function inWindow(kind: Goal['kind'], points: ProjectionPoint[], today: string):
 }
 
 /**
- * The rate a projection is built on, on its own (redesign part 5): the Weight
+ * The rate a projection is built on, on its own: the Weight
  * page and Home show it with or without a goal, and it must be the number
  * Insights projects from, so there is one definition of it. `current` is the
  * line's value at today.

@@ -37,7 +37,7 @@ describe("refreshApp", () => {
     expect(reload).toHaveBeenCalledTimes(1);
   });
 
-  // Final review: a recovery button that spins forever recovers nothing.
+  // A recovery button that spins forever recovers nothing.
   it("still reloads when a step fails", async () => {
     health(true);
     vi.spyOn(persister, "removeClient").mockRejectedValue(new Error("storage"));
@@ -47,7 +47,7 @@ describe("refreshApp", () => {
     expect(reload).toHaveBeenCalledTimes(1);
   });
 
-  // Final review: dead wifi reports online. Emptying the caches then would
+  // Dead wifi reports online. Emptying the caches then would
   // leave nothing to open until there is signal.
   it("clears nothing when the server can't be reached", async () => {
     const qc = new QueryClient();

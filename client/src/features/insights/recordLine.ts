@@ -15,7 +15,7 @@ function line(value: string, now: number, before: number): RecordLine {
 }
 
 /**
- * One record as one line (redesign part 6, §4): the heaviest weight when the
+ * One record as one line: the heaviest weight when the
  * record was one, otherwise the estimated 1RM, otherwise the reps.
  */
 export function recordLine(e: RecordEvent): RecordLine {

@@ -22,7 +22,7 @@ const box = () => screen.getByLabelText("New exercise name");
 const suggestions = () => screen.queryByRole("list", { name: "Suggestions" });
 
 describe("ExerciseList suggestions", () => {
-  // Review focus 5: any case, so "t bar" finds "T Bar Row".
+  // Any case, so "t bar" finds "T Bar Row".
   it("suggests names from history as you type, and adds one on tap", async () => {
     const onAdd = renderList();
     await userEvent.type(box(), "t bar");
@@ -33,7 +33,7 @@ describe("ExerciseList suggestions", () => {
     expect(box()).toHaveValue("");
   });
 
-  // Review finding: a phone capitalises "T bar row" for you, and stats match
+  // A phone capitalises "T bar row" for you, and stats match
   // names exactly, so a typed near-twin must become the history's spelling.
   it("adds a typed name in the history's spelling when only the case differs", async () => {
     const onAdd = renderList();
@@ -68,7 +68,6 @@ describe("ExerciseList, last time loading", () => {
         historyNames={[]} onOpen={vi.fn()} onDelete={vi.fn()} onReorder={vi.fn()} onRename={vi.fn()} onAdd={vi.fn()} />,
     );
 
-  // Final review, important 1.
   it("says nothing about last time while it loads", () => {
     view(true);
     expect(screen.getByText("Lat Pulldown")).toBeInTheDocument();

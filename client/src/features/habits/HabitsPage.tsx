@@ -8,7 +8,7 @@ import { HabitRow } from "./HabitRow";
 import { EditHabitRow } from "./EditHabitRow";
 import { AddHabitForm } from "./AddHabitForm";
 
-/** The Habits tab: the last 7 days of each habit, streaks, and editing (redesign part 7). */
+/** The Habits tab: the last 7 days of each habit, streaks, and editing. */
 export function HabitsPage() {
   const { habits, today, isPending, isError, hasData, refetch, setDone, add, rename, remove, reorder } = useHabits();
   const [editing, setEditing] = useState(false);

@@ -23,7 +23,7 @@ function contrast(a: string, b: string): number {
   return (hi! + 0.05) / (lo! + 0.05);
 }
 
-describe("the palette (redesign spec §3)", () => {
+describe("the palette", () => {
   // Every text colour stays legible on every ground it sits on. `dim` is
   // decoration only, so it is deliberately absent.
   for (const fg of ["text", "muted", "good", "caution", "negative"]) {

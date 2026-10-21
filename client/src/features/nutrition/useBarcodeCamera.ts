@@ -7,7 +7,7 @@ const SCAN_EVERY_MS = 250;
 /**
  * The back camera into `video`, read every 250 ms until a code turns up. The
  * stream stops the moment a code is read or the caller unmounts: the camera
- * light must never stay on (spec §3).
+ * light must never stay on.
  */
 export function useBarcodeCamera(video: RefObject<HTMLVideoElement | null>, onCode: (code: string) => void): CameraState {
   const [state, setState] = useState<CameraState>("starting");

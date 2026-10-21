@@ -33,7 +33,7 @@ describe('rollingAverage', () => {
   })
 })
 
-/** The quadratic implementation rollingAverage replaced (housekeeping item 2), kept as the reference its results must equal. */
+/** The quadratic implementation rollingAverage replaced, kept as the reference its results must equal. */
 function referenceRollingAverage(points: WeighInPoint[]): AveragePoint[] {
   const asc = [...points].sort((a, b) => a.date.localeCompare(b.date))
   return asc.map((pt, i) => ({

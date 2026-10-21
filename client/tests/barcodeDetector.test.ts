@@ -41,7 +41,7 @@ describe("createDetector", () => {
     expect(ponyfill.prepareZXingModule).not.toHaveBeenCalled();
   });
 
-  // Spec §3: the fallback's .wasm is this app's own file, never a CDN's.
+  // The fallback's .wasm is this app's own file, never a CDN's.
   it("falls back to ZXing, served from this app, when the browser lacks a format or a detector", async () => {
     class Partial {
       static async getSupportedFormats() {

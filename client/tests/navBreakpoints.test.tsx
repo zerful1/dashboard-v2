@@ -48,7 +48,7 @@ describe("navigation", () => {
     expect(current.querySelector("span")).not.toHaveClass("uppercase");
     const other = screen.getByRole("link", { name: "Home" });
     expect(other.querySelector('[data-part="dot"]')).not.toHaveClass("bg-accent");
-    // Readable when inactive (6.1:1), not decoration-dim (user's call, 2026-10-06).
+    // Readable when inactive (6.1:1), not decoration-dim (decided 2026-10-06).
     expect(other).toHaveClass("text-muted");
   });
 

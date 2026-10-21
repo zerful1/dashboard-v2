@@ -74,7 +74,7 @@ export async function deleteSet(userId: string, id: string): Promise<boolean> {
 }
 
 /**
- * "Last time" for each named exercise (redesign part 3a, §4): the newest session
+ * "Last time" for each named exercise: the newest session
  * dated before `before` that holds a set of it, on ANY day type (a same-date
  * tie goes to the later session), and that session's sets of it. Strictly
  * before, so today's own sets are never offered back as last time's. day_type

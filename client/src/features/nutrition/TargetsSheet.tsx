@@ -53,7 +53,7 @@ export function TargetsSheet({
 
   // Keyed on the latest target's identity, not the array: with no targets yet
   // the list is a fresh [] on every render, and depending on it wiped whatever
-  // had been typed (#17 review 12).
+  // had been typed.
   const latestId = latestActiveTarget(targets, today)?.id ?? null;
   useEffect(() => {
     if (!open) return;
@@ -131,7 +131,7 @@ function HintCard({ hint }: { hint: TdeeHint | undefined }) {
   let headline: string | null = null;
   let detail: string;
   // Promising "after 14 logged days" to someone already past 14 read as a bug
-  // once implausible estimates were hidden (final review): say why instead.
+  // once implausible estimates were hidden: say why instead.
   const pastFourteen = hint !== undefined && hint.days_logged >= 14;
   if (!hint) {
     detail = "Estimating…";
@@ -192,7 +192,7 @@ function BodyDetails() {
   const h = parseDecimal(height);
   const y = int(birthYear);
   // A typed value that can't be saved says so, rather than being dropped while
-  // the rest saves; a blank field clears its detail (#17 review 11).
+  // the rest saves; a blank field clears its detail.
   const heightError =
     height.trim() !== "" && (h === null || h < 100 || h > 250) ? "Enter a height between 100 and 250 cm" : undefined;
   const yearError =
@@ -241,7 +241,7 @@ function BodyDetails() {
         <Button
           variant="ghost"
           // Not before the profile has loaded: the save sends all four details,
-          // and blanks would clear the ones not yet shown (final review).
+          // and blanks would clear the ones not yet shown.
           disabled={!profile.data || !!heightError || !!yearError}
           loading={save.isPending}
           onClick={() => save.mutate(patch)}

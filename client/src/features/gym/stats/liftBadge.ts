@@ -5,7 +5,7 @@ export type BadgeTone = "good" | "muted" | "caution";
 /** Tailwind classes per tone: each signal colour's one job (CLAUDE.md). */
 export const TONE: Record<BadgeTone, string> = { good: "text-good", muted: "text-muted", caution: "text-caution" };
 
-/** A lift's badge (redesign part 3b, §3). Not lately has none: its row shows its last date. */
+/** A lift's badge. Not lately has none: its row shows its last date. */
 export function liftBadge(p: LiftProgress): { text: string; tone: BadgeTone } | null {
   switch (p.status) {
     case "new":

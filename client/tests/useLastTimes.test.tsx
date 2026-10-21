@@ -17,8 +17,7 @@ function run(names: string[], before: string) {
 
 afterEach(() => vi.restoreAllMocks());
 
-describe("useLastTimes (redesign part 3a, §4)", () => {
-  // Review focus 4.
+describe("useLastTimes", () => {
   it("asks for every name before the date, each one encoded", async () => {
     const LAST = { "Row & Press": { date: "2026-10-02", sets: [] } };
     const api = vi.spyOn(apiModule, "api").mockResolvedValue(LAST as never);
@@ -35,7 +34,7 @@ describe("useLastTimes (redesign part 3a, §4)", () => {
     expect(result.current).toEqual({ byName: {}, isPending: false });
   });
 
-  // Final review, important 1: "not loaded yet" must not read as "never done".
+  // "Not loaded yet" must not read as "never done".
   it("reports pending until last time arrives", async () => {
     let resolve!: (v: unknown) => void;
     vi.spyOn(apiModule, "api").mockReturnValue(new Promise((r) => { resolve = r; }) as never);

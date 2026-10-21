@@ -106,7 +106,7 @@ function track<T>(p: Promise<T>) {
   return state;
 }
 
-// Housekeeping item 28: dead wifi left a request pending for good.
+// Dead wifi left a request pending for good.
 describe("api, on a connection that never answers", () => {
   afterEach(() => vi.useRealTimers());
 
@@ -114,7 +114,7 @@ describe("api, on a connection that never answers", () => {
     vi.useFakeTimers();
     vi.stubGlobal("fetch", slowFetch());
     const call = track(api("/api/x"));
-    // Review focus 1: not a moment early.
+    // Not a moment early.
     await vi.advanceTimersByTimeAsync(API_TIMEOUT_MS - 1);
     expect(call.settled).toBe(false);
     await vi.advanceTimersByTimeAsync(1);

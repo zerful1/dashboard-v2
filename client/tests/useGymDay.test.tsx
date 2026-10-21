@@ -186,7 +186,7 @@ describe("useGymDay across midnight", () => {
     expect(result.current.date).toBe("2026-08-05");
   });
 
-  // Final review: History's "Edit in log" on a past date goes through jumpTo.
+  // History's "Edit in log" on a past date goes through jumpTo.
   it("leaves a past day History sent you to where it is", () => {
     freeze(A_MONDAY_NIGHT);
     const { result } = renderHook(() => useGymDay(DEFAULT_SPLIT, false, null));

@@ -68,7 +68,7 @@ describe("POST /api/restore/preview and /api/restore", () => {
     expect(await weighIns(a.id)).toBe(1);
   });
 
-  // Downloads made before housekeeping PR 1 carry these, empty.
+  // Downloads made before the media tables were dropped carry these, empty.
   it("ignores an old download's media keys", async () => {
     const a = await aliceMissingAWeighIn();
     const old = { ...a.file, tables: { ...a.file.tables, media: [], media_seasons: [], progress_photos: [] } };

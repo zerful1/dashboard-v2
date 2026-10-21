@@ -6,8 +6,8 @@ import { clientPath } from "./clientRoot";
 const SRC = clientPath("src");
 
 /**
- * Where a SOLID white fill may appear, and why (redesign spec §3). Anything
- * else filled white reads as a second action.
+ * Where a SOLID white fill may appear, and why. Anything else filled white
+ * reads as a second action.
  */
 const ALLOWED: Record<string, string> = {
   "components/ui/Button.tsx": "the primary variant (Button, and buttonClass on a Link): the one action",

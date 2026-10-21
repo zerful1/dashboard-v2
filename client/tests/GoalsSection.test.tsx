@@ -65,7 +65,7 @@ describe("GoalsSection", () => {
     expect(screen.getByText("Not enough data yet (4 of 6 sessions)")).toBeInTheDocument();
   });
 
-  // Part 2 review: the projections query opts out of the toast, so the section
+  // The projections query opts out of the toast, so the section
   // must show its failure itself, or every goal reads "…" for good.
   it("says when projections could not load, and retries", async () => {
     let fail = true;
@@ -104,7 +104,7 @@ describe("GoalsSection", () => {
     expect(calls).toContainEqual({ key: "POST /api/goals/lifts", body: { exercise_name: "Lat Pulldown", target_kg: 75 } });
   });
 
-  // Review focus 4: the form goes away at the limit.
+  // The form goes away at the limit.
   it("hides the add form at 5 lift goals", async () => {
     const lifts = ["A", "B", "C", "D", "E"].map((n, i) => goal({ id: `l${i}`, kind: "lift", exercise_name: n }));
     mockApi(lifts, []);
@@ -157,7 +157,7 @@ describe("GoalsSection", () => {
     expect(await screen.findByRole("button", { name: "Change" })).toHaveClass("min-h-6");
   });
 
-  // Settings' shortcut (redesign part 8, §3).
+  // Settings' shortcut.
   it("opens the goals sheet from ?open=goals", async () => {
     mockApi([goal({})], []);
     renderSection("/insights?open=goals");

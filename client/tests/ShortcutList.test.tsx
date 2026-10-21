@@ -77,7 +77,7 @@ describe("ShortcutList", () => {
     expect(screen.getByRole("link", { name: /Habits/ }).parentElement).toHaveClass("border-b-0");
   });
 
-  // Review focus 1: useSplit answers DEFAULT_SPLIT until the real one loads.
+  // useSplit answers DEFAULT_SPLIT until the real one loads.
   it("leaves a value blank while it loads, never the default split's", async () => {
     mockApi({ split: null });
     renderList();
@@ -96,7 +96,6 @@ describe("ShortcutList", () => {
     expect(screen.getByRole("link", { name: /Gym split/ })).toHaveTextContent(/^Gym split$/);
   });
 
-  // Review focus 5.
   it("reads Not set for a target that starts after today", async () => {
     mockApi({ targets: [target("2026-10-20")] });
     renderList();

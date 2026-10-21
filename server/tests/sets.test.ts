@@ -88,7 +88,7 @@ describe("sets", () => {
     await agent.post("/api/workouts/sets").send(set({ date: "2026-08-09", weight_kg: 95 })).expect(201);
     await agent.post("/api/workouts/sets").send(set({ date: "2026-08-16", weight_kg: 100 })).expect(201);
 
-    // Review focus 3: before is exclusive, so today's 100 kg is never "last time".
+    // Before is exclusive, so today's 100 kg is never "last time".
     const res = await lastTimes(agent, "2026-08-16", "Squat").expect(200);
     expect(res.body.Squat.date).toBe("2026-08-09");
     expect(res.body.Squat.sets.map((s: { weight_kg: number }) => s.weight_kg)).toEqual([95]);
@@ -134,7 +134,6 @@ describe("sets", () => {
     expect(res.body).toEqual({});
   });
 
-  // Review focus 4.
   it("last-times round-trips a name with & + and , in it", async () => {
     const agent = await signedIn(alice);
     const name = "Row & Press, wide+";

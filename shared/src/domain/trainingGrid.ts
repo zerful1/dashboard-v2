@@ -24,7 +24,7 @@ export function gridSince(today: string): string {
   return shiftISO(today, -(GRID_WEEKS * 7 - 1))
 }
 
-/** History's 12-week grid (redesign part 3b, §5). The current week is the last column. */
+/** History's 12-week grid. The current week is the last column. */
 export function trainingGrid<S extends SessionRef>(sessions: S[], today: string): TrainingGrid<S> {
   const firstMonday = shiftISO(mondayOf(today), -(GRID_WEEKS - 1) * 7)
   const byDate = new Map<string, S[]>()

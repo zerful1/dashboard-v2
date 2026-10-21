@@ -115,7 +115,7 @@ describe("useDiary", () => {
     }
   });
 
-  // #17 review (3): rescale and remove rolled back into whichever day was showing.
+  // #17: rescale and remove rolled back into whichever day was showing.
   for (const op of ["rescale", "remove"] as const) {
     it(`rolls a failed ${op} back into the day it came from, after the day changes`, async () => {
       let fail!: () => void;

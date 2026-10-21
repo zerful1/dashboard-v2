@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { Button } from "../src/components/ui/Button";
 
 describe("Button, disabled", () => {
-  // Final review: a disabled `subtle` choice (Add food's "g" for a food that
+  // A disabled `subtle` choice (Add food's "g" for a food that
   // can't be weighed) took the disabled grey fill, and sat beside the selected
   // grey pill looking like a second selection.
   it("draws a disabled unchosen choice without a fill, so it can't pass for the selected one", () => {

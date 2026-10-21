@@ -80,7 +80,7 @@ describe("LoginPage", () => {
   });
 });
 
-// Housekeeping PR 4: the project page is linked from here.
+// The project page is linked from here.
 describe("LoginPage, the project page", () => {
   it("links to the project page", async () => {
     // Only the session check is called, and it says signed out.

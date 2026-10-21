@@ -20,7 +20,7 @@ const entry = (over: Partial<FoodLogEntry>): FoodLogEntry => ({
 /** The figure and its unit, e.g. "762 kcal left". */
 const figure = () => screen.getByText(/^kcal (left|over|eaten)$/).parentElement!;
 
-describe("DayFigure (redesign part 4, §4)", () => {
+describe("DayFigure", () => {
   it("shows kcal left against the target, and what was eaten", () => {
     render(<DayFigure summary={deriveDay([entry({ calories: 1640 })], [cut], "2026-09-23")} onSetTargets={() => {}} />);
     expect(figure()).toHaveTextContent("762 kcal left");
@@ -34,8 +34,8 @@ describe("DayFigure (redesign part 4, §4)", () => {
     expect(figure()).toHaveClass("text-caution");
   });
 
-  // Over target, the part past the goal is amber stripes after a notch
-  // (redesign spec §5.7); protein is never "over".
+  // Over target, the part past the goal is amber stripes after a notch;
+  // protein is never "over".
   it("draws the excess past a macro's target as stripes, and never for protein", () => {
     const summary = deriveDay([entry({ protein_g: 200, carbs_g: 230 })], [cut], "2026-09-23");
     render(<DayFigure summary={summary} onSetTargets={() => {}} />);
@@ -83,7 +83,7 @@ describe("DiaryList", () => {
 });
 
 describe("LabelStrip", () => {
-  // Review focus 2: the migrated June days know no label nutrients at all.
+  // The migrated June days know no label nutrients at all.
   it("shows a dash, not zero, when nothing is known", () => {
     render(<LabelStrip labels={deriveDay([entry({}), entry({ id: "e2" })], [], "2026-09-23").labels} />);
     expect(screen.getAllByText("—")).toHaveLength(4);

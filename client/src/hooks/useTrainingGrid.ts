@@ -6,7 +6,7 @@ import { gymApi } from "@/api/gym";
 import { newestCached } from "@/lib/newestCached";
 
 /**
- * History's 12-week grid (redesign part 3b, §5): every session since the 84
+ * History's 12-week grid: every session since the 84
  * days ending today. 100 is the endpoint's cap and more than 12 weeks can hold.
  */
 export function useTrainingGrid(today: string): { grid: TrainingGrid<SessionSummary> | null; isPending: boolean } {

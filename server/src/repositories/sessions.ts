@@ -25,8 +25,8 @@ export async function findSession(
  * recomputed. day_type is reused across split eras — in the migrated history
  * 'Upper A' and 'Legs' are both day_type 1, 'Upper B' and 'Pull' both 2 — so
  * resolving a name later would relabel five real sessions with whatever the
- * split says today. Task 4's test asserts a later call with a renamed split
- * still returns the original snapshot.
+ * split says today. tests/sessions.test.ts asserts a later call with a renamed
+ * split still returns the original snapshot.
  *
  * The upsert is atomic against UNIQUE (user_id, date, day_type): two concurrent
  * first-set logs cannot create two sessions. The DO UPDATE is a deliberate
@@ -61,7 +61,7 @@ export interface SessionListOptions {
 
 /**
  * Newest first, each with its distinct exercises and its set count for the
- * history list (redesign part 3b, §6). COUNT is a bigint, which pg hands back
+ * history list. COUNT is a bigint, which pg hands back
  * as a string, hence the casts.
  */
 export async function listSessions(

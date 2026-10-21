@@ -50,7 +50,7 @@ describe("exportUserData", () => {
     }
   });
 
-  // Review focus 1: the export is the user's only backup.
+  // The export is the user's only backup.
   it("covers every table with a user_id column, so a new table can't be left out", async () => {
     const a = await signedIn(alice);
     const { rows } = await pool.query<{ table_name: string }>(
@@ -63,7 +63,6 @@ describe("exportUserData", () => {
     expect(Object.keys((await exportUserData(a.id)).tables).sort()).toEqual(expected);
   });
 
-  // Review focus 3.
   it("keeps dates as text, numbers exact, and nesting intact", async () => {
     const a = await aliceWithData();
     const file = await exportUserData(a.id);
@@ -75,7 +74,6 @@ describe("exportUserData", () => {
     expect(file.account.created_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
-  // Review focus 4.
   it("never contains a secret", async () => {
     const a = await aliceWithData();
     await request(app).post("/api/auth/forgot-password").send({ email: alice.email }).expect(204);
@@ -109,7 +107,7 @@ describe("GET /api/export", () => {
     expect(res.body.tables.body_weight[0].date).toBe("2026-10-01");
   });
 
-  // Final review: Vercel caps a response sent in one piece at 4.5 MB, and the
+  // Vercel caps a response sent in one piece at 4.5 MB, and the
   // owner's file grows by about 2 MB a year. Streamed, it never is one piece.
   it("streams the file rather than sending it in one piece", async () => {
     const a = await aliceWithData();
@@ -120,7 +118,7 @@ describe("GET /api/export", () => {
     expect(res.body.tables.workout_sets).toHaveLength(1);
   });
 
-  // Spec §4: a read, so the demo's read-only rule lets it through.
+  // A read, so the demo's read-only rule lets it through.
   it("works in the demo, with the demo's made-up data", async () => {
     const agent = request.agent(app);
     await agent.post("/api/auth/demo").expect(200);

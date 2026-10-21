@@ -25,8 +25,8 @@ function renderPage() {
 afterEach(() => vi.restoreAllMocks());
 
 describe("RegisterPage", () => {
-  // Repo owner's ask: pin both halves of the field-error mapping behaviour.
-  // The brief's RegisterPage only shows the generic banner when
+  // Pins both halves of the field-error mapping behaviour.
+  // RegisterPage only shows the generic banner when
   // `Object.keys(fieldErrors).length === 0`, so a regression that showed
   // both the field error AND the generic banner would be a visible
   // double-reporting bug that this test would catch.

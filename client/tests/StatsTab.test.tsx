@@ -74,7 +74,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("Stats, the overview (redesign part 3b, §3)", () => {
+describe("Stats, the overview", () => {
   it("groups lifts as moving, stalled and going back, with their badges", async () => {
     mockApi({ "/api/workouts/progress": LIFTS });
     renderTab();
@@ -90,7 +90,6 @@ describe("Stats, the overview (redesign part 3b, §3)", () => {
     expect(screen.getByText(/Best 75 × 8/)).toBeInTheDocument();
   });
 
-  // Review focus 1.
   it("folds lifts not trained lately away, and unfolds them on tap", async () => {
     mockApi({ "/api/workouts/progress": LIFTS });
     renderTab();
@@ -109,7 +108,6 @@ describe("Stats, the overview (redesign part 3b, §3)", () => {
     expect(screen.queryByRole("region", { name: "Going back" })).toBeNull();
   });
 
-  // Review focus 5.
   it("searches across every group, Not lately included", async () => {
     mockApi({ "/api/workouts/progress": LIFTS });
     renderTab();
@@ -146,7 +144,7 @@ describe("Stats, the overview (redesign part 3b, §3)", () => {
   });
 });
 
-describe("Stats, a lift's detail (redesign part 3b, §4)", () => {
+describe("Stats, a lift's detail", () => {
   it("opens a lift, and comes back to the overview with the search kept", async () => {
     freeze();
     mockApi({ "/api/workouts/progress": LIFTS, "/api/workouts/stats": [row("2026-10-02", 75, 8)] });
@@ -204,7 +202,7 @@ describe("Stats, a lift's detail (redesign part 3b, §4)", () => {
     expect(within(await screen.findByRole("region", { name: "Best" })).getByText("BW × 11")).toBeInTheDocument();
   });
 
-  // Final review: Back re-folded Not lately and dropped you near the top.
+  // Back once re-folded Not lately and dropped you near the top.
   it("keeps Not lately open, and your place in the list, coming back from a lift", async () => {
     freeze();
     mockApi({ "/api/workouts/progress": LIFTS, "/api/workouts/stats": [row("2025-03-01", 60, 8)] });
@@ -219,7 +217,7 @@ describe("Stats, a lift's detail (redesign part 3b, §4)", () => {
     expect(main.scrollTop).toBe(420);
   });
 
-  // Final review: v1-era lifts have nothing in the span, and once said "Not enough sessions".
+  // Lifts from the v1 era have nothing in the span, and once said "Not enough sessions".
   it("charts an old lift's whole history", async () => {
     freeze();
     mockApi({

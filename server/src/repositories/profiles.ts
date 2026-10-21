@@ -39,7 +39,7 @@ export async function updateProfile(
   patch: ProfilePatch,
 ): Promise<Profile | null> {
   // COALESCE keeps an unmentioned field as it was. The body details instead
-  // take a "mentioned" flag, so null can clear one (#17 review 11).
+  // take a "mentioned" flag, so null can clear one.
   const { rows } = await pool.query<Profile>(
     `UPDATE ${T.profiles}
         SET timezone       = COALESCE($2, timezone),

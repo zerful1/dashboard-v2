@@ -29,7 +29,7 @@ describe('sessionBests', () => {
       bw('Pull Up', '2026-09-08', 12),
     ])
     expect(r.bodyweightOnly).toBe(false)
-    // Review focus 2: the bodyweight sets are no 0 kg best, and a session of
+    // The bodyweight sets are no 0 kg best, and a session of
     // only bodyweight sets has no value at all.
     expect(r.sessions).toHaveLength(1)
     expect(r.sessions[0]!.value).toBeCloseTo(10 * (1 + 8 / 30))
@@ -54,7 +54,6 @@ describe('liftProgress', () => {
     expect(status([set('Row', '2026-08-25', 100, 5), set('Row', '2026-08-26', 104, 5)]).status).toBe('moving')
   })
 
-  // Review focus 1.
   it('folds a lift away at 56 days, not at 55', () => {
     expect(status([set('Row', '2026-08-11', 100, 5)])).toMatchObject({ status: 'old', lastDate: '2026-08-11' })
     expect(status([set('Row', '2026-08-12', 100, 5)]).status).toBe('stalled')
@@ -126,7 +125,7 @@ describe('liftDetail', () => {
     expect(d.chartAll).toBe(false)
   })
 
-  // Final review: most production lifts are v1-era, with nothing in the span.
+  // Most production lifts are v1-era, with nothing in the span.
   it('charts the whole history of a lift with nothing in the span', () => {
     const d = liftDetail('Row', [
       set('Row', '2025-03-14', 100, 5),
@@ -141,7 +140,6 @@ describe('liftDetail', () => {
     ])
   })
 
-  // Review focus 3.
   it('keeps the higher of two sessions on one date as its point, and lists both sessions', () => {
     // The higher session first: a last-wins point would keep 70 kg and fail.
     const d = liftDetail('Row', [

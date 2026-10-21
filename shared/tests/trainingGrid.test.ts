@@ -22,7 +22,6 @@ describe('trainingGrid', () => {
     ])
   })
 
-  // Review focus 4.
   it('ends on today whether today is a Monday or a Sunday', () => {
     const mon = trainingGrid([], '2026-10-05').weeks[11]!
     expect(mon[0]).toMatchObject({ date: '2026-10-05', future: false })

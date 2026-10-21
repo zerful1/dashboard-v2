@@ -6,7 +6,7 @@ import { gymApi } from "@/api/gym";
 const NONE: Record<string, LastTime> = {};
 
 /**
- * Last time for each exercise on a day's list (redesign part 3a, §4): the
+ * Last time for each exercise on a day's list: the
  * newest session before `before` that has it, on any day. Sorted, so the same
  * list in another order is the same cache entry.
  */

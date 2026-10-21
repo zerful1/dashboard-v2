@@ -127,7 +127,6 @@ describe("Insights: the week", () => {
     expect(calls).not.toContain("/api/insights/review?week=2026-09-28");
   });
 
-  // Review focus 1.
   it("waits for the goals before colouring the weight change", async () => {
     freeze();
     let release!: (g: Goal[]) => void;
@@ -141,7 +140,7 @@ describe("Insights: the week", () => {
     expect((await screen.findByText("+0.8")).closest("[data-tone]")).toHaveAttribute("data-tone", "good");
   });
 
-  // Final review: offline, with the week saved and goals never loaded, the goals
+  // Offline, with the week saved and goals never loaded, the goals
   // query pauses and stays pending. Waiting for it would spin for good (Weight's rule).
   it("draws the saved week offline when the goals were never loaded", async () => {
     freeze();
@@ -218,7 +217,6 @@ describe("Insights: records", () => {
     expect(screen.getByRole("list", { name: "This week so far" })).toHaveTextContent("Press");
   });
 
-  // Review focus 5.
   it("shows 5, then the rest on N more; changing the week closes it", async () => {
     freeze();
     mockApi({ records: () => Array.from({ length: 8 }, (_, i) => rec("2026-09-23", `Lift ${i}`, 100 + i + 1)) });

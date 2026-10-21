@@ -15,7 +15,7 @@ import { GoalsSection } from "./GoalsSection";
 
 const SAVED = "Couldn't refresh — showing saved data.";
 
-/** Last week at a glance, the records it set, this week's so far, and the goals (redesign part 6). */
+/** Last week at a glance, the records it set, this week's so far, and the goals. */
 export function InsightsPage() {
   // One clock for the page (CLAUDE.md).
   const today = useToday();

@@ -33,7 +33,7 @@ export function signed(n: number, digits: number): string {
   return `${n > 0 ? "+" : "−"}${text}`;
 }
 
-/** "+6%", or null when either week is 0 (spec section 4): nothing to compare. */
+/** "+6%", or null when either week is 0: nothing to compare. */
 export function percentChange(current: number, previous: number): string | null {
   if (!previous || !current) return null;
   return `${signed(((current - previous) / previous) * 100, 0)}%`;

@@ -90,7 +90,6 @@ describe("RestoreSheet", () => {
     expect(screen.queryByRole("button", { name: "Add them back" })).toBeNull();
   });
 
-  // Review Focus 5.
   it("says it isn't a download, and sends nothing", async () => {
     renderSheet();
     await pick(download(JSON.stringify({ hello: "world" })));

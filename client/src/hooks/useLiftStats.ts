@@ -5,7 +5,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { gymApi } from "@/api/gym";
 import { newestCached } from "@/lib/newestCached";
 
-/** The Stats overview (redesign part 3b, §3): every lift's status as of `today`, worked out on the server. */
+/** The Stats overview: every lift's status as of `today`, worked out on the server. */
 export function useLiftProgress(today: string): { lifts: LiftProgress[] | undefined; isPending: boolean; isError: boolean } {
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -22,7 +22,7 @@ export function useLiftProgress(today: string): { lifts: LiftProgress[] | undefi
   return { lifts: query.data, isPending: query.isPending, isError: query.isError };
 }
 
-/** One lift's detail (§4), from its sets, by the same rule as the overview. */
+/** One lift's detail, from its sets, by the same rule as the overview. */
 export function useLiftDetail(name: string, today: string): { detail: LiftDetail | null; isPending: boolean; isError: boolean } {
   const { user } = useAuth();
   const query = useQuery({

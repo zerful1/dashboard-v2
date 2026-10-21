@@ -36,7 +36,6 @@ describe("orderRecords", () => {
     expect(orderRecords([older, newer]).map((e) => e.exercise_name)).toEqual(["B", "A"]);
   });
 
-  // Review focus 2.
   it("sorts a record from zero first, without dividing by zero", () => {
     const fromZero = ev("2026-09-22", "Dip", { heaviest: { weightKg: 10, reps: 8, previousKg: 0 } });
     const big = ev("2026-09-23", "Squat", { heaviest: { weightKg: 150, reps: 5, previousKg: 100 } });

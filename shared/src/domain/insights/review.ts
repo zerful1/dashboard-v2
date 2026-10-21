@@ -17,7 +17,7 @@ export interface WeekNumbers {
   weight: { average: number | null; weighIns: number }
 }
 
-/** One day of the reviewed week (redesign part 6, §3.1). */
+/** One day of the reviewed week. */
 export interface ReviewDay {
   date: string
   /** A session that day: the rule `training.days` counts. */
@@ -73,7 +73,7 @@ export function weekNumbers(inputs: ReviewInputs, monday: string): WeekNumbers {
   }
 }
 
-/** The seven days from `monday`, out of rows that may span more (§3.1). */
+/** The seven days from `monday`, out of rows that may span more. */
 export function reviewDays(inputs: ReviewInputs, monday: string): ReviewDay[] {
   return Array.from({ length: 7 }, (_, i) => {
     const date = shiftISO(monday, i)

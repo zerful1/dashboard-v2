@@ -13,7 +13,7 @@ import { WeekLine } from "@/features/home/WeekLine";
 import { AddFoodSheet } from "@/features/nutrition/AddFoodSheet";
 
 /**
- * Today at a glance (redesign part 2). The top slot holds the next thing and
+ * Today at a glance. The top slot holds the next thing and
  * the screen's one white action — weigh-in, then workout, then food — and the
  * rest of today follows in a fixed order, minus whichever is on top.
  */

@@ -112,7 +112,6 @@ describe("NutritionPage", () => {
     await findFigure("762 kcal left");
   });
 
-  // Review focus 2 (#17).
   it("reads a day with no label data as unknown, not zero", async () => {
     freeze("2026-09-23");
     mockApi({ diary: () => [e({}), e({ id: "e2" })] });
@@ -122,7 +121,7 @@ describe("NutritionPage", () => {
   });
 });
 
-describe("NutritionPage, the last 7 days (redesign part 4)", () => {
+describe("NutritionPage, the last 7 days", () => {
   it("shows the 7 days ending today, with today open", async () => {
     freeze("2026-09-23");
     const calls = mockApi({ days: () => [{ date: "2026-09-22", calories: 2979, protein_g: 131 }] });
@@ -146,7 +145,7 @@ describe("NutritionPage, the last 7 days (redesign part 4)", () => {
     expect(calls.filter((c) => c.key.startsWith("GET /api/nutrition/days")).every((c) => c.key.endsWith("to=2026-09-23"))).toBe(true);
   });
 
-  // Review focus 5 (#17): logging on a past day lands on that day.
+  // Logging on a past day lands on that day.
   it("adds to the day being viewed, not today", async () => {
     freeze("2026-09-23");
     const calls = mockApi({
@@ -232,7 +231,7 @@ describe("NutritionPage, the last 7 days (redesign part 4)", () => {
     expect(screen.getByRole("group", { name: "Last 7 days" })).toBeInTheDocument();
   });
 
-  // Review focus 3: typing gets past the picker's max.
+  // Typing gets past the picker's max.
   it("ignores a future date typed into the picker", async () => {
     freeze("2026-09-23");
     const calls = mockApi();
@@ -243,7 +242,7 @@ describe("NutritionPage, the last 7 days (redesign part 4)", () => {
     expect(bar(/^Wednesday 23 September/)).toHaveAttribute("aria-pressed", "true");
   });
 
-  // Final review: "10000-…" passed the future-date guard ("1" < "2" as strings)
+  // "10000-…" passed the future-date guard ("1" < "2" as strings)
   // and crashed the strip's render; "0002-…" opened a strip in 1902.
   it("ignores a typed date that isn't a real date with a four-digit year", async () => {
     freeze("2026-09-23");
@@ -304,7 +303,7 @@ describe("NutritionPage, the last 7 days (redesign part 4)", () => {
     await waitFor(() => expect(bar(/^Wednesday 23 September/)).toHaveAttribute("aria-pressed", "true"));
   });
 
-  // Spec §3: back on today, with the strip ending today, IS following the clock.
+  // Back on today, with the strip ending today, IS following the clock.
   it("keeps following the clock after Back to today", async () => {
     freeze("2026-09-23");
     const calls = mockApi();
@@ -332,7 +331,7 @@ describe("NutritionPage, the last 7 days (redesign part 4)", () => {
   });
 });
 
-// Settings' shortcut (redesign part 8, §3).
+// Settings' shortcut.
 describe("NutritionPage, opened from Settings", () => {
   it("opens Targets from ?open=targets", async () => {
     mockApi();

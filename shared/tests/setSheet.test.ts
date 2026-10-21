@@ -27,7 +27,6 @@ describe('lastTimeRows', () => {
     expect(r.below.map((x) => x.set_number)).toEqual([4])
   })
 
-  // Review focus 2.
   it('continues from the highest set after a deleted middle one, and shows the gap', () => {
     const r = lastTimeRows([s(1), s(3)], [s(1), s(2), s(3)])
     expect(r.next).toBe(4)

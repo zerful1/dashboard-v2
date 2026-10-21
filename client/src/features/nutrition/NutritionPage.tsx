@@ -36,7 +36,7 @@ export function NutritionPage() {
   const end = picked?.end ?? today;
   const open = picked?.open ?? today;
   const from = shiftISO(end, -6);
-  // Today open, with the strip ending today, IS following the clock (spec §3).
+  // Today open, with the strip ending today, IS following the clock.
   const choose = (next: Picked) => setPicked(next.end === today && next.open === today ? null : next);
   const pickDate = (d: string) => {
     // The picker is capped at today, but a typed date is not. And a typed year

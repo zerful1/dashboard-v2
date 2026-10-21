@@ -21,7 +21,7 @@ describe("generateDemo", () => {
     }
   });
 
-  // Review focus 2: the staleness check reads the newest weigh-in.
+  // The staleness check reads the newest weigh-in.
   it("always weighs in yesterday", () => {
     for (const today of WEEK) {
       expect(generateDemo(today).weights.at(-1)!.date).toBe(shiftISO(today, -1));
@@ -71,7 +71,7 @@ describe("generateDemo", () => {
     expect(later.weights.at(-1)!.date).toBe("2026-10-10");
   });
 
-  // Review focus 4. These are the generator's figures for TODAY before habits
+  // These are the generator's figures for TODAY before habits
   // existed. Habits draw from their own random stream; drawing one from the
   // shared stream would move every value after it, and with them these.
   it("leaves the rest of the demo exactly as it was", () => {

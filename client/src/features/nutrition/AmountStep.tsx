@@ -92,7 +92,7 @@ export function AmountStep({
           : "Enter an amount"}
       </p>
       {labels && (
-        // Phase 1's spec §3: the label nutrients, unknown as "—", never as 0 (#17 review 7).
+        // The label nutrients, unknown as "—", never as 0.
         <p className="tnum text-xs text-muted">
           {LABEL_ROWS.map((r) => {
             const v = labels[r.key];

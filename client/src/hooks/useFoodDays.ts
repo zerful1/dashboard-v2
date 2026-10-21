@@ -6,7 +6,7 @@ import { nutritionApi } from "@/api/nutrition";
 export const foodDaysKey = (userId: string, from: string, to: string) => ["foodDays", userId, from, to] as const;
 
 /**
- * Each day's kcal and protein for Food's 7-day strip (redesign part 4, §5).
+ * Each day's kcal and protein for Food's 7-day strip.
  *
  * Keyed by its range, so each new day is a new key with nothing cached, and
  * offline that would wait behind the strip's empty state. While the strip ends

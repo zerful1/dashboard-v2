@@ -19,9 +19,9 @@ const TONE_CLASS = { good: "text-good", caution: "text-caution", neutral: "text-
 
 /**
  * Where the weight is and which way it is going, in words, before anything
- * else (redesign part 5, §2–3): the 7-day average, Insights' rate, and the
+ * else: the 7-day average, Insights' rate, and the
  * goal's projection. Then what the weight is made of, from the same rate and
- * Gym's lift statuses (housekeeping §4, mockup 1A).
+ * Gym's lift statuses.
  */
 export function WeightHeadline({ summary, today, goal, goalsFailed, composition }: Props) {
   const safe = useMotionSafe();

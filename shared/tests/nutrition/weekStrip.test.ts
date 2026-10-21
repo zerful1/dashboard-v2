@@ -63,7 +63,7 @@ describe('weekStrip', () => {
     expect(s.days[5]!.over).toBe(true)
   })
 
-  // Review focus 5: production holds two rows with the same effective_from.
+  // Production holds two rows with the same effective_from.
   it('takes the newer of two targets from the same day', () => {
     const older = target('2026-06-09', 2402, 180, '2026-06-09T10:00:00Z')
     const newer = target('2026-06-09', 2200, 170, '2026-06-09T11:00:00Z')

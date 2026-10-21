@@ -69,7 +69,7 @@ describe("weekly review endpoint", () => {
   });
 });
 
-// Review finding: TargetsSheet saves with effective_from = today, so two saves
+// TargetsSheet saves with effective_from = today, so two saves
 // in a day tie, and the tie-break compared created_at as a string while
 // node-pg handed it back as a Date. Production already holds such a pair.
 describe("weekly review with targets saved twice in a day", () => {

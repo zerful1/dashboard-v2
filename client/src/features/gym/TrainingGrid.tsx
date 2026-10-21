@@ -3,7 +3,7 @@ import { listDate } from "@/lib/dates";
 import { cn } from "@/lib/cn";
 
 /**
- * Twelve weeks at a glance (redesign part 3b, §5): weeks are columns, Monday on
+ * Twelve weeks at a glance: weeks are columns, Monday on
  * top. A trained day is a small white square, a done mark under 24 px, and the
  * only kind a screen reader is told about. Capped at max-w-xs, so it stays a
  * mark on a desktop.

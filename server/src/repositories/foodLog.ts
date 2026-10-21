@@ -92,7 +92,7 @@ export async function copyDay(userId: string, from: string, to: string): Promise
           fibre_g, sugar_g, sat_fat_g, salt_g)
        SELECT user_id, $3::date,
               -- Whole local days in the user's timezone, so 08:00 stays 08:00
-              -- across a clock change (#17 review 14).
+              -- across a clock change.
               ((logged_at AT TIME ZONE tz.z) + ($3::date - $2::date) * interval '1 day') AT TIME ZONE tz.z,
               food_item_id, name, quantity, unit, calories, protein_g, fat_g, carbs_g,
               fibre_g, sugar_g, sat_fat_g, salt_g

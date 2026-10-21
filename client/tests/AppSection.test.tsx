@@ -43,7 +43,7 @@ describe("AppSection", () => {
     expect(screen.getByRole("button", { name: "Refresh the app" })).toBeEnabled();
   });
 
-  // Review focus 4: with no signal, emptying the caches leaves nothing to load.
+  // With no signal, emptying the caches leaves nothing to load.
   it("is disabled offline, and says why", () => {
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
     renderSection();
@@ -53,7 +53,7 @@ describe("AppSection", () => {
   });
 });
 
-// Housekeeping PR 4: the project page is linked from Settings' App section.
+// The project page is linked from Settings' App section.
 describe("AppSection, the project page", () => {
   it("links to the project page", () => {
     renderSection();

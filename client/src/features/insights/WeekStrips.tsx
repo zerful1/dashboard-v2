@@ -2,7 +2,7 @@ import type { ReviewDay } from "@dashboard/shared";
 import { weekdayInitial } from "@/lib/dates";
 
 /**
- * The Monday-to-Sunday strips beside the week's rows (redesign part 6, §3).
+ * The Monday-to-Sunday strips beside the week's rows.
  * Plain elements and SVG on one 70 px grid of seven 10 px columns, so the
  * weekday row under them lines up. Decorative: each row says it in words.
  */

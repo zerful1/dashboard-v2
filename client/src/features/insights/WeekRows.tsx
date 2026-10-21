@@ -30,7 +30,7 @@ function Row({ label, figure, sub, spoken, strip }: { label: string; figure: Rea
   );
 }
 
-/** Last week's training, food and weight, each beside its strip (redesign part 6, §3). */
+/** Last week's training, food and weight, each beside its strip. */
 export function WeekRows({ review, goalKg }: { review: WeeklyReview; goalKg: number | null }) {
   const { current: c, previous: p, trainingTarget, foodTarget: t } = review;
   const small = (s: string) => <span className="ml-1.5 text-sm font-normal tracking-normal text-muted">{s}</span>;

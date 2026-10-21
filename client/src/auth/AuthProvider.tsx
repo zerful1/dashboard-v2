@@ -62,7 +62,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
  * while every future key remembers the id — and a key that forgets fails
  * silently, showing the previous account's data with nothing to notice.
  * Clearing is one call at the one place identity can change, and it covers
- * keys written by people who never read this. Phase 4 adds a dozen keys
+ * keys written by people who never read this. The features hold a dozen keys
  * carrying far more than a timezone, so the guarantee has to hold by
  * construction rather than by everyone remembering.
  *

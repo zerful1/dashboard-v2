@@ -104,7 +104,7 @@ describe("WeightHeadline", () => {
   });
 });
 
-// Housekeeping PR 3: what the weight is made of, one line under the goal (mockup 1A).
+// What the weight is made of, one line under the goal.
 describe("WeightHeadline, the composition line", () => {
   const line = (tone: CompositionLine["tone"]): CompositionLine => ({
     verdict: "Losing fat, keeping strength",

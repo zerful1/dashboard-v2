@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 /**
  * A script pointing tsx at a deleted file passes the typecheck and fails only
  * when someone runs it, which for a one-off tool can be months later. Retiring
- * v1 (housekeeping 5) deleted six such files and their four scripts.
+ * v1 deleted six such files and their four scripts.
  */
 describe("npm scripts", () => {
   it.each([
