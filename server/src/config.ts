@@ -29,7 +29,10 @@ const schema = z.object({
     .string()
     .url()
     .default("http://localhost:5173")
-    .transform((u) => new URL(u).origin),
+    .transform((u) => new URL(u).origin)
+    // "localhost:5173" passes .url() as a scheme, and its origin is "null": the
+    // one value a sandboxed iframe sends, so it must never reach the CORS header.
+    .refine((o) => o !== "null", "must be an http(s) origin"),
   /** Who may register: empty = nobody new, "*" = anyone, or a list. See signups.ts. */
   SIGNUP_ALLOWLIST: z.string().default(""),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
