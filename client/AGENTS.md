@@ -13,7 +13,7 @@ Run from the repo root, not here:
 
 ## Conventions
 
-- Entry point is `src/index.tsx`. Public env vars use the `PUBLIC_` prefix.
+- Entry point is `src/index.tsx`.
 - **No component calls `fetch`.** Everything goes through `src/lib/api.ts`, which
   sets `credentials: 'include'` so the session cookie travels.
 - Design tokens live in `src/styles.css` under Tailwind v4's `@theme`. Use the
