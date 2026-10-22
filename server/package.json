@@ -15,7 +15,7 @@
     "@dashboard/shared": "1.0.0",
     "@node-rs/argon2": "^2.0.2",
     "connect-pg-simple": "^9.0.1",
-    "express": "^4.19.2",
+    "express": "^4.22.3",
     "express-session": "^1.18.0",
     "helmet": "^8.3.0",
     "pg": "^8.11.5",
