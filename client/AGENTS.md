@@ -28,7 +28,7 @@ Run from the repo root, not here:
   (toward your goal), `caution` (over a target, warnings), `negative` (errors,
   destructive). There is no `sage`, `gold` or terracotta any more: Tailwind 4
   compiles an unknown token's class to nothing, silently. See CLAUDE.md's
-  "Frontend conventions".
+  "Design system".
 - **Errors: a form submission renders its own inline error next to its
   controls; everything else toasts.** Inline is `FormError` (whole-submission)
   or `Field`'s `error` (one field). Everything else — autosaves, background
