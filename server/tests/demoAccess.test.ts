@@ -25,7 +25,7 @@ describe("demo entry", () => {
     expect((await agent.get("/api/weight").expect(200)).body.length).toBeGreaterThan(50);
   });
 
-  // Final review: the refresh runs only on entry, so a month-long session would
+  // The refresh runs only on entry, so a month-long session would
   // show a returning visitor the data as it was on their first visit.
   it("lasts hours rather than a month, so a returning visitor enters again to fresh data", async () => {
     const msLeft = (res: request.Response) => {
@@ -44,7 +44,6 @@ describe("demo entry", () => {
     expect(msLeft(registered)).toBeGreaterThan(7 * 24 * HOUR);
   });
 
-  // Review focus 3.
   it("opens with sign-ups closed", async () => {
     const closed = createApp({ signups: parseSignupPolicy(undefined) });
     await request.agent(closed).post("/api/auth/demo").expect(200);
@@ -52,18 +51,21 @@ describe("demo entry", () => {
 });
 
 describe("demo is read-only", () => {
-  // Review focus 4: not only the obvious writes.
+  // Not only the obvious writes.
   it("refuses every kind of write", async () => {
     const agent = await inDemo();
+    // One at a time: supertest starts and closes a server per request, and six
+    // at once reset a connection now and then on CI's Linux runner (ECONNRESET).
     const writes = [
-      agent.post("/api/weight").send({ date: "2026-10-01", weight_kg: 70 }),
-      agent.put("/api/goals/weight").send({ target_kg: 70 }),
-      agent.patch("/api/profile").send({ timezone: "UTC" }),
-      agent.delete("/api/profile").send({ password: "x" }),
-      agent.post("/api/auth/change-password").send({ currentPassword: "x", newPassword: "correct-horse-10" }),
-      agent.post("/api/workouts/sets").send({ date: "2026-10-01", day_type: 1, exercise_name: "Squat", set_number: 1, weight_kg: 100, reps: 5 }),
+      () => agent.post("/api/weight").send({ date: "2026-10-01", weight_kg: 70 }),
+      () => agent.put("/api/goals/weight").send({ target_kg: 70 }),
+      () => agent.patch("/api/profile").send({ timezone: "UTC" }),
+      () => agent.delete("/api/profile").send({ password: "x" }),
+      () => agent.post("/api/auth/change-password").send({ currentPassword: "x", newPassword: "correct-horse-10" }),
+      () => agent.post("/api/workouts/sets").send({ date: "2026-10-01", day_type: 1, exercise_name: "Squat", set_number: 1, weight_kg: 100, reps: 5 }),
     ];
-    for (const res of await Promise.all(writes)) {
+    for (const write of writes) {
+      const res = await write();
       expect(res.status).toBe(403);
       expect(res.body.message).toBe(READ_ONLY);
     }
@@ -85,7 +87,7 @@ describe("demo is read-only", () => {
 });
 
 describe("a browser still holding a demo session", () => {
-  // Final review: "Leave demo" signs out locally even when its POST fails, and
+  // "Leave demo" signs out locally even when its POST fails, and
   // a reset link can open in a browser that last visited the demo.
   it("can still sign in to a real account, or reset a password", async () => {
     await request(app).post("/api/auth/register").send({ email: "alice@example.com", password: "correct-horse-9" }).expect(201);

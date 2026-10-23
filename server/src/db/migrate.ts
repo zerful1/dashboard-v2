@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Pool } from "pg";
 import { config } from "../config";
+import { sslFor } from "./ssl";
 
 const MIGRATIONS_DIR = join(__dirname, "migrations");
 
@@ -24,6 +25,7 @@ export async function runMigrations(schema: string = config.DB_SCHEMA): Promise<
 
   const pool = new Pool({
     connectionString: config.MIGRATION_DATABASE_URL,
+    ssl: sslFor(config.MIGRATION_DATABASE_URL),
     max: 1,
     connectionTimeoutMillis: 15_000,
   });

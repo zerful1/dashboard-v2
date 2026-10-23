@@ -85,7 +85,7 @@ describe("food search", () => {
     });
   });
 
-  // Review focus 1: search text is user input and goes into a regex.
+  // Search text is user input and goes into a regex.
   it("survives regex and LIKE metacharacters", async () => {
     const agent = await signedIn();
     stubOff(() => ({ hits: [] }));
@@ -173,7 +173,7 @@ describe("Open Food Facts", () => {
 });
 
 describe("Open Food Facts mapping limits", () => {
-  // #17 review (4): hits the diary POST would refuse.
+  // Hits the diary POST would refuse.
   it("treats a negative nutrient as unknown, and a negative energy as no energy", () => {
     const hit = mapSearchHit({ code: "1", product_name: "Bar", nutriments: { "energy-kcal_100g": 400, proteins_100g: 5, fat_100g: -2, sugars_100g: -1 } });
     expect(hit?.per100g).toMatchObject({ kcal: 400, p: 5, f: 0, sugar: null });
@@ -190,7 +190,7 @@ describe("Open Food Facts mapping limits", () => {
 });
 
 describe("Open Food Facts impossible values", () => {
-  // Final review: real products list values that cannot be true - 59,000 kcal
+  // Real products list values that cannot be true - 59,000 kcal
   // per 100 g, or 112 g of carbohydrate in 100 g - and the diary POST refuses
   // some of them outright. Impossible core values leave the hit out; impossible
   // label values become unknown.
@@ -206,7 +206,7 @@ describe("Open Food Facts impossible values", () => {
 });
 
 describe("Open Food Facts query text", () => {
-  // #17 review (15): "(light" or "brand:x" was Lucene syntax, and the error
+  // "(light" or "brand:x" was Lucene syntax, and the error
   // read as "Branded foods are unavailable".
   it("sends the user's words as text, not query syntax", async () => {
     const calls = stubOff(() => ({ hits: [] }));
@@ -216,7 +216,7 @@ describe("Open Food Facts query text", () => {
 });
 
 describe("CoFID search size", () => {
-  // #17 review (16): the spec asks for 20 generic foods; the code returned 15.
+  // Search offers up to 20 generic foods; the code once returned 15.
   it("returns up to 20 generic foods", async () => {
     for (let i = 1; i <= 22; i++) {
       await pool.query(

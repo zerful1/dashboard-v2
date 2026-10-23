@@ -36,7 +36,7 @@ describe("deriveWeightSummary", () => {
 });
 
 // The chart's y-range is the data ± 1 kg. A goal far outside it used to stretch
-// the axis to reach it and squash the line flat (redesign review); now it is
+// the axis to reach it and squash the line flat; now it is
 // drawn only inside the range, and named beside the chart otherwise.
 describe("goalPlacement", () => {
   const pts = [{ date: "2026-09-01", kg: 84 }, { date: "2026-10-01", kg: 80.6 }];
@@ -58,7 +58,7 @@ describe("goalPlacement", () => {
   });
 });
 
-describe("deriveWeightSummary: redesign part 5", () => {
+describe("deriveWeightSummary: the 7-day average and the rate", () => {
   it("averages the weigh-ins of the 7 days ending today", () => {
     // 8 Aug is 7 days back: outside the window.
     const s = deriveWeightSummary([e("2026-08-08", 90), e("2026-08-09", 82), e("2026-08-15", 84)], TODAY);

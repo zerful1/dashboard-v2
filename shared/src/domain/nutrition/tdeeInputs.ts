@@ -84,7 +84,7 @@ export function tdeeFromLog(i: {
   return kcal === null ? null : { kcal, daysLogged, weighIns: weights.length }
 }
 
-/** The range an adaptive estimate must fall in to be shown (#17 review 10). */
+/** The range an adaptive estimate must fall in to be shown. */
 export const ADAPTIVE_TDEE_MIN = 1200
 export const ADAPTIVE_TDEE_MAX = 5000
 /** How far from the formula estimate it may stray, when there is one. */

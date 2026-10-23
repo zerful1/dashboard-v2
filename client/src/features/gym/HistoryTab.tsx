@@ -15,7 +15,7 @@ import { SessionDetailSheet } from "./SessionDetailSheet";
 const counts = (s: SessionSummary) =>
   s.sets === 0 ? "Cardio" : `${s.lifts} lift${s.lifts === 1 ? "" : "s"} · ${s.sets} set${s.sets === 1 ? "" : "s"}`;
 
-/** History (redesign part 3b, §5): how regularly you train, then every session. */
+/** History: how regularly you train, then every session. */
 export function HistoryTab({ onEditInLog }: { onEditInLog: (s: WorkoutSession) => void }) {
   const today = useToday();
   const [dayName, setDayName] = useState<string | null>(null);

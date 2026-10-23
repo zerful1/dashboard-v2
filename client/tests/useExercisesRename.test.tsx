@@ -16,7 +16,7 @@ const wrapper = (client: QueryClient) => ({ children }: { children: ReactNode })
 afterEach(() => vi.restoreAllMocks());
 
 describe("useExercises rename", () => {
-  // Insights part 2 review: lift goals move with a rename on the server, so the
+  // Lift goals move with a rename on the server, so the
   // Goals section must refetch, or it keeps showing the old name.
   it("refreshes goals after a rename", async () => {
     vi.spyOn(apiModule, "api").mockImplementation(async (path: string, init?: RequestInit) => {

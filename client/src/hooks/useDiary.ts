@@ -62,7 +62,7 @@ export function useDiary(
   const rescaleEntry = useMutation({
     mutationFn: ({ id, quantity }: { id: string; quantity: number }) => nutritionApi.rescaleEntry(id, quantity),
     onMutate: async ({ id, quantity }) => {
-      // The day this edit belongs to, for the rollback (#17 review 3).
+      // The day this edit belongs to, for the rollback.
       const day = key;
       await qc.cancelQueries({ queryKey: day });
       const previous = qc.getQueryData<FoodLogEntry[]>(day);
@@ -91,7 +91,7 @@ export function useDiary(
   const removeEntry = useMutation({
     mutationFn: nutritionApi.removeEntry,
     onMutate: async (id: string) => {
-      // The day this delete belongs to, for the rollback (#17 review 3).
+      // The day this delete belongs to, for the rollback.
       const day = key;
       await qc.cancelQueries({ queryKey: day });
       const previous = qc.getQueryData<FoodLogEntry[]>(day);

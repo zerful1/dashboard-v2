@@ -3,7 +3,7 @@ import { cn } from "@/lib/cn";
 import type { DaySummary, MacroBar } from "./deriveDay";
 
 /**
- * The open day (redesign part 4, §4): what's left, or eaten with no target, in
+ * The open day: what's left, or eaten with no target, in
  * Home's figure, over the macro bars.
  */
 export function DayFigure({ summary, onSetTargets }: { summary: DaySummary; onSetTargets: () => void }) {
@@ -45,7 +45,7 @@ export function DayFigure({ summary, onSetTargets }: { summary: DaySummary; onSe
 function MacroMeter({ bar }: { bar: MacroBar }) {
   const ratio = bar.target > 0 ? bar.eaten / bar.target : 0;
   // Over target the bar is full: white up to the target's notch, amber stripes
-  // past it (redesign spec §5.7). Otherwise the fill is the share eaten.
+  // past it. Otherwise the fill is the share eaten.
   const targetPct = bar.over && ratio > 0 ? 100 / ratio : 100;
   const fillPct = bar.over ? targetPct : Math.min(100, ratio * 100);
   return (

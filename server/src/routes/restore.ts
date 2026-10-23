@@ -52,7 +52,7 @@ function restoreRoute(dryRun: boolean) {
 }
 
 // Preview runs the identical restore and rolls back, so its numbers are what
-// the restore will do (redesign part 8, §6.4).
+// the restore will do.
 restoreRouter.post("/preview", restoreRoute(true));
 restoreRouter.post("/", restoreRoute(false));
 

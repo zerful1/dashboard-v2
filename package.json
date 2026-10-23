@@ -8,13 +8,12 @@
     "client"
   ],
   "engines": {
-    "node": ">=20"
+    "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
     "build": "npm run build -w @dashboard/shared && npm run build -w @dashboard/client",
     "typecheck": "npm run build -w @dashboard/shared && npm run typecheck --workspaces --if-present && tsc -p tsconfig.json --noEmit",
     "test": "npm run build -w @dashboard/shared && npm run test --workspaces --if-present",
-    "dev": "npm run dev -w @dashboard/server",
     "dev:api": "npm run dev -w @dashboard/server",
     "dev:web": "npm run dev -w @dashboard/client",
     "dev:web:lan": "npm run dev -w @dashboard/client -- --host",

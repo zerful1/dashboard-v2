@@ -13,7 +13,7 @@ interface DetectorClass {
  * The browser's own BarcodeDetector when it reads all four formats (Android
  * Chrome); otherwise ZXing compiled to WebAssembly (iPhone, desktop). The
  * fallback loads only here, on the first scan, and its .wasm is this app's own
- * file - rsbuild.config.ts copies it under /static/wasm - never a CDN's (spec §3).
+ * file - rsbuild.config.ts copies it under /static/wasm - never a CDN's.
  */
 export async function createDetector(): Promise<Detector> {
   const native = (globalThis as { BarcodeDetector?: DetectorClass }).BarcodeDetector;

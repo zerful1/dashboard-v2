@@ -52,7 +52,7 @@ describe("GET /api/food/barcode/:code", () => {
     await agent.get("/api/food/barcode/1234567").expect(400);
   });
 
-  // Review focus 2: a food scanned or added before comes back as saved, from
+  // A food scanned or added before comes back as saved, from
   // the library, without asking Open Food Facts.
   it("finds the caller's own food first, as the item itself", async () => {
     const urls = stubProducts({});
@@ -72,7 +72,7 @@ describe("GET /api/food/barcode/:code", () => {
     expect(res.body.message).toBe("That barcode isn't in Open Food Facts");
   });
 
-  // Review focus 3: a real product, with its serving in ml.
+  // A real product, with its serving in ml.
   it("maps a real Open Food Facts product, serving size included", async () => {
     stubProducts({ "5000112548167": COKE });
     const agent = await signedIn(alice);
@@ -84,7 +84,7 @@ describe("GET /api/food/barcode/:code", () => {
     expect(serving.kcal).toBeCloseTo(body.hit.per100g.kcal * 2.5, 5);
   });
 
-  // Final review I2: the amount step's serving list starts with the packet's
+  // The amount step's serving list starts with the packet's
   // serving, as a saved food's does, not with "100 g".
   it("lists the label serving before 100 g", async () => {
     stubProducts({ "5000112548167": COKE });
@@ -109,14 +109,13 @@ describe("GET /api/food/barcode/:code", () => {
     expect((await agent.get("/api/food/barcode/5099999999999").expect(404)).body.message).toBe("That barcode isn't in Open Food Facts");
   });
 
-  // Review focus 4.
   it("answers 502 when Open Food Facts can't be reached", async () => {
     stubProducts({ "5000112548167": new TypeError("fetch failed") });
     const agent = await signedIn(alice);
     expect((await agent.get("/api/food/barcode/5000112548167").expect(502)).body.message).toBe("Product lookup is unavailable right now");
   });
 
-  // Review focus 5, as Open Food Facts really behaves (final review I3, checked
+  // As Open Food Facts really behaves (checked
   // live 2026-10-05): asked for a 12-digit UPC-A, it answers with the product
   // under its own 13-digit code. That is the id text search gives the product
   // too, so a food first saved from search is updated by a scan, not duplicated.

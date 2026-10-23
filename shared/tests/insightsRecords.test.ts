@@ -39,7 +39,7 @@ describe('recordEvents', () => {
     expect(events).toEqual([{ date: '2026-09-16', exercise_name: 'Pull Ups', reps: { reps: 6, previous: 5 } }])
   })
 
-  // Review focus 2: bodyweight for months, then a first weighted set.
+  // Bodyweight for months, then a first weighted set.
   it("treats each measure's first appearance as its baseline", () => {
     const events = recordEvents([
       row('2026-05-05', '45 Extension', 0, 15, true),

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { LIFT_TICK, liftDomain, liftTick } from "../src/features/weight/WeightChart";
 
-// Final review: a fixed "dataMin - 2" domain gave decimal ticks such as 128.7,
+// A fixed "dataMin - 2" domain gave decimal ticks such as 128.7,
 // whose leading digit the margin clipped, so heavy lifts mislabelled their axis.
 describe("LiftChart's axis", () => {
   it("rounds the domain to whole numbers around the data", () => {

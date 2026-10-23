@@ -7,7 +7,7 @@ import { orderRecords, recordLine } from "./recordLine";
 const SHOWN = 5;
 
 /**
- * A block of records (redesign part 6, §4): one line each, biggest jump first,
+ * A block of records: one line each, biggest jump first,
  * 5 shown and the rest behind "N more". The parent changes `key` to close it.
  */
 export function RecordList({ title, events, empty }: { title: string; events: RecordEvent[]; empty: string }) {

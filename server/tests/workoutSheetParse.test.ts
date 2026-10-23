@@ -89,7 +89,7 @@ describe("parseWorkoutSheet", () => {
     ]);
   });
 
-  // Left | right on a single-sided lift (the user, 2026-10-03): both kept, the lower counts.
+  // Left | right on a single-sided lift (decided 2026-10-03): both kept, the lower counts.
   it('reads "6 | 5" reps as left 6, right 5, counting 5', () => {
     const { workouts, notes } = parseWorkoutSheet([
       session("24082026", { C6: "Pull", B10: "Unilateral Machine Preacher Curl", C10: 17.5, D10: "6 | 5" }),
@@ -128,8 +128,8 @@ describe("parseWorkoutSheet", () => {
     expect(notes).toEqual(["2026-08-24 Unilateral Machine Row: on two rows; numbered as one exercise, sets 1-3"]);
   });
 
-  // The user, 2026-10-03: the 63 kg row on 24 Aug "isn't supposed to be
-  // unilateral". A fix for one row of one tab, not for the name everywhere.
+  // Corrected 2026-10-03: the 63 kg row on 24 Aug isn't supposed to be
+  // unilateral. A fix for one row of one tab, not for the name everywhere.
   it("corrects a single row's exercise name, and only that row", () => {
     const { workouts, notes } = parseWorkoutSheet(
       [

@@ -35,7 +35,7 @@ describe('trendWeightChange', () => {
 describe('tdeeFromLog', () => {
   const flat = Array.from({ length: 28 }, (_, n) => ({ date: day(n), weight_kg: 80 }))
 
-  // The trap the spec names: averageDailyIntake divides by EVERY day. Swapped
+  // The trap: averageDailyIntake divides by EVERY day. Swapped
   // in here it gives 1000 and this test fails.
   it('divides intake by days with food, not by the window', () => {
     const entries = Array.from({ length: 14 }, (_, k) => ({ date: day(k * 2), calories: 2000 }))

@@ -94,7 +94,7 @@ const shown = (v: Cell) => (typeof v === "string" ? v.trim() : String(v));
 const name = (v: Cell) => (isEmpty(v) ? null : shown(v).replace(/\s+/g, " "));
 
 /**
- * Whole reps, or "a | b": left | right on a single-sided lift (the user,
+ * Whole reps, or "a | b": left | right on a single-sided lift (decided
  * 2026-10-03). Both sides are kept, and the reps that count are the lower.
  */
 function readReps(v: Cell): { reps: number; left: number | null; right: number | null } | null {
@@ -106,7 +106,7 @@ function readReps(v: Cell): { reps: number; left: number | null; right: number |
   return left > 0 && right > 0 ? { reps: Math.min(left, right), left, right } : null;
 }
 
-/** Corrections the user gave for single rows: date, then sheet row, then the right name. */
+/** Known corrections for single rows: date, then sheet row, then the right name. */
 export type RowFixes = Record<string, Record<number, string>>;
 
 function parseTab(

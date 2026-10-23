@@ -22,8 +22,8 @@ import { gymApi } from "@/api/gym";
 const RECENT_LIMIT = 20;
 
 /**
- * Everything Home shows for `today`, and what claims its top slot (redesign
- * part 2). One isPending covers EVERY source it reads: the top slot is a
+ * Everything Home shows for `today`, and what claims its top slot. One
+ * isPending covers EVERY source it reads: the top slot is a
  * conclusion, and drawn from a half-loaded day it flashes the wrong hero
  * (CLAUDE.md, isPending not isLoading). The split is in the gate because
  * useSplit returns DEFAULT_SPLIT until it loads, so an unloaded split names a
@@ -45,7 +45,7 @@ export function useHomeDay(today: string) {
   });
 
   const home = useMemo(() => deriveHome(split, sessions.data ?? [], today), [split, sessions.data, today]);
-  // Which workout today is (redesign part 3a, §5): a session already logged
+  // Which workout today is: a session already logged
   // today wins over the schedule. Until the sessions arrive this is the
   // scheduled day, so its queries start at once; the gate holds the slot.
   const workoutToday = useMemo(

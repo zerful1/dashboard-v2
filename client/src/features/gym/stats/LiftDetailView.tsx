@@ -11,7 +11,7 @@ import { liftBadge, TONE } from "./liftBadge";
 
 const RECENT = 5;
 
-/** One lift (redesign part 3b, §4): its best, its trend, and its recent sessions set by set. */
+/** One lift: its best, its trend, and its recent sessions set by set. */
 export function LiftDetailView({ name, today, onBack }: { name: string; today: string; onBack: () => void }) {
   const { detail, isPending, isError } = useLiftDetail(name, today);
   const [all, setAll] = useState(false);

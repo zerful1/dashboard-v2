@@ -31,7 +31,7 @@ function LiftRow({ lift, today, onOpen }: { lift: LiftProgress; today: string; o
   );
 }
 
-/** Every lift by trend (redesign part 3b, §3), with search; lifts not trained lately fold away. */
+/** Every lift by trend, with search; lifts not trained lately fold away. */
 export function LiftsOverview({ today, search, onSearch, unfolded, onUnfold, onOpen }: {
   today: string;
   search: string;

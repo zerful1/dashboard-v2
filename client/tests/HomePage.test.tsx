@@ -124,7 +124,7 @@ afterEach(() => {
 });
 
 describe("HomePage, today at a glance", () => {
-  // Review focus 1. While auth resolves every query is disabled, and a disabled
+  // While auth resolves every query is disabled, and a disabled
   // query reports isLoading false: Home once painted a confident day from
   // DEFAULT_SPLIT and zero sessions, then the spinner, then the truth.
   it("shows no top slot and no day until everything has arrived", async () => {
@@ -167,7 +167,7 @@ describe("HomePage, today at a glance", () => {
     expect(screen.getByRole("link", { name: /^start$/i })).toBeInTheDocument();
   });
 
-  // Review focus 3: the hand-over happens without a refresh.
+  // The hand-over happens without a refresh.
   it("logs a weight from Home against today, and hands the top slot to the workout", async () => {
     freeze(WED);
     const calls = mockApi({ weights: [weighIn("2026-08-25", 81)] });
@@ -178,7 +178,7 @@ describe("HomePage, today at a glance", () => {
     expect(await screen.findByRole("link", { name: /start workout/i })).toBeInTheDocument();
   });
 
-  // Housekeeping item 22. The optimistic weigh-in hands the slot to the workout,
+  // The optimistic weigh-in hands the slot to the workout,
   // unmounting the field; the rollback hands it back, and the field remounts.
   // The failure is held until the field has gone: one that rejects at once rolls
   // back before React draws the optimistic weigh-in, so the field never unmounts
@@ -199,7 +199,7 @@ describe("HomePage, today at a glance", () => {
     await waitFor(() => expect(screen.getByLabelText("Today's weight (kg)")).toHaveValue("80.4"));
   });
 
-  // Housekeeping item 27: the habits card mounts after the spinner, so its
+  // The habits card once mounted after the spinner, so its
   // query started last and the card popped in after everything else.
   it("starts today's habits with the rest of the day, not after it", async () => {
     freeze(WED);
@@ -288,7 +288,7 @@ describe("HomePage, today at a glance", () => {
     expect(await screen.findByRole("button", { name: "Mark Skincare done" })).toBeInTheDocument();
   });
 
-  // Review focus 5: one filled white action in every state.
+  // One filled white action in every state.
   it.each<[string, Overrides]>([
     ["weigh-in", { weights: [weighIn("2026-08-25")] }],
     ["workout", { weights: [weighIn(WED)] }],
@@ -302,7 +302,7 @@ describe("HomePage, today at a glance", () => {
     cleanup();
   });
 
-  // Review focus 2: an app left open rolls to the new day.
+  // An app left open rolls to the new day.
   it("rolls over at midnight, and puts the weigh-in back on top", async () => {
     freeze(WED);
     mockApi({ weights: [weighIn(WED)] });

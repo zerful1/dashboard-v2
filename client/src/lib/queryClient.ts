@@ -22,7 +22,7 @@ import { MAX_AGE } from "@/lib/persister";
 /**
  * A failed write's message. Offline, it says so: the banner beside it already
  * says changes won't save, and "Something went wrong" read as a different,
- * unexplained fault (#17 review 53).
+ * unexplained fault.
  */
 export function writeFailureMessage(err: unknown): string {
   // api() gave up waiting (dead wifi, a captive portal). Not "not saved", as

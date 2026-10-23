@@ -43,7 +43,7 @@ describe("stats endpoint", () => {
     await request(app).get("/api/workouts/stats?exercise_name=X").expect(401);
   });
 
-  // The user's call: progress counts the weaker side.
+  // Progress counts the weaker side.
   it("counts the weaker side of a single-sided set, and returns both", async () => {
     const agent = await signedIn(alice);
     await agent

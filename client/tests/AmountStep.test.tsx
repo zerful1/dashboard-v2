@@ -19,11 +19,11 @@ describe("AmountStep", () => {
     expect(screen.getByText(/304 kcal/)).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Add" }));
-    // Review focus 5: the chosen day, not today.
+    // The chosen day, not today.
     expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ date: "2026-09-20", quantity: 80, calories: 304 }));
   });
 
-  // Review focus 3: iPhone keypads in some regions type a decimal comma.
+  // iPhone keypads in some regions type a decimal comma.
   it("accepts a decimal comma and refuses an empty or non-numeric amount", async () => {
     const onAdd = vi.fn();
     render(<AmountStep choice={hitToChoice(oats)} date="2026-09-20" onAdd={onAdd} onBack={() => {}} />);
@@ -71,7 +71,6 @@ describe("AmountStep", () => {
     expect(onAdd).toHaveBeenCalledTimes(1);
   });
 
-  // #17 review (7): phase 1's spec §3 asked for label nutrients in the preview.
   it("previews the label nutrients, with a dash for what's unknown", () => {
     const labels = { fibre: 9, satFat: 1.2, salt: 0.3 };
     const labelled: FoodHit = { ...oats, servings: [{ ...oats.servings[0]!, ...labels }], per100g: { ...per100g, ...labels } };

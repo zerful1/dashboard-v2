@@ -209,7 +209,7 @@ workoutsRouter.get(
   },
 );
 
-/** The Stats overview (redesign part 3b, §2): every lift's status as of the client's today. The server is UTC. */
+/** The Stats overview: every lift's status as of the client's today. The server is UTC. */
 workoutsRouter.get(
   "/progress",
   validate({ query: z.object({ today: isoDate }) }),

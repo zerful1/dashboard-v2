@@ -29,7 +29,7 @@ function externalFontRefs(text: string): string[] {
   return patterns.flatMap((p) => text.match(p) ?? []);
 }
 
-describe("fonts (redesign spec §4)", () => {
+describe("fonts", () => {
   it("recognises a remote font however it is loaded, and not a bundled one", () => {
     for (const remote of [
       '@import url("https://rsms.me/inter/inter.css");',

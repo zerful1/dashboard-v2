@@ -42,7 +42,7 @@ describe("WeekRows", () => {
     expect(screen.getByText("2,500")).toHaveClass("text-caution");
   });
 
-  // Final review: with no target, "No day over target" is a false statement.
+  // With no target, "No day over target" is a false statement.
   it("tells a screen reader nothing about targets when there is none", () => {
     const { rerender } = render(<WeekRows review={review()} goalKg={null} />);
     expect(screen.getByText("No day over target")).toBeInTheDocument();
@@ -93,7 +93,6 @@ describe("foodBar", () => {
   it("draws nothing for a day with nothing logged", () => {
     expect(foodBar(null, 2400, 3000)).toBeNull();
   });
-  // Review focus 4.
   it("scales to the largest day without a target, with nothing over", () => {
     expect(foodBar(1500, null, 3000)).toEqual({ fill: 50, over: 0 });
   });
@@ -117,7 +116,6 @@ describe("weightPoints", () => {
     // 0.2 kg apart on a 1 kg scale: a small step, not the full height.
     expect(Math.abs(pts[1]!.y - pts[0]!.y)).toBeLessThan(6);
   });
-  // Review focus 3.
   it("places a single weigh-in in the middle", () => {
     const pts = weightPoints([0, 1, 2, 3, 4, 5, 6].map((i) => day(i, { weightKg: i === 3 ? 80 : null })));
     expect(pts).toEqual([{ x: 35, y: 14 }]);

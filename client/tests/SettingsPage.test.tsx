@@ -112,7 +112,7 @@ describe("SettingsPage", () => {
     renderPage();
 
     const retry = await screen.findByRole("button", { name: /try again/i });
-    // Restyled like Insights (redesign part 8): red words, an outline retry.
+    // Restyled like Insights: red words, an outline retry.
     expect(screen.getByRole("alert")).toHaveClass("text-negative");
     expect(retry).toHaveClass("border-edge");
 
@@ -140,7 +140,7 @@ describe("SettingsPage data export", () => {
   });
 });
 
-describe("SettingsPage, redesigned (part 8)", () => {
+describe("SettingsPage, redesigned", () => {
   it("is headed Settings, with its sections in order", async () => {
     mockWithDelete();
     renderPage();

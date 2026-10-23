@@ -25,7 +25,7 @@ describe("profile", () => {
     expect(res.body.timezone).toBe("Europe/London");
   });
 
-  // Settings redesign (part 8): nothing read them, so they went.
+  // Settings redesign: nothing read them, so they went.
   it("no longer has display_name, units or avatar_path", async () => {
     const agent = request.agent(app);
     await agent.post("/api/auth/register").send(alice);

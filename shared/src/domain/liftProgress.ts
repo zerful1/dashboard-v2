@@ -1,6 +1,6 @@
 import { daysBetweenISO, shiftISO } from './date'
 
-/** One logged set, as the lift stats read it (redesign part 3b, §2). */
+/** One logged set, as the lift stats read it. */
 export interface LiftSetRow {
   session_id: string
   date: string
@@ -66,13 +66,13 @@ export interface LiftDetail {
   /** The all-time best, only when it beats the span's (or the span has none). */
   allTime: DatedSet | null
   points: LiftChartPoint[]
-  /** The span held no session, so the chart is the lift's whole history (the user's call, 2026-10-07). */
+  /** The span held no session, so the chart is the lift's whole history (decided 2026-10-07). */
   chartAll: boolean
   /** Every session of the lift, newest first, its sets in order. */
   sessions: LiftSession[]
 }
 
-/** The windows (§2), counted back from `today`, inclusive. */
+/** The windows, counted back from `today`, inclusive. */
 const RECENT_DAYS = 42
 const PRIOR_DAYS = 182
 const OLD_DAYS = 56
@@ -128,7 +128,7 @@ export function sessionBests(sets: LiftSetRow[]): { bodyweightOnly: boolean; ses
   return { bodyweightOnly, sessions }
 }
 
-/** One lift's status (§2) from its session bests, oldest first, and its last date. */
+/** One lift's status from its session bests, oldest first, and its last date. */
 export function liftStatus(name: string, sessions: SessionBest[], lastDate: string, today: string): LiftProgress {
   const { recentStart, priorStart } = windows(today)
   const span = sessions.filter((s) => s.date >= priorStart && s.date <= today)
@@ -154,14 +154,14 @@ export function liftStatus(name: string, sessions: SessionBest[], lastDate: stri
   }
 }
 
-/** Every lift's status (§2): the Stats overview, the most recently trained first. */
+/** Every lift's status: the Stats overview, the most recently trained first. */
 export function liftProgress(rows: LiftSetRow[], today: string): LiftProgress[] {
   return [...groupBy(rows, (r) => r.exercise_name).entries()]
     .map(([name, sets]) => liftStatus(name, sessionBests(sets).sessions, lastDateOf(sets), today))
     .sort((a, b) => b.lastDate.localeCompare(a.lastDate) || a.name.localeCompare(b.name))
 }
 
-/** One lift's detail (§4), from its sets, by the same rule as the overview. */
+/** One lift's detail, from its sets, by the same rule as the overview. */
 export function liftDetail(name: string, sets: LiftSetRow[], today: string): LiftDetail | null {
   if (sets.length === 0) return null
   const { bodyweightOnly, sessions: bests } = sessionBests(sets)

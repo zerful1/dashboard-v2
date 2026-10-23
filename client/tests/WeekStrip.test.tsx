@@ -28,7 +28,7 @@ function renderStrip(over: Partial<Props> = {}) {
 const bar = (name: RegExp) => screen.getByRole("button", { name });
 const summary = () => screen.getByText(/^Last 7 days$|–/).parentElement!;
 
-describe("WeekStrip (redesign part 4, §3)", () => {
+describe("WeekStrip", () => {
   it("shows the seven days ending today, with the open day pressed", () => {
     renderStrip();
     const days = within(screen.getByRole("group", { name: "Last 7 days" })).getAllByRole("button");
@@ -108,7 +108,7 @@ describe("WeekStrip (redesign part 4, §3)", () => {
     expect(props.onPrev).toHaveBeenCalled();
   });
 
-  // Review focus 1: offline on a new day, today comes from yesterday's answer.
+  // Offline on a new day, today comes from yesterday's answer.
   it("leaves today unknown, not empty, when it comes from yesterday's answer", () => {
     renderStrip({ strip: weekStrip(TOTALS.slice(0, 3), [cut], WED, WED), todayUnknown: true });
     const wed = bar(/^Wednesday 7 October/);

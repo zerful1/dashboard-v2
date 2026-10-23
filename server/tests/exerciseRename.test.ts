@@ -154,7 +154,7 @@ describe("exercise rename cascade", () => {
   });
 });
 
-// Insights part 2 review: a lift goal matches its exercise by name, so a rename
+// A lift goal matches its exercise by name, so a rename
 // that left it behind cut it off from its history ("0 of 6 sessions" for good).
 describe("rename carries lift goals", () => {
   it("moves a lift goal to the new name", async () => {

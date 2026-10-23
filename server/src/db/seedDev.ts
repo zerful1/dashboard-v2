@@ -199,7 +199,7 @@ const ERA_2: Record<number, DayPlan> = {
  * The exercises TEMPLATE, i.e. what the Log tab offers today.
  *
  * Intentionally narrower than the history: every era-1 lift is absent, so the
- * stats picker lists names the template cannot reach. That gap is the Phase 7
+ * stats picker lists names the template cannot reach. That gap is the Stats
  * behaviour worth being able to see.
  */
 const TEMPLATE: Record<number, string[]> = {

@@ -128,7 +128,7 @@ describe("useWeights", () => {
     expect(typeof result.current.entries[0]!.date).toBe("string");
   });
 
-  // #17 review (16): a weigh-in moves the adaptive estimate, but the hint kept the old one.
+  // A weigh-in moves the adaptive estimate, but the hint kept the old one.
   it("refreshes the TDEE estimate after a weigh-in", async () => {
     vi.spyOn(apiModule, "api").mockImplementation(async (_path: string, init?: RequestInit) =>
       (init?.method === "POST" ? entry("2026-09-22", 78) : []) as never);

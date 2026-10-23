@@ -147,7 +147,7 @@ export function GymPage() {
             // jumpTo sets both AND latches, so a slow lastLoggedDay query cannot
             // pull the user back to today's rotation slot after the hand-off.
             // A plain selectDay + selectDate pair would reintroduce exactly the
-            // v1 bug phase 6 fixed.
+            // v1 bug jumpTo fixed.
             jumpTo(s.day_type, s.date);
             setTab("log");
           }}

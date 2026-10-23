@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/Button";
 import { DateEyebrow } from "@/components/ui/DateEyebrow";
 
-/** Food's header (redesign part 4, §2): the open day as the eyebrow, Targets on the right. */
+/** Food's header: the open day as the eyebrow, Targets on the right. */
 export function FoodHeader({
   date,
   today,

@@ -34,7 +34,7 @@ describe("habits", () => {
     await agent.post("/api/habits").send({ name: "   " }).expect(400);
   });
 
-  // Browser pass: the app sends emoji: null for "no emoji", and the add
+  // The app sends emoji: null for "no emoji", and the add
   // schema took only a string or nothing.
   it("adds a habit sent with emoji null, as the app sends it", async () => {
     const agent = await signedIn(alice);
@@ -64,7 +64,6 @@ describe("habits", () => {
     expect((await list(agent, "2026-10-04"))[0]!.streak).toBe(1);
   });
 
-  // Review focus 2.
   it("marks and unmarks a day idempotently", async () => {
     const agent = await signedIn(alice);
     const h = await add(agent, "Skincare");
@@ -86,7 +85,6 @@ describe("habits", () => {
     await agent.patch(`/api/habits/${h.id}`).send({}).expect(400);
   });
 
-  // Review focus 5.
   it("reorders by the full list only", async () => {
     const agent = await signedIn(alice);
     const [a, b, c] = [await add(agent, "A"), await add(agent, "B"), await add(agent, "C")];
@@ -98,8 +96,8 @@ describe("habits", () => {
     await agent.post("/api/habits/reorder").send({ ids: [a.id, b.id, a.id] }).expect(400);
   });
 
-  // A restore adds habits back without the 12 limit (redesign part 8, §6.4), so
-  // the list can be longer; reordering it must still work.
+  // A restore adds habits back without the 12 limit, so the list
+  // can be longer; reordering it must still work.
   it("reorders a list longer than 12, as a restore can leave", async () => {
     const agent = await signedIn(alice);
     for (let i = 0; i < 12; i++) await add(agent, `H${i}`);
@@ -119,7 +117,6 @@ describe("habits", () => {
     await agent.delete(`/api/habits/${h.id}`).expect(404);
   });
 
-  // Review focus 1.
   it("keeps every habit to its owner", async () => {
     const a = await signedIn(alice);
     const h = await add(a, "Skincare");

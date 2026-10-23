@@ -25,7 +25,7 @@ const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
 /**
  * "Since 24 Jun 2026: 108 weigh-ins · 71 sessions · …", numbers white and
- * words muted; zero parts are left out (redesign part 8, §4).
+ * words muted; zero parts are left out.
  */
 function SummaryLine({ s }: { s: DataSummary }) {
   const parts = [

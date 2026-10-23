@@ -5,7 +5,7 @@ import { NotFoundPage } from "../src/pages/NotFoundPage";
 import { NAV_ITEMS } from "../src/layout/navItems";
 
 describe("NotFoundPage", () => {
-  // Housekeeping PR 1: an old /media link lands here, inside the app.
+  // An old /media link lands here, inside the app.
   it("says the page doesn't exist, with a way home", () => {
     render(
       <MemoryRouter initialEntries={["/media"]}>

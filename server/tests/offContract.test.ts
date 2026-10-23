@@ -15,7 +15,7 @@ const fixture = JSON.parse(
 ) as { hits: OffProduct[] };
 
 describe("Open Food Facts contract", () => {
-  // #17 review (4): nothing proved a real hit could be logged end to end.
+  // From #17: nothing proved a real hit could be logged end to end.
   it("logs every hit the mapping lets through", async () => {
     const hits = fixture.hits.map(mapSearchHit).filter((h): h is FoodHit => h !== null);
     expect(hits.length).toBeGreaterThan(10);

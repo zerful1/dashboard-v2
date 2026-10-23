@@ -112,9 +112,9 @@ describe("GymPage sub-tabs and hand-off", () => {
   });
 
   it("the hand-off survives a late lastLoggedDay resolving", async () => {
-    // The v1 bug phase 6 fixed, re-asserted at the page level: jumpTo latches,
-    // so the fallback cannot pull the user back to today's rotation slot. A
-    // plain selectDay + selectDate pair would not latch and would regress this.
+    // A v1 bug, re-asserted at the page level: jumpTo latches, so the fallback
+    // cannot pull the user back to today's rotation slot. A plain selectDay +
+    // selectDate pair would not latch and would regress this.
     let resolveLastLogged!: (v: unknown) => void;
     const lastLoggedPromise = new Promise<unknown>((r) => {
       resolveLastLogged = r;

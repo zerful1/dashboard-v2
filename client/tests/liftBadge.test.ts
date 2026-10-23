@@ -6,7 +6,7 @@ const p = (over: Partial<LiftProgress>): LiftProgress => ({
   name: "Row", status: "stalled", best: null, change: null, weeksSinceBest: null, lastDate: "2026-10-01", ...over,
 });
 
-describe("liftBadge (redesign part 3b, §3)", () => {
+describe("liftBadge", () => {
   it("reads each status, in its signal colour", () => {
     expect(liftBadge(p({ status: "moving", change: 0.04 }))).toEqual({ text: "▲ 4%", tone: "good" });
     expect(liftBadge(p({ status: "moving", change: 0.004 }))).toEqual({ text: "▲ <1%", tone: "good" });

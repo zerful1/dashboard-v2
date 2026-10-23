@@ -13,7 +13,7 @@ vi.mock("@/auth/AuthProvider", () => ({
   useAuth: () => ({ user: { id: "u1", email: "a@b.com" }, loading: false }),
 }));
 
-/** The card reads the summary query now (redesign part 8), so it needs a client. */
+/** The card reads the summary query now, so it needs a client. */
 const renderCard = () =>
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -82,7 +82,6 @@ describe("YourDataCard", () => {
     expect(screen.getByRole("dialog", { name: "Restore from a download" })).toBeInTheDocument();
   });
 
-  // Review focus 5.
   it("says so when the download fails, saves nothing, and can be tried again", async () => {
     mockApi(async () => {
       throw new ApiError(500, "boom");

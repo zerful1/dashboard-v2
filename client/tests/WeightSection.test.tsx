@@ -28,7 +28,7 @@ function show(over: Partial<WeightSummary>, goal: { target_kg: number; start_kg:
   );
 }
 
-describe("Home's weight section (redesign part 5, §6)", () => {
+describe("Home's weight section", () => {
   it("shows Weight's rate under the latest weigh-in, green toward the goal", () => {
     show({});
     const rate = screen.getByText("−0.4 kg a week");

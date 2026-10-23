@@ -63,7 +63,7 @@ describe("writes made offline", () => {
     expect(toast.error).toHaveBeenCalledTimes(1);
   });
 
-  // #17 review (53): "Something went wrong" read as an unexplained fault beside
+  // "Something went wrong" read as an unexplained fault beside
   // a banner that already said changes won't save.
   it("say the device is offline", async () => {
     onlineManager.setOnline(false);
@@ -75,7 +75,7 @@ describe("writes made offline", () => {
     expect(toast.error).toHaveBeenCalledWith("You're offline — not saved");
   });
 
-  // Final review: TanStack's onlineManager starts online and changes only on an
+  // TanStack's onlineManager starts online and changes only on an
   // online/offline event, so an app opened with no signal (no event ever fires)
   // still showed "Something went wrong" beside the offline banner.
   it("say the device is offline when the app was opened with no signal", async () => {
@@ -92,7 +92,7 @@ describe("writes made offline", () => {
     }
   });
 
-  // Housekeeping item 28: a write that gave up after 15 s says so, rather than
+  // A write that gave up after 15 s says so, rather than
   // the bare "Timed out". Not "not saved": a slow write can still land after
   // the app gave up, and the refetch on settle shows whether it did.
   it("say a timed-out write may not have saved", async () => {
@@ -114,7 +114,7 @@ describe("writes made offline", () => {
   });
 });
 
-// #35's final review: TanStack's onlineManager starts online and changes only on
+// TanStack's onlineManager starts online and changes only on
 // an online/offline event, so an app opened with no signal fetched anyway, and
 // every query failed and toasted over the data it had saved.
 describe("an app opened with no signal", () => {

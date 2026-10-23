@@ -1,6 +1,6 @@
 /**
  * The tables a restore brings back, in the order it inserts them: every parent
- * before its children (redesign part 8, §6.3). The server's restore and the
+ * before its children. The server's restore and the
  * client's labels both read this list.
  */
 export const RESTORED_TABLES = [

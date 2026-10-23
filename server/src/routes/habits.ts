@@ -45,7 +45,7 @@ habitsRouter.post("/", validate({ body: addBody }), async (req, res, next) => {
 
 habitsRouter.post(
   "/reorder",
-  // No MAX_HABITS cap: a restore can leave more (redesign part 8, §6.4), and
+  // No MAX_HABITS cap: a restore can leave more, and
   // reorderHabits already refuses anything but the full list.
   validate({ body: z.object({ ids: z.array(z.string().uuid()) }) }),
   async (req, res, next) => {

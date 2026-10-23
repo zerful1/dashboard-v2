@@ -102,7 +102,7 @@ describe("food diary", () => {
     expect(await listDiary(id, "2026-09-21")).toHaveLength(2);
   });
 
-  // #17 review (9): a text-search hit carries no serving sizes, and logging it
+  // A text-search hit carries no serving sizes, and logging it
   // overwrote the serving data a product lookup had stored.
   it("keeps a saved food's serving data when the same food is logged without any", async () => {
     const { agent, id } = await signedIn(alice);
@@ -123,7 +123,7 @@ describe("food diary", () => {
     expect(rows).toEqual([{ serving_description: "1 bar (45 g)", serving_grams: 45, kcal_per_serving: 230, kcal_per_100g: 510 }]);
   });
 
-  // #17 review (14): copying across a clock change moved every entry by an hour.
+  // Copying across a clock change moved every entry by an hour.
   it("keeps the local time when copying across a clock change", async () => {
     const { agent, id } = await signedIn(alice); // profiles.timezone defaults to Europe/London
     const e = await addEntry(id, entry({ date: "2026-10-24", name: "Oats" }) as never);
@@ -134,7 +134,7 @@ describe("food diary", () => {
     expect(new Date(res.body[0].logged_at).toISOString()).toBe("2026-10-26T08:00:00.000Z");
   });
 
-  // Part 2: a scanned food keeps its barcode, so the next scan finds it in the library.
+  // A scanned food keeps its barcode, so the next scan finds it in the library.
   it("saves a food's barcode, and a later log without one keeps it", async () => {
     const { agent, id } = await signedIn(alice);
     const COKE = { ...OATS, source: "off", external_id: "5000112548167", name: "Coca-Cola Light", barcode: "5000112548167" };
@@ -149,7 +149,7 @@ describe("food diary", () => {
     await agent.post("/api/nutrition/diary").send(entry({ food: { ...OATS, barcode: "12ab" } })).expect(400);
   });
 
-  // Part 1 final review (M3): serving data is replaced whole or kept whole, so a
+  // Serving data is replaced whole or kept whole, so a
   // new serving's unknown label values never keep the old serving's.
   it("replaces a stored serving whole when a new one arrives", async () => {
     const { agent, id } = await signedIn(alice);
@@ -178,7 +178,7 @@ describe("food diary", () => {
   });
 });
 
-// Food's 7-day strip (redesign part 4, §5).
+// Food's 7-day strip.
 describe("food diary, day totals", () => {
   it("requires a session", async () => {
     await request(app).get("/api/nutrition/days?from=2026-09-15&to=2026-09-21").expect(401);
@@ -208,7 +208,7 @@ describe("food diary, day totals", () => {
     await agent.get("/api/nutrition/days?from=2026-09-01&to=2026-10-01").expect(200);
   });
 
-  // Review focus 2: shiftISO throws on a malformed date, and zod refines dirty input.
+  // shiftISO throws on a malformed date, and zod refines dirty input.
   it("answers a malformed date with 400, not 500", async () => {
     const { agent } = await signedIn(alice);
     await agent.get("/api/nutrition/days?from=21/09/2026&to=2026-09-21").expect(400);

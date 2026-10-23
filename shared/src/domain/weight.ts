@@ -18,7 +18,7 @@ export type PeriodKind = 'week' | 'month'
 /** 'before': a day of the first week before the first weigh-in, when there was no history to miss. */
 export type DayMark = 'weighed' | 'missed' | 'future' | 'before'
 
-/** A row of the Weight page's list (redesign part 5, §4), newest first. */
+/** A row of the Weight page's list, newest first. */
 export type PeriodRow =
   | {
       kind: 'period'
@@ -45,9 +45,9 @@ export function windowMean(points: WeighInPoint[], from: string, to: string): nu
 }
 
 /**
- * At each weigh-in, the mean of the weigh-ins in the 7 days ending on its date
- * (redesign part 5, §3). Looking back only, so the newest point never waits for
- * weigh-ins not yet made. Any input order; the result is oldest first.
+ * At each weigh-in, the mean of the weigh-ins in the 7 days ending on its date.
+ * Looking back only, so the newest point never waits for weigh-ins not yet
+ * made. Any input order; the result is oldest first.
  *
  * A sliding window: `lo` and `hi` only move forward, so it is linear in the
  * weigh-ins. Each window is summed afresh, in date order, as windowMean sums
@@ -82,8 +82,8 @@ const nextStart = (kind: PeriodKind, start: string) => (kind === 'week' ? shiftI
 /**
  * The weeks or months from the one holding `from` - or the first weigh-in, if
  * later: time before any history is not a gap - to the one holding today,
- * newest first (redesign part 5, §4). A run of empty periods folds into one
- * row; the current period never folds.
+ * newest first. A run of empty periods folds into one row; the current period
+ * never folds.
  */
 export function periodRows(points: WeighInPoint[], kind: PeriodKind, from: string, today: string): PeriodRow[] {
   if (points.length === 0) return []

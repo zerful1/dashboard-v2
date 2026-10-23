@@ -33,7 +33,7 @@ export function listDate(iso: string, today: string): string {
   return new Date(y!, m! - 1, d!).toLocaleDateString(undefined, opts);
 }
 
-/** "2 Oct", or "2 Mar 2025" outside today's year: a date in a list (redesign part 3b). */
+/** "2 Oct", or "2 Mar 2025" outside today's year: a date in a list. */
 export function shortDate(iso: string, today: string): string {
   const [y, m, d] = iso.split("-").map(Number);
   const opts: Intl.DateTimeFormatOptions =
@@ -62,7 +62,7 @@ export function rangeLabel(from: string, to: string, today: string): string {
   const [ty, tm, td] = to.split("-").map(Number);
   const year = (y: number) => (y === Number(today.slice(0, 4)) ? "" : ` ${y}`);
   // Across a year end the second year is named, always, and the first never:
-  // "29 Dec – 4 Jan 2026" (housekeeping item 5).
+  // "29 Dec – 4 Jan 2026".
   if (fy !== ty) return `${fd} ${MONTHS[fm! - 1]} – ${td} ${MONTHS[tm! - 1]} ${ty}`;
   if (fm !== tm) return `${fd} ${MONTHS[fm! - 1]} – ${td} ${MONTHS[tm! - 1]}${year(ty!)}`;
   return `${fd}–${td} ${MONTHS[tm! - 1]}${year(ty!)}`;
@@ -79,7 +79,7 @@ export function weekdayInitial(iso: string): string {
   return weekday(iso)[0]!;
 }
 
-/** "October", or "Sep 2025" outside today's year: a month in Weight's list (redesign part 5). */
+/** "October", or "Sep 2025" outside today's year: a month in Weight's list. */
 export function monthLabel(iso: string, today: string): string {
   const m = Number(iso.slice(5, 7)) - 1;
   return iso.slice(0, 4) === today.slice(0, 4) ? MONTHS_LONG[m]! : `${MONTHS[m]} ${iso.slice(0, 4)}`;

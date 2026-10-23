@@ -4,7 +4,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { gymApi, type CardioInput } from "@/api/gym";
 import { invalidateSessionReaders } from "./invalidate";
 
-/** One session's cardio, shared by the Gym page and Home (redesign part 3a, §5). */
+/** One session's cardio, shared by the Gym page and Home. */
 export function cardioQueryOptions(userId: string, sessionId: string | null) {
   return queryOptions({
     queryKey: ["cardio", userId, sessionId] as const,

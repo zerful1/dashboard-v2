@@ -88,11 +88,11 @@ describe("Scan tab", () => {
     expect(await screen.findByText("Coca-Cola Light")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Back" })).toBeInTheDocument();
     expect(calls).toContain(`/api/food/barcode/${CODE}`);
-    // Review focus 1: a read code stops the camera.
+    // A read code stops the camera.
     expect(stop).toHaveBeenCalled();
   });
 
-  // Review focus 2: logging a library food links to it, rather than storing a copy.
+  // Logging a library food links to it, rather than storing a copy.
   it("finds a food from the library as saved, and logs it against that item", async () => {
     stubCamera(["5012345678900"]);
     mockApi(async () => ({ source: "library", item: FLAPJACK }));
@@ -133,7 +133,7 @@ describe("Scan tab", () => {
     expect(calls).toContain(`/api/food/barcode/${CODE}`);
   });
 
-  // Review focus 4: a failed lookup says so, and typing stays available.
+  // A failed lookup says so, and typing stays available.
   it("says when the lookup is unavailable, and keeps the type-in box", async () => {
     stubCamera([CODE]);
     mockApi(async () => {
@@ -145,7 +145,7 @@ describe("Scan tab", () => {
     expect(screen.getByLabelText("Type the barcode")).toBeInTheDocument();
   });
 
-  // Review focus 1: the camera light must never stay on.
+  // The camera light must never stay on.
   it("stops the camera when the Scan tab is left", async () => {
     const { stop, getUserMedia } = stubCamera([]);
     mockApi(async () => ({ source: "off", hit: COKE }));
@@ -156,7 +156,7 @@ describe("Scan tab", () => {
     await waitFor(() => expect(stop).toHaveBeenCalled());
   });
 
-  // Final review I1: a lookup's answer belongs to the screen it was asked from.
+  // A lookup's answer belongs to the screen it was asked from.
   it("drops a lookup that finishes after the Scan tab is left", async () => {
     stubCamera([CODE]);
     let answer!: (r: BarcodeResult) => void;

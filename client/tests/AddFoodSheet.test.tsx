@@ -116,7 +116,7 @@ describe("AddFoodSheet", () => {
     expect(screen.getByText(/Open Government Licence v3\.0/)).toBeInTheDocument();
   });
 
-  // #17 review (6): most adds are a repeat, but the sheet always opened on Search.
+  // Most adds are a repeat, but the sheet always opened on Search.
   it("opens on Recent when there is something to re-log", async () => {
     mockApi();
     renderSheet();
@@ -131,7 +131,7 @@ describe("AddFoodSheet", () => {
     expect(screen.getByLabelText("Search foods")).toBeInTheDocument();
   });
 
-  // Review focus 3: the opening tab is decided once; a tab the user picks wins.
+  // The opening tab is decided once; a tab the user picks wins.
   it("keeps a tab picked before the recent foods arrive", async () => {
     let arrive!: () => void;
     mockApi(() => new Promise((resolve) => (arrive = () => resolve(RECENT))));
@@ -139,8 +139,8 @@ describe("AddFoodSheet", () => {
     await userEvent.click(screen.getByRole("tab", { name: "Search" }));
     await userEvent.type(screen.getByLabelText("Search foods"), "oa");
     arrive();
-    // Judge only once the list has landed and React has rendered it (final
-    // review: the old assertion ran first, so a tab flip could not fail it).
+    // Judge only once the list has landed and React has rendered it (the old
+    // assertion ran first, so a tab flip could not fail it).
     await waitFor(() => expect(lastClient.getQueryState(["recents", "u1"])?.status).toBe("success"));
     await act(async () => {
       await new Promise((r) => setTimeout(r, 0));
@@ -149,7 +149,7 @@ describe("AddFoodSheet", () => {
     expect(screen.getByLabelText("Search foods")).toHaveValue("oa");
   });
 
-  // #17 review (6): the search text was lost on Back from the amount step.
+  // The search text was lost on Back from the amount step.
   it("keeps the search text when stepping back from the amount step", async () => {
     mockApi();
     renderSheet();

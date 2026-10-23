@@ -58,7 +58,7 @@ export interface WorkoutSession {
   created_at: string;
 }
 
-/** A session as the history list shows it (redesign part 3b, §6). */
+/** A session as the history list shows it. */
 export interface SessionSummary extends WorkoutSession {
   /** Distinct exercises with sets. */
   lifts: number;
@@ -94,7 +94,7 @@ export interface WorkoutSet {
   is_bodyweight: boolean;
 }
 
-/** The last time one exercise was done (redesign part 3a, §4): that session's date, and its sets of it. */
+/** The last time one exercise was done: that session's date, and its sets of it. */
 export interface LastTime {
   date: string;
   sets: WorkoutSet[];
@@ -357,7 +357,7 @@ export interface ExportFile {
   tables: Record<string, Record<string, unknown>[]>;
 }
 
-/** What Settings says is stored, beside the download (redesign part 8, §4). */
+/** What Settings says is stored, beside the download. */
 export interface DataSummary {
   /** The earliest date among weigh-ins, sessions and food entries; null when there is none. */
   since: string | null;

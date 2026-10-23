@@ -22,7 +22,6 @@ describe("demo account", () => {
     expect(isDemoEmail(" Demo@Demo.invalid ")).toBe(true);
   });
 
-  // Review focus 1.
   it("two first visits get the same account", async () => {
     const [a, b] = await Promise.all([findOrCreateDemoUser(), findOrCreateDemoUser()]);
     expect(a.id).toBe(b.id);

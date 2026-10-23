@@ -117,7 +117,7 @@ nutritionRouter.get("/diary", validate({ query: z.object({ date: isoDate }) }), 
   }
 });
 
-// Food's 7-day strip (redesign part 4, §5). Bounded, so a query string can't
+// Food's 7-day strip. Bounded, so a query string can't
 // ask for years. The refinements check the shape first: zod runs them even
 // when a field has already failed its regex, and shiftISO throws on a
 // malformed date, which would turn a 400 into a 500.

@@ -9,7 +9,7 @@ export interface CompositionLine {
 }
 
 /**
- * What the weight is made of, in one line (housekeeping spec §4): "Losing fat,
+ * What the weight is made of, in one line: "Losing fat,
  * keeping strength · 6 lifts climbing, 1 slipping". The weight's direction is
  * the rate line's own fit and "flat" threshold, and its colour the rate line's
  * own rule (rateTone), so the two lines never disagree. The strength side is
@@ -49,7 +49,7 @@ export function compositionLine(
 /**
  * "6 lifts climbing, 1 slipping": every non-zero group, holding included, so a
  * verdict that rests on the holding lifts ("keeping strength", "lifts
- * holding") has them beside it (the final review on PR 3).
+ * holding") has them beside it.
  */
 function detailOf(climbing: number, holding: number, slipping: number): string {
   const groups: [number, string][] = [

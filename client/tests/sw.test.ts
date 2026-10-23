@@ -9,7 +9,7 @@ import { resolve } from "node:path";
  *
  * Worth the setup for one rule in particular: /api must never be cached. v2's
  * API is same-origin, so a "cache same-origin GETs" rule would write one user's
- * authenticated JSON into a store that outlives sign-out. The plan says that
+ * authenticated JSON into a store that outlives sign-out. So the /api guard
  * must be the first rule; this is what stops a later edit reordering it.
  */
 type Listener = (e: unknown) => void;
@@ -83,14 +83,14 @@ async function settle(respondWith: ReturnType<typeof vi.fn>) {
 
 describe("service worker", () => {
   /**
-   * The rule the plan cares about, asserted STRUCTURALLY.
+   * The rule that matters most, asserted STRUCTURALLY.
    *
    * The behavioural tests below are necessary but not sufficient: with the
    * /api guard deleted entirely, all but one still pass, because those requests
    * happen to match no other branch and the handler falls through anyway. The
    * hazard is a future rule shaped like "cache same-origin GETs" being added
    * ABOVE the guard — and no behavioural test can exercise a rule that does not
-   * exist yet. What can be checked is the ordering the plan actually demands:
+   * exist yet. What can be checked is the ordering that actually matters:
    * the /api return must come before anything that responds.
    */
   it("returns on /api before the handler responds to anything", () => {

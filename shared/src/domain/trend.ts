@@ -22,8 +22,8 @@ export function trendPoint(x: number, trend: TrendLine): number {
 }
 
 /**
- * Whether a weight change moved toward the goal, for colouring it (redesign
- * spec §5.8). Green means progress whatever the phase: down on a cut, up on a
+ * Whether a weight change moved toward the goal, for colouring it.
+ * Green means progress whatever the phase: down on a cut, up on a
  * bulk. With no goal there is nothing to measure against, so it is neutral,
  * and a weight is never shown as bad: it only ever earns green or nothing.
  */

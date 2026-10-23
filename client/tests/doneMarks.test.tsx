@@ -23,9 +23,8 @@ const habit: HabitSummary = {
 
 /**
  * The resting "not done" mark is the most-used control's idle state, and it
- * must be findable on black, outdoors (final review I2): one ring colour
- * everywhere, `dim`, and a habit's mark shows its content in grey (spec §5.10:
- * "a ring with muted content") rather than an empty circle.
+ * must be findable on black, outdoors: one ring colour everywhere, `dim`, and
+ * a habit's mark shows its content in grey rather than an empty circle.
  */
 describe("unticked done marks", () => {
   it("rings an unticked gym set in dim", () => {

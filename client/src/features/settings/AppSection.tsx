@@ -8,7 +8,7 @@ import { useOnline } from "@/hooks/useOnline";
 import { BUILD_DATE, BUILD_SHA, versionText } from "@/lib/buildInfo";
 import { refreshApp } from "@/lib/refreshApp";
 
-/** The version running, a way to get the latest (redesign part 8, §5), and the project page. */
+/** The version running, a way to get the latest, and the project page. */
 export function AppSection() {
   const qc = useQueryClient();
   const online = useOnline();

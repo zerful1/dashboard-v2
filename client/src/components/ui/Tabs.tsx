@@ -9,7 +9,7 @@ interface Props<T extends string> {
 }
 
 /**
- * Underline tabs (redesign spec §5.6): grey labels, the selected one white
+ * Underline tabs: grey labels, the selected one white
  * with a white rule beneath, a hairline under the row. Choices that are not
  * views — Cut / Maintain / Bulk — are Buttons with `selected` and `subtle`.
  */

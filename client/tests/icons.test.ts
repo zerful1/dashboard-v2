@@ -9,7 +9,7 @@ function pngSize(path: string): [number, number] {
   return [b.readUInt32BE(16), b.readUInt32BE(20)];
 }
 
-describe("icons and metadata (redesign spec §6)", () => {
+describe("icons and metadata", () => {
   it("ships every icon at the size it is declared at", () => {
     expect(pngSize("public/apple-touch-icon.png")).toEqual([180, 180]);
     expect(pngSize("public/icon-192.png")).toEqual([192, 192]);

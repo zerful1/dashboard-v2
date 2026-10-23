@@ -36,7 +36,7 @@ const MARK = SOURCE.replace(/<svg[^>]*>/, "")
 /**
  * Every PNG is FULL-BLEED black: no corner radius, no edge. iOS and Android
  * apply their own masks, and a pre-rounded tile would show the wallpaper in
- * the gap between our corners and theirs (redesign spec §6).
+ * the gap between our corners and theirs.
  *
  * `scale` shrinks the mark about the centre. Only maskable needs it: the
  * guaranteed-visible area is a circle of radius 40%, and the mark's dot edge

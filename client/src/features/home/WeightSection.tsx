@@ -13,8 +13,8 @@ export interface HomeWeight {
 }
 
 /**
- * The latest weigh-in, and the Weight page's own rate under it (redesign part
- * 5, §6), green only toward the goal. Hidden until there is a weigh-in.
+ * The latest weigh-in, and the Weight page's own rate under it, green only
+ * toward the goal. Hidden until there is a weigh-in.
  */
 export function WeightSection({ weight }: { weight: HomeWeight }) {
   if (weight.isError) {

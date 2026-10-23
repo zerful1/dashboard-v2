@@ -13,7 +13,7 @@ import { goalsText, habitsText, splitText, targetText } from "./shortcutText";
 
 /**
  * The settings that live on other pages, each with its current value, linking
- * to where it is changed (redesign part 8, §3). A value is blank until its
+ * to where it is changed. A value is blank until its
  * source has answered, or if it failed: useSplit answers DEFAULT_SPLIT while
  * loading, which would name days that aren't yours (CLAUDE.md, isPending).
  */

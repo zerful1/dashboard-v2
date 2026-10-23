@@ -29,7 +29,7 @@ function RestoreBody({ onDone }: { onDone: () => void }) {
   const [refused, setRefused] = useState<string | null>(null);
   const picks = useRef(0);
 
-  // Both show their failure here, never as a toast (redesign part 8, §6.1).
+  // Both show their failure here, never as a toast.
   const preview = useMutation({ mutationFn: (p: PackedBody) => restoreApi.preview(p), meta: { errorToast: false } });
   const restore = useMutation({
     mutationFn: (p: PackedBody) => restoreApi.restore(p),
@@ -107,7 +107,7 @@ function RestoreBody({ onDone }: { onDone: () => void }) {
   );
 }
 
-/** Restore from a download (redesign part 8, §6): a preview of what's missing, then one button. */
+/** Restore from a download: a preview of what's missing, then one button. */
 export function RestoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <Sheet open={open} onClose={onClose} title="Restore from a download">

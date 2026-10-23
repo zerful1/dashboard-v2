@@ -7,7 +7,7 @@ import type { BodyWeightEntry } from "@dashboard/shared";
 /**
  * The cache key carries the user id.
  *
- * Phase 2 shipped a cross-account leak because `["profile"]` carried no
+ * An earlier version shipped a cross-account leak because `["profile"]` carried no
  * identity and outlived a sign-out: the next account in the same tab was served
  * the previous one's row. That was fixed by clearing the cache on every
  * identity transition, which works but depends on the clear firing. Scoping the
@@ -63,7 +63,7 @@ export function useWeights() {
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: key });
       invalidateInsightsReaders(qc);
-      // A weigh-in moves the adaptive TDEE estimate (#17 review 16).
+      // A weigh-in moves the adaptive TDEE estimate.
       void qc.invalidateQueries({ queryKey: ["tdeeHint"] });
     },
   });
@@ -85,7 +85,7 @@ export function useWeights() {
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: key });
       invalidateInsightsReaders(qc);
-      // A weigh-in moves the adaptive TDEE estimate (#17 review 16).
+      // A weigh-in moves the adaptive TDEE estimate.
       void qc.invalidateQueries({ queryKey: ["tdeeHint"] });
     },
   });

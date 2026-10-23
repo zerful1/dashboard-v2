@@ -1,7 +1,7 @@
 import type { Goal, Projection } from "@dashboard/shared";
 import { dayMonth, signed } from "./format";
 
-/** One honest sentence per projection status (spec section 6). */
+/** One honest sentence per projection status. */
 export function projectionText(p: Projection, kind: Goal["kind"], today: string): string {
   switch (p.status) {
     case "projected":

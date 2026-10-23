@@ -56,7 +56,7 @@ describe("TDEE hint", () => {
     expect(res.body.adaptive).toEqual({ kcal: 2000, days_logged: 14, weigh_ins: 28 });
     expect(res.body.days_logged).toBe(14);
   });
-  // #17 review (10): partial logging and noisy weigh-ins could show an absurd figure.
+  // #17: partial logging and noisy weigh-ins could show an absurd figure.
   it("hides an adaptive figure outside the human range", async () => {
     const { agent, id } = await signedIn(alice);
     await seedFlatMonth(id, 800);

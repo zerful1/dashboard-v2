@@ -42,7 +42,7 @@ describe("CopyDaySheet", () => {
     expect(copy.mutate).toHaveBeenCalledWith({ from: "2026-09-22", to: "2026-09-23" }, expect.anything());
   });
 
-  // Review focus 4: nothing to copy, or a copy already on its way.
+  // Nothing to copy, or a copy already on its way.
   it("cannot copy an empty day", async () => {
     mockDiary({});
     renderSheet();

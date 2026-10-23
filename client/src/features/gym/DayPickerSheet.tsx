@@ -3,7 +3,7 @@ import type { SplitDay } from "@dashboard/shared";
 import { Sheet } from "@/components/ui/Sheet";
 import { cn } from "@/lib/cn";
 
-/** The split's days, behind Gym's title (redesign part 3a, §2). The current one is tinted: a selection, not an action. */
+/** The split's days, behind Gym's title. The current one is tinted: a selection, not an action. */
 export function DayPickerSheet({
   open,
   days,

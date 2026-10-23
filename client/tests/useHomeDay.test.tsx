@@ -94,7 +94,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("useHomeDay (redesign part 2, §3)", () => {
+describe("useHomeDay", () => {
   it("puts the weigh-in on top until today has one", async () => {
     freeze(WED);
     mockApi({ weights: () => [weighIn("2026-08-25")] });
@@ -120,7 +120,6 @@ describe("useHomeDay (redesign part 2, §3)", () => {
     expect(result.current.top).toBe("food");
   });
 
-  // Review focus 4.
   it("skips the workout on a rest day, without asking for a list or sets", async () => {
     freeze(THU);
     const calls = mockApi({ weights: () => [weighIn(THU)] });
@@ -140,9 +139,9 @@ describe("useHomeDay (redesign part 2, §3)", () => {
     expect(result.current.top).toBe("workout");
   });
 
-  // Review focus 1: the slot is a conclusion, so it waits for every source.
-  // One case per source (final review, important 2): each fails when its source
-  // leaves the gate, so "Weigh in" can't flash before today's weigh-in arrives.
+  // The slot is a conclusion, so it waits for every source. One case per
+  // source: each fails when its source leaves the gate, so "Weigh in" can't
+  // flash before today's weigh-in arrives.
   it.each([
     ["the split", "/api/split"],
     ["this week's sessions", "/api/workouts/sessions"],
@@ -174,7 +173,7 @@ describe("useHomeDay (redesign part 2, §3)", () => {
     expect(result.current.isPending).toBe(false);
   });
 
-  // Final review, important 1. TanStack keeps the data when a refetch fails and
+  // TanStack keeps the data when a refetch fails and
   // still sets isError. A phone refetches on every focus, and one opened with no
   // signal refetches everything, so a failure with the data in hand must not
   // move the slot or turn the sections into "Couldn't load".

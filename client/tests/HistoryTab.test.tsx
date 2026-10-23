@@ -63,7 +63,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("History, the list (redesign part 3b, §5)", () => {
+describe("History, the list", () => {
   it("lists sessions with their lifts and sets, and Cardio for one without sets", async () => {
     mockByPath({ list: [session("a", "2026-08-16", "Legs"), session("b", "2026-08-15", "Push", 0, 0)] });
     renderTab();
@@ -88,7 +88,7 @@ describe("History, the list (redesign part 3b, §5)", () => {
 });
 
 describe("History, dates", () => {
-  // Final review: Load more reaches last year, and a date without its year reads as this one.
+  // Load more reaches last year, and a date without its year reads as this one.
   it("shows the year on a session from another year", async () => {
     mockByPath({ list: [session("a", "2025-11-03", "Legs")] });
     renderTab();
@@ -96,7 +96,7 @@ describe("History, dates", () => {
   });
 });
 
-describe("History, the 12-week grid (redesign part 3b, §5)", () => {
+describe("History, the 12-week grid", () => {
   it("shows the weekly average against the split's aim", async () => {
     freeze();
     const dates = ["2026-08-24", "2026-08-21", "2026-08-17", "2026-08-10", "2026-08-03", "2026-07-27"];
@@ -156,8 +156,8 @@ describe("History, the session sheet", () => {
     );
   });
 
-  // Final review: "100 × 8" broke onto two lines in narrow columns; spec §5.5
-  // says a long session scrolls sideways inside the sheet instead.
+  // "100 × 8" broke onto two lines in narrow columns; a long session
+  // scrolls sideways inside the sheet instead.
   it("keeps every set cell on one line", async () => {
     mockByPath({ list: [session("a", "2026-08-16", "Legs")], detail: { sets: [1, 2, 3, 4, 5, 6].map((n) => aSet(n)), cardio: [] } });
     renderTab();

@@ -80,7 +80,7 @@ afterEach(() => {
 });
 
 describe("useWorkoutDay", () => {
-  // The user's call (2026-10-03): a set logged with no signal fails and is
+  // Decided 2026-10-03: a set logged with no signal fails and is
   // logged again once back online, rather than queueing and looking saved.
   // The real client, because the rule is its default, not this hook's option.
   it("fails a set logged offline instead of queueing it", async () => {

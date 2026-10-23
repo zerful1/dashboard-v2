@@ -7,7 +7,7 @@ const SRC = clientPath("src");
 
 /**
  * `dim` (#555, 2.8:1 on black) is decoration only; anything a person reads is
- * `muted` (6.1:1) or brighter (redesign spec §1: every text colour ≥ 4.5:1).
+ * `muted` (6.1:1) or brighter (every text colour ≥ 4.5:1).
  * The remaining uses, counted per file so a new one is a decision.
  */
 const ALLOWED: Record<string, { count: number; why: string }> = {

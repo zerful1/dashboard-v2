@@ -47,7 +47,7 @@ foodRouter.get("/barcode/:code", validate({ params: barcodeParams }), async (req
     let hit;
     try {
       // One request even for a 12-digit UPC-A: Open Food Facts pads it to its
-      // 13-digit form itself (final review I3).
+      // 13-digit form itself.
       hit = await lookupBarcode(code);
     } catch {
       next(new AppError(502, "Product lookup is unavailable right now", "bad_gateway"));

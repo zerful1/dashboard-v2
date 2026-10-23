@@ -39,7 +39,7 @@ export interface WeightRow {
 /**
  * The weigh-ins on or after `start` as rows on a day axis, each with its 7-day
  * average, and a null row between two plotted weigh-ins more than 7 days apart
- * so the line breaks rather than bridging the gap (redesign part 5, §3).
+ * so the line breaks rather than bridging the gap.
  */
 export function weightRows(points: ChartPoint[], line: AveragePoint[], start: string): WeightRow[] {
   const byDate = new Map(line.map((a) => [a.date, a]));
@@ -107,8 +107,8 @@ interface Props {
  *
  * Series colours are `var(--color-*)` rather than hexes so the chart inherits
  * the app's palette. `raised` is the gridline colour and appears nowhere as
- * data, per the token rule. Since redesign part 5 the weigh-ins are grey dots
- * on a real-time axis and the 7-day average is the white line.
+ * data, per the token rule. The weigh-ins are grey dots on a real-time axis
+ * and the 7-day average is the white line.
  */
 export function WeightChart({ points, line, start, today, goalKg, span, weekly }: Props) {
   const rows = useMemo(() => weightRows(points, line, start), [points, line, start]);
@@ -257,8 +257,8 @@ export function sparklineRows(line: AveragePoint[]): { date: string; kg: number 
  * at the top. Importing Recharts into the Home tile instead would give the
  * codebase a second import site and quietly retire that rule.
  *
- * Since redesign part 5 it draws the 7-day average, as the Weight chart's
- * white line does, so the white line means one thing on both screens.
+ * It draws the 7-day average, as the Weight chart's white line does, so the
+ * white line means one thing on both screens.
  */
 export function WeightSparkline({ line }: { line: AveragePoint[] }) {
   const safe = useMotionSafe();
@@ -306,10 +306,10 @@ export function liftDomain(values: number[]): [number, number] {
 export const liftTick = (v: number) => String(Math.round(v));
 
 /**
- * One lift over the trend span (redesign part 3b, §4): each session's best as
- * an estimated 1RM (or reps), new bests white and the rest dim, with a dashed
- * fitted line that never reads as measurement. It lives here because this file
- * is the one charting boundary; ProgressionChart broke that rule and is gone.
+ * One lift over the trend span: each session's best as an estimated 1RM (or
+ * reps), new bests white and the rest dim, with a dashed fitted line that never
+ * reads as measurement. It lives here because this file is the one charting
+ * boundary; ProgressionChart broke that rule and is gone.
  */
 export function LiftChart({ points, unit, allHistory = false }: { points: LiftChartPoint[]; unit: "kg" | "reps"; allHistory?: boolean }) {
   const data = useMemo(() => {

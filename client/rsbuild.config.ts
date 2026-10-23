@@ -6,11 +6,14 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 
 // The barcode scanner's ZXing decoder (barcodeDetector.ts), served by this app
-// rather than a CDN (spec: no third-party fetch at scan time). The file name
+// rather than a CDN: no third-party fetch at scan time. The file name
 // carries zxing-wasm's version, which is also the ponyfill's ZXING_WASM_VERSION,
 // so the service worker's cache-first /static/ rule can keep it for good.
+// zxing-wasm is resolved from the ponyfill's own location, not ours: it is the
+// ponyfill's dependency, not this package's, and that is the copy it asks for.
 const require = createRequire(import.meta.url);
-const ZXING_WASM = require.resolve('zxing-wasm/reader/zxing_reader.wasm');
+const fromPonyfill = createRequire(require.resolve('barcode-detector/ponyfill'));
+const ZXING_WASM = fromPonyfill.resolve('zxing-wasm/reader/zxing_reader.wasm');
 const ZXING_VERSION = (JSON.parse(readFileSync(join(dirname(ZXING_WASM), '..', '..', 'package.json'), 'utf8')) as { version: string }).version;
 
 // Docs: https://rsbuild.rs/config/

@@ -5,7 +5,7 @@ import type { ChartPoint } from "./WeightChart";
 export interface WeightSummary {
   latest: number | null;
   latestDate: string | null;
-  /** The mean of the weigh-ins in the 7 days ending today; null with none (redesign part 5, §3). */
+  /** The mean of the weigh-ins in the 7 days ending today; null with none. */
   average7: number | null;
   /** Insights' fit over the last 56 days (trendFit): the one rate, with or without a goal. */
   fit: TrendFit;
@@ -66,7 +66,7 @@ export interface RangeSpec {
   id: RangeId;
   /** Days back from today; null for All, which starts at the first weigh-in. */
   days: number | null;
-  /** Weeks for 1M and 3M, months beyond (redesign part 5, §4). */
+  /** Weeks for 1M and 3M, months beyond. */
   period: PeriodKind;
   /** For the chart's label: "Weight over 3 months". */
   span: string;

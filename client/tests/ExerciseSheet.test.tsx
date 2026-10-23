@@ -91,7 +91,7 @@ describe("ExerciseSheet, logging", () => {
     expect(onLogSet).toHaveBeenCalledWith(0, 9, true, 1);
   });
 
-  // Redesign review: a selected toggle dropped its border, so switching one on
+  // A selected toggle once dropped its border, so switching one on
   // moved everything below it by 2px. Both states keep a 1px border.
   it("keeps the bodyweight toggle the same size when it is switched on", async () => {
     mockCoaching(null);
@@ -137,7 +137,7 @@ describe("ExerciseSheet, logging", () => {
   });
 });
 
-describe("ExerciseSheet, last time (redesign part 3a, §3)", () => {
+describe("ExerciseSheet, last time", () => {
   it("lines today's sets up against last time's, set by set", () => {
     mockCoaching(null);
     renderSheet({
@@ -158,7 +158,6 @@ describe("ExerciseSheet, last time (redesign part 3a, §3)", () => {
     expect(row(4).getByText("—")).toBeInTheDocument();
   });
 
-  // Review focus 2.
   it("shows a deleted set as a gap, with no delete, and continues from the highest", () => {
     mockCoaching(null);
     renderSheet({ todaySets: [aSet(1), aSet(3)], last: lastTime([aSet(1), aSet(2), aSet(3)]) });
@@ -175,8 +174,7 @@ describe("ExerciseSheet, last time (redesign part 3a, §3)", () => {
     expect(onDeleteSet).toHaveBeenCalledWith("s1");
   });
 
-  // Housekeeping item 22, review focus 3: the reps come back only to the sheet
-  // they were typed in.
+  // The reps come back only to the sheet they were typed in.
   it("refills the reps when Add set fails, for that exercise only", async () => {
     mockCoaching(null);
     const { update } = renderSheet();
@@ -199,7 +197,7 @@ describe("ExerciseSheet, last time (redesign part 3a, §3)", () => {
     expect(screen.getByLabelText("Right")).toHaveValue(8);
   });
 
-  // Housekeeping item 23: "nothing last time" is not "First time" while today's
+  // "Nothing last time" is not "First time" while today's
   // sets may still hold this exercise.
   it("says nothing about a first time while today's sets load", () => {
     mockCoaching(null);
@@ -264,7 +262,6 @@ describe("ExerciseSheet, last time (redesign part 3a, §3)", () => {
     expect(screen.getByRole("button", { name: /mark as bodyweight/i })).toHaveAttribute("aria-pressed", "false");
   });
 
-  // Review focus 1.
   it("keeps what you typed when last time arrives after the sheet opened", async () => {
     mockCoaching(null);
     const { update } = renderSheet();
@@ -275,7 +272,7 @@ describe("ExerciseSheet, last time (redesign part 3a, §3)", () => {
     expect(reps()).toHaveValue(6);
   });
 
-  // Final review, important 1: until last time has loaded, the sheet must not
+  // Until last time has loaded, the sheet must not
   // claim there is none, and its arrival must not rebuild the inputs.
   it("says nothing about last time while it loads", () => {
     mockCoaching(null);
@@ -344,7 +341,7 @@ describe("ExerciseSheet, before today's sets load", () => {
     expect(onLogSet).toHaveBeenCalledWith(90, 6, false, 2);
   });
 
-  // Final review: following today's sets past their arrival moved the weight
+  // Following today's sets past their arrival moved the weight
   // when a set was deleted to redo it, and the redo logged the wrong one.
   it("keeps the weight when a set is deleted to redo it", () => {
     mockCoaching(null);
@@ -395,7 +392,7 @@ describe("ExerciseSheet, left / right", () => {
     expect(screen.getByLabelText("Right")).toHaveAttribute("placeholder", "8");
   });
 
-  // Review finding: the sheet closes between exercises and iOS drops the app
+  // The sheet closes between exercises and iOS drops the app
   // during rest, so a choice made today must survive reopening the sheet.
   it("switches itself on when this session already has a set logged per side", () => {
     mockCoaching(null);

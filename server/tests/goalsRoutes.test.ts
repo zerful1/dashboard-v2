@@ -59,7 +59,7 @@ describe("projections endpoint", () => {
     ]);
   });
 
-  // Review focus 3, found broken in the part 2 review: with no start, the
+  // Once found broken: with no start, the
   // direction was re-derived from the trend each time, so a goal set before
   // any weigh-in could never be reached ("Trending away" once past it).
   it("reaches a weight goal set before any weigh-in, once the trend passes it", async () => {

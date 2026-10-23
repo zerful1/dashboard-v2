@@ -5,7 +5,7 @@ import { T } from "../config";
 
 type Row = Record<string, unknown>;
 
-/** Settings and the template, where the current ones win (redesign part 8, §6.3). */
+/** Settings and the template, where the current ones win. */
 export const NOT_RESTORED = ["profiles", "workout_split", "exercises"] as const;
 
 const REF: Record<RestoredTable, string> = {
@@ -102,7 +102,7 @@ async function parentMap(
 
 /**
  * Adds back the rows of a download that the account is missing, and changes
- * nothing it already has (redesign part 8, §6.4). One transaction, in
+ * nothing it already has. One transaction, in
  * RESTORED_TABLES order; each insert skips any row that clashes on its id or
  * its natural key (a bare ON CONFLICT DO NOTHING: no target, so both kinds).
  *

@@ -26,7 +26,7 @@ describe("useOpenParam", () => {
     expect(open).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId("search")).toHaveTextContent(/^\?keep=1$/);
     // Replaced, not pushed: Back must not land on the URL that opens it again.
-    // (Final review: the search alone reads the same after a push.)
+    // (The search alone reads the same after a push.)
     expect(screen.getByTestId("nav")).toHaveTextContent("REPLACE");
   });
 

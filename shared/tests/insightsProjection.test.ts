@@ -52,7 +52,7 @@ describe('projectGoal: weight', () => {
     expect(projectGoal(weightGoal(75), line(14, 79, -0.06), TODAY)).toMatchObject({ status: 'over-a-year' })
   })
 
-  // Review focus 3: a weight goal set before any weigh-in has no start.
+  // A weight goal set before any weigh-in has no start.
   it('takes the direction from the trend when there is no starting weigh-in', () => {
     expect(projectGoal(weightGoal(78, null), line(14, 79, -0.5), TODAY)).toMatchObject({ status: 'projected' })
     expect(projectGoal(weightGoal(78, null), line(14, 79, 0.5), TODAY)).toMatchObject({ status: 'away' })
@@ -70,7 +70,7 @@ describe('projectGoal: lift', () => {
     expect(projectGoal(liftGoal(80), points, TODAY).status).toBe('reached')
   })
 
-  // Part 2 review: reaching a lift goal is a fact (one set at the target), not
+  // Reaching a lift goal is a fact (one set at the target), not
   // a trend, so it needs no minimum number of sessions.
   it('is reached on a lifted target even with fewer than 6 sessions', () => {
     const points = [...line(4, 70, 1, 7).slice(0, 3), { date: TODAY, value: 75 }]
@@ -83,7 +83,7 @@ describe('projectGoal: lift', () => {
   })
 })
 
-// Redesign part 5: Weight and Home show this rate with or without a goal, and it
+// Weight and Home show this rate with or without a goal, and it
 // must be the number Insights projects from.
 describe('trendFit', () => {
   it('needs 14 points inside the window', () => {
@@ -111,7 +111,7 @@ describe('trendFit', () => {
 })
 
 // The one rule for "reached": the goal line says it and the rate stops being
-// green by the same test (redesign part 5, §9).
+// green by the same test.
 describe('weightGoalReached', () => {
   it('is reached at or past the target, in the direction from where it started', () => {
     expect(weightGoalReached({ target_kg: 78, start_kg: 84 }, 78)).toBe(true)
@@ -127,7 +127,7 @@ describe('weightGoalReached', () => {
   })
 })
 
-// Housekeeping PR 3: the rate line's colour rule, shared with the composition line.
+// The rate line's colour rule, shared with the composition line.
 describe('rateTone', () => {
   const fit = (ratePerWeek: number, current = 80) => ({ ratePerWeek, current })
   const goal = (target_kg: number, start_kg: number | null = 84) => ({ target_kg, start_kg })

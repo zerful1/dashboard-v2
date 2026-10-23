@@ -29,26 +29,26 @@ React 19 · RSBuild · Tailwind 4 · TanStack Query 5 · Express 4 · Postgres 1
 
 ## Run it locally
 
-You need Node 20+ and a Postgres database. Locally the app uses the `app_dev` schema.
+You need Node 20.19+ (or 22.12+) and Postgres 13 or later. Any Postgres works: locally all three database URLs in `.env` can be the same one, such as `postgresql://postgres:postgres@localhost:5432/dashboard`. Production uses Supabase's transaction and session poolers, which is why there are separate URLs. Each environment gets its own schema in that one database: `app_dev` locally, `app_test` for the tests.
 
 ```bash
 npm install
-cp .env.example .env     # database URLs, DB_SCHEMA=app_dev, a session secret
+cp .env.example .env     # then set the database URLs and SESSION_SECRET
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"   # a SESSION_SECRET
 npm run migrate
 npm run dev:api          # API on :3001
 npm run dev:web          # app on :5173, proxying /api to the API
 ```
 
-- **Sign-ups are closed by default.** Set `SIGNUP_ALLOWLIST=*` to register, or use **Try the demo**.
+- **Sign-ups:** the example `.env` sets `SIGNUP_ALLOWLIST=*` so you can register locally. Unset, nobody new can register, which is how production runs. **Try the demo** works either way.
 - **Sample history:** `npm run seed-dev -w @dashboard/server -- --email <your address> --reset` fills an account you've registered.
-- **A session secret:** `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 
 ## Scripts
 
 | Command | What it does |
 |---|---|
 | `npm run dev:api` / `npm run dev:web` | The API on :3001, the app on :5173 |
-| `npm test` | Every workspace's tests (the server's need the `app_test` schema) |
+| `npm test` | Every workspace's tests. The shared and client tests need nothing; the server's use the database in `.env`, creating the `app_test` schema and wiping it before each test, and refuse to run against any other schema |
 | `npm run typecheck` | Typecheck every workspace |
 | `npm run build` | Build the shared package and the app |
 | `npm run migrate` | Apply pending migrations to `$DB_SCHEMA` |

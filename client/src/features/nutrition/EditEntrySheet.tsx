@@ -21,7 +21,7 @@ export function EditEntrySheet({
   const [raw, setRaw] = useState("");
   // One action per opening. The sheet closes on Save or Delete, but its exit
   // animation keeps it mounted and clickable for a moment, so a second tap sent
-  // a second request (#17 review 8): the same guard as AmountStep's.
+  // a second request: the same guard as AmountStep's.
   const acted = useRef(false);
   useEffect(() => {
     if (entry) {

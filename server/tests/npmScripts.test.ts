@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 /**
  * A script pointing tsx at a deleted file passes the typecheck and fails only
  * when someone runs it, which for a one-off tool can be months later. Retiring
- * v1 (housekeeping 5) deleted six such files and their four scripts.
+ * v1 deleted six such files and their four scripts.
  */
 describe("npm scripts", () => {
   it.each([
@@ -17,7 +17,7 @@ describe("npm scripts", () => {
     };
     const targets = Object.entries(scripts).flatMap(([name, cmd]) =>
       // `tsx`, then `watch` or any flags, then the file.
-      [...cmd.matchAll(/\btsx(?:\s+(?:watch|-\S+))*\s+(\S+\.[cm]?[jt]s)\b/g)].map((m) => ({ name, path: m[1] })),
+      [...cmd.matchAll(/\btsx(?:\s+(?:watch|-\S+))*\s+(\S+\.[cm]?[jt]s)\b/g)].map((m) => ({ name, path: m[1]! })),
     );
     expect(targets.length).toBeGreaterThan(0);
     const missing = targets.filter((t) => !existsSync(resolve(dir, t.path))).map((t) => t.name);

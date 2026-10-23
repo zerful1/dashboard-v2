@@ -14,21 +14,11 @@ from the source is deliberately absent.
 
 ## The design history is in another repository
 
-Specs, plans and reviews for this project are **not here**. They are in the
-sibling v1 repo:
-
-```
-C:\Users\zerful\Desktop\daboards\dashboard-v1    branch: docs/dashboard-v2-design
-                                                 path:   docs/superpowers/
-                                                 repo:   github.com/zerful1/dashboard
-```
-
-That path is this machine’s; the repo is private but cloneable, so on any other
-machine it is wherever you put it. That branch is **currently local-only** — on
-no remote as of 2026-10-04. Searching only inside `dashboard-v2` finds no spec
-and makes every phase of work look unplanned. Read
-the plan from there before starting anything, and tell any subagent where it is
-and that looking in this repo will not find it.
+Specs, plans and reviews for this project are **not here**: they live in a
+separate, private repository. Where to find them on this machine is in
+`CLAUDE.local.md`, which is gitignored. Searching only inside this repo finds no
+spec and makes every phase of work look unplanned, so read the plan from there
+before starting anything, and tell any subagent where it is.
 
 The two can drift. The plan is a proposal, not a record of what shipped.
 
@@ -46,7 +36,7 @@ the other half do not, which looks like corruption rather than a bug. So:
 - every query selects `date::text`
 - calendar arithmetic uses `shiftISO`, which is pure string maths
 - a charting library that demands `Date` objects is disqualified on those
-  grounds alone — that is what ruled one out in phase 4
+  grounds alone — that is what ruled one out when the weight chart was built
 
 **`toLocalISO()` is for the client. `todayISO(timeZone)` is for the server.**
 The browser already runs in the user's timezone; a deployed server is UTC for
@@ -154,11 +144,20 @@ What the demo code won't tell you:
 
 Schemas in one database: **`app`** is production, **`app_dev`** local,
 **`app_test`** tests. `public` held the v1 app; its 19 tables were backed up and
-dropped on 2026-10-20 (housekeeping 5, `docs/CUTOVER.md`), so it now holds only
+dropped on 2026-10-20 (`docs/CUTOVER.md`), so it now holds only
 Supabase's own objects (`rls_auto_enable`, behind its `ensure_rls` event
 trigger). Nothing of ours belongs there, and no migration may name it: the test
 setup migrates `app_test` in this same database, so a migration that touched
 `public` would touch the real one on the next test run.
+
+**Both paths are TLS-verified in code, not by the URL.** node-pg connects in
+plaintext unless handed `ssl`, and until 2026-10-21 production did exactly that,
+across regions, with nothing failing to say so. `sslFor` in `server/src/db/ssl.ts`
+gives a Supabase host Supabase's own CA (a bare `sslmode=require` would refuse it:
+pg treats it as verify-full against Node's built-in CAs). Keep `sslmode` out of
+the URLs, since pg lets the URL override the option. Any new `Pool` takes
+`ssl: sslFor(url)` too. Supabase's "Enforce SSL" is what refuses a connection
+that forgets.
 
 ### Reaching production is a one-command override, never an edit
 
@@ -328,8 +327,8 @@ copy is a separate artifact, so `persister.removeClient()` has to accompany
 every one of them.
 
 **Writes are not queued offline, in any feature.** Logging with no signal fails
-with a toast and is logged again once back online — the user's call, made for
-Gym on 2026-10-03. A banner says so, because failing silently would look like
+with a toast and is logged again once back online — decided for Gym on
+2026-10-03. A banner says so, because failing silently would look like
 success. The rule is `networkMode: "always"` in `defaultOptions.mutations`
 (`client/src/lib/queryClient.ts`); TanStack's own default pauses a write
 offline and replays it on reconnect, so it looks saved and is lost if the app
@@ -375,7 +374,7 @@ last 56 days, at least 14 weigh-ins, "flat" under 0.05 kg a week. The Weight
 page's composition line reads the same fit, and takes its colour from the rate
 line's own rule (`rateTone` in shared), so a moving weight can't read green
 beside a white rate. A steady weight reads green only for its lifts ("Weight
-steady, lifts climbing"), which is right. The user chose agreement over a
+steady, lifts climbing"), which is right. Agreement was chosen over a
 faster-turning smoothed rate (2026-10-12), so changing the method in one place
 makes two screens contradict each other. The figure above it is a different
 number on purpose: the 7-day average.
@@ -415,7 +414,7 @@ the way they should read.
 **Only `client/src/features/weight/WeightChart.tsx` imports a charting
 library.** Its component comment calls it "THE swappable boundary". The rule
 broke once, silently: `ProgressionChart.tsx` imported Recharts from 2026-08-17
-until the Stats redesign (part 3b) moved Gym's chart in as `LiftChart` and
+until the Stats redesign moved Gym's chart in as `LiftChart` and
 deleted it. A new chart is a new export from `WeightChart.tsx`, never a second
 import site.
 

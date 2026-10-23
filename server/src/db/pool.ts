@@ -1,5 +1,6 @@
 import { Pool, type PoolClient } from "pg";
 import { config } from "../config";
+import { sslFor } from "./ssl";
 
 /**
  * Runtime connection pool, pointed at Supabase's TRANSACTION pooler.
@@ -12,6 +13,7 @@ import { config } from "../config";
  */
 export const pool = new Pool({
   connectionString: config.DATABASE_URL,
+  ssl: sslFor(config.DATABASE_URL),
   // Kept low in production: the pooler has a connection ceiling and every warm
   // serverless instance opens a pool of its own.
   max: config.isProduction ? 5 : 10,

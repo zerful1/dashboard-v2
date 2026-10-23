@@ -104,7 +104,7 @@ describe("WeighInSheet, opened by Log", () => {
     expect(save).not.toHaveBeenCalled();
   });
 
-  // Review focus 4: the minute after midnight, the clock says the 18th while
+  // The minute after midnight, the clock says the 18th while
   // the page's useToday still says the 17th (CLAUDE.md, one clock per page).
   it("cannot pick a date after the page's today, even once the clock has moved on", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
@@ -166,7 +166,7 @@ describe("WeighInSheet, opened from a weigh-in", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  // Review focus 2: the server has never issued an optimistic id.
+  // The server has never issued an optimistic id.
   it("cannot delete a weigh-in still saving", () => {
     const saving = entry("2026-08-10", 83.1, { id: "optimistic-2026-08-10" });
     renderSheet({ mode: "edit", entry: saving }, [saving]);

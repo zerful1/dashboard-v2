@@ -20,7 +20,7 @@ export interface SheetLayout {
 }
 
 /**
- * The set sheet's rows (redesign part 3a, §3): today against last time, matched
+ * The set sheet's rows: today against last time, matched
  * by set number. `next` continues from the highest number, so deleting a middle
  * set never makes the next one collide with, and overwrite, a later one.
  */
@@ -50,7 +50,7 @@ export interface SheetDefaults {
 }
 
 /**
- * What the sheet starts from for set `next` (§3). "Previous" is today's
+ * What the sheet starts from for set `next`. "Previous" is today's
  * highest-numbered set; "matching" is last time's set `next`, or its final set
  * when it had fewer. Reps are only ever hinted, never filled in, so Add set
  * cannot log a set nobody typed.

@@ -33,7 +33,7 @@ describe('trendPoint', () => {
 })
 
 describe('trendTone', () => {
-  // Green means progress toward the goal, whatever the phase (redesign spec §5.8).
+  // Green means progress toward the goal, whatever the phase.
   it('is good for a cut moving down', () => {
     expect(trendTone(82.4, 81.8, 78)).toBe('good')
   })

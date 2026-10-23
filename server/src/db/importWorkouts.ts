@@ -39,7 +39,7 @@ export const SHEET_RENAMES: Record<string, string> = {
 };
 
 /**
- * Single rows the user corrected (2026-10-03). 24 Aug row 12 reads "Unilateral
+ * Single rows corrected by hand (2026-10-03). 24 Aug row 12 reads "Unilateral
  * Machine Row" at 63 kg, beside the real unilateral sets at 36.3 kg: "the 63kg
  * set isn't supposed to be unilateral". Machine Row is the history's name for
  * the two-arm machine.
