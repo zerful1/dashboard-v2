@@ -29,7 +29,7 @@ React 19 · RSBuild · Tailwind 4 · TanStack Query 5 · Express 4 · Postgres 1
 
 ## Run it locally
 
-You need Node 20.19+ (or 22.12+) and Postgres 13 or later. Any Postgres works: locally all three database URLs in `.env` can be the same one, such as `postgresql://postgres:postgres@localhost:5432/dashboard`. Production uses Supabase's transaction and session poolers, which is why there are separate URLs. Each environment gets its own schema in that one database: `app_dev` locally, `app_test` for the tests.
+You need Node 22.12+ and Postgres 13 or later. Any Postgres works: locally all three database URLs in `.env` can be the same one, such as `postgresql://postgres:postgres@localhost:5432/dashboard`. Production uses Supabase's transaction and session poolers, which is why there are separate URLs. Each environment gets its own schema in that one database: `app_dev` locally, `app_test` for the tests.
 
 ```bash
 npm install
