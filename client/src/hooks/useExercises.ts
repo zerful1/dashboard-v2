@@ -45,7 +45,12 @@ export function useExercises(dayType: number) {
     onSettled: () => void qc.invalidateQueries({ queryKey: key }),
   });
 
+  const reorderKey = ["reorderExercises", userId, dayType];
   const reorder = useMutation({
+    mutationKey: reorderKey,
+    // One at a time, in the order made: two saves racing can land in reverse
+    // and leave the server on the older order.
+    scope: { id: reorderKey.join(":") },
     mutationFn: (orderedIds: string[]) => gymApi.reorderExercises(dayType, orderedIds),
     onMutate: async (orderedIds: string[]) => {
       await qc.cancelQueries({ queryKey: key });
@@ -62,7 +67,11 @@ export function useExercises(dayType: number) {
     onError: (_e, _v, ctx) => {
       if (ctx?.previous) qc.setQueryData(key, ctx.previous);
     },
-    onSettled: () => void qc.invalidateQueries({ queryKey: key }),
+    // Only the last move refetches. An earlier one's refetch reads the server
+    // before the later moves land, and puts the list back under the thumb.
+    onSettled: () => {
+      if (qc.isMutating({ mutationKey: reorderKey }) === 1) void qc.invalidateQueries({ queryKey: key });
+    },
   });
 
   const renameExercise = useMutation({
