@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { Exercise } from "@dashboard/shared";
@@ -77,5 +77,57 @@ describe("ExerciseList, last time loading", () => {
   it("says No history once loaded with none", () => {
     view(false);
     expect(screen.getByText("No history")).toBeInTheDocument();
+  });
+});
+
+describe("ExerciseList, dragging to reorder", () => {
+  // jsdom lays nothing out, and dnd-kit moves by measured position: each row
+  // stands 50 px below the one before it, as on a phone, and everything else
+  // is a tall column holding them. (A 0 × 0 parent clamps every drag to its top.)
+  beforeEach(() => {
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
+      const i = [...document.querySelectorAll("[data-exercise-row]")].indexOf(this);
+      const [top, height] = i < 0 ? [0, 1000] : [i * 50, 50];
+      return { x: 0, y: top, top, left: 0, right: 320, bottom: top + height, width: 320, height, toJSON: () => ({}) } as DOMRect;
+    });
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  const three = [ex("Bench Press", 0), ex("Incline Press", 1), ex("Lateral Raise", 2)];
+  const renderDrag = () => {
+    const onReorder = vi.fn();
+    render(
+      <ExerciseList exercises={three} sets={[]} lastSets={{}} editMode historyNames={[]}
+        onOpen={vi.fn()} onDelete={vi.fn()} onReorder={onReorder} onRename={vi.fn()} onAdd={vi.fn()} />,
+    );
+    return onReorder;
+  };
+
+  // Space picks up, the arrows move, Space drops: dnd-kit's keyboard drag, so
+  // reordering never needs a touchscreen or a mouse.
+  it("saves the new order once, on drop", async () => {
+    const onReorder = renderDrag();
+    screen.getByRole("button", { name: "Drag Bench Press" }).focus();
+    await userEvent.keyboard("[Space]");
+    await userEvent.keyboard("[ArrowDown]");
+    await userEvent.keyboard("[Space]");
+    expect(onReorder).toHaveBeenCalledTimes(1);
+    expect(onReorder).toHaveBeenCalledWith(["e1", "e0", "e2"]);
+  });
+
+  it("saves nothing when dropped where it started", async () => {
+    const onReorder = renderDrag();
+    screen.getByRole("button", { name: "Drag Incline Press" }).focus();
+    await userEvent.keyboard("[Space]");
+    await userEvent.keyboard("[Space]");
+    expect(onReorder).not.toHaveBeenCalled();
+  });
+
+  it("drags only in edit mode", () => {
+    render(
+      <ExerciseList exercises={three} sets={[]} lastSets={{}} editMode={false} historyNames={[]}
+        onOpen={vi.fn()} onDelete={vi.fn()} onReorder={vi.fn()} onRename={vi.fn()} onAdd={vi.fn()} />,
+    );
+    expect(screen.queryByRole("button", { name: /^Drag / })).toBeNull();
   });
 });
