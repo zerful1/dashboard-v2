@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { Trash2 } from "lucide-react";
 import { lastTimeRows, setCell, sheetDefaults } from "@dashboard/shared";
 import type { Exercise, LastTime, WorkoutSet } from "@dashboard/shared";
@@ -62,6 +62,9 @@ export function ExerciseSheet({
   const bodyweightTouched = useRef(false);
   const weightTouched = useRef(false);
   const nextBlock = useRef<HTMLDivElement>(null);
+  const repsInput = useRef<HTMLInputElement>(null);
+  const leftInput = useRef<HTMLInputElement>(null);
+  const rightInput = useRef<HTMLInputElement>(null);
   const nextId = useId();
 
   const { data: coaching, isLoading } = useCoaching(exercise?.exercise_name ?? null);
@@ -129,10 +132,12 @@ export function ExerciseSheet({
     const n = Number.parseInt(v, 10);
     return Number.isFinite(n) && n > 0 ? n : null;
   };
-  const r = whole(reps);
-  const l = whole(left);
-  const rt = whole(right);
-  const w = Number.parseFloat(weight);
+  // An empty field takes its hint: the same as last time is the common case,
+  // and a set logged by mistake is one tap to delete.
+  const r = whole(reps || (defaults.repsHint ?? ""));
+  const l = whole(left || (defaults.leftHint ?? ""));
+  const rt = whole(right || (defaults.rightHint ?? ""));
+  const w = Number.parseFloat(weight || (defaults.weightHint ?? ""));
   const weightOk = isBodyweight || (Number.isFinite(w) && w > 0);
   const valid = weightOk && (sides ? l !== null && rt !== null : r !== null);
   // Enter in the reps field reaches submit without the button, so it checks too.
@@ -141,11 +146,24 @@ export function ExerciseSheet({
   const submit = () => {
     if (!canLog || !exercise) return;
     onLogSet(isBodyweight ? 0 : w, sides ? { left: l!, right: rt! } : r!, isBodyweight, rows.next);
-    // The weight stays for the next set. The reps clear, so a stray tap cannot
-    // log this set twice: Add set waits for new ones.
+    // The weight stays for the next set. The reps clear, so the next set's
+    // hint shows; with a hint, the next tap logs the next set (decided
+    // 2026-10-26: clicking through beats a guard, and a set deletes in a tap).
     setReps("");
     setLeft("");
     setRight("");
+  };
+
+  // Enter moves across and the last field's Enter logs: Android's keyboard
+  // sends Enter from its action key, labelled by enterKeyHint. An iPhone's
+  // number pad has no such key; Safari's arrows above it move across instead.
+  const enterTo = (next: RefObject<HTMLInputElement | null>) => (e: KeyboardEvent) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    next.current?.focus();
+  };
+  const enterSubmits = (e: KeyboardEvent) => {
+    if (e.key === "Enter") submit();
   };
 
   // Until last time has loaded the sheet claims nothing about it (CLAUDE.md,
@@ -193,6 +211,8 @@ export function ExerciseSheet({
               inputMode="decimal"
               step="0.5"
               min="0"
+              enterKeyHint="next"
+              onKeyDown={enterTo(sides ? leftInput : repsInput)}
               placeholder={isBodyweight ? "BW" : (defaults.weightHint ?? "kg")}
               value={isBodyweight ? "" : weight}
               disabled={isBodyweight}
@@ -210,24 +230,25 @@ export function ExerciseSheet({
           <>
             <div className="flex-1">
               <Field label="Left" htmlFor="set-left">
-                <Input id="set-left" type="number" inputMode="numeric" min="1"
-                  placeholder={defaults.leftHint ?? "L"} value={left} onChange={(e) => setLeft(e.target.value)} />
+                <Input ref={leftInput} id="set-left" type="number" inputMode="numeric" min="1" enterKeyHint="next"
+                  placeholder={defaults.leftHint ?? "L"} value={left} onChange={(e) => setLeft(e.target.value)}
+                  onKeyDown={enterTo(rightInput)} />
               </Field>
             </div>
             <div className="flex-1">
               <Field label="Right" htmlFor="set-right">
-                <Input id="set-right" type="number" inputMode="numeric" min="1"
+                <Input ref={rightInput} id="set-right" type="number" inputMode="numeric" min="1" enterKeyHint="done"
                   placeholder={defaults.rightHint ?? "R"} value={right} onChange={(e) => setRight(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") submit(); }} />
+                  onKeyDown={enterSubmits} />
               </Field>
             </div>
           </>
         ) : (
           <div className="flex-1">
             <Field label="Reps" htmlFor="set-reps">
-              <Input id="set-reps" type="number" inputMode="numeric" min="1"
+              <Input ref={repsInput} id="set-reps" type="number" inputMode="numeric" min="1" enterKeyHint="done"
                 placeholder={defaults.repsHint ?? "reps"} value={reps} onChange={(e) => setReps(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") submit(); }} />
+                onKeyDown={enterSubmits} />
             </Field>
           </div>
         )}
