@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { sparklineRows, weightDomain, weightRows, weightTicks } from "../src/features/weight/WeightChart";
+import { sparklineRows, weightRows, weightTicks } from "../src/features/weight/WeightChart";
+import { axisDomain } from "../src/lib/axisDomain";
 
 describe("sparklineRows", () => {
   it("puts a null between two averages more than 7 days apart, so the line breaks", () => {
@@ -87,8 +88,8 @@ describe("weightTicks", () => {
   });
 });
 
-describe("weightDomain", () => {
-  it("has whole-number ends a kilogram beyond the data", () => {
-    expect(weightDomain([81.6, 84.2])).toEqual([80, 86]);
+describe("axisDomain", () => {
+  it("has the whole-number ends just outside the data", () => {
+    expect(axisDomain([81.6, 84.2])).toEqual([81, 85]);
   });
 });

@@ -1,12 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { LIFT_TICK, liftDomain, liftTick } from "../src/features/weight/WeightChart";
+import { LIFT_TICK, liftTick } from "../src/features/weight/WeightChart";
+import { axisDomain } from "../src/lib/axisDomain";
 
 // A fixed "dataMin - 2" domain gave decimal ticks such as 128.7,
 // whose leading digit the margin clipped, so heavy lifts mislabelled their axis.
 describe("LiftChart's axis", () => {
   it("rounds the domain to whole numbers around the data", () => {
-    expect(liftDomain([88.67, 128.7])).toEqual([86, 131]);
-    expect(liftDomain([9, 11])).toEqual([7, 13]);
+    expect(axisDomain([88.67, 128.7])).toEqual([88, 129]);
+    expect(axisDomain([9, 11])).toEqual([9, 11]);
   });
 
   it("labels ticks as whole numbers", () => {
