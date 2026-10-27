@@ -30,8 +30,8 @@ describe("unticked done marks", () => {
   it("rings an unticked gym set in dim", () => {
     const exercise: Exercise = { id: "e1", user_id: "u1", day_type: 1, exercise_name: "Squat", sort_order: 1 };
     const { container } = render(
-      <ExerciseRow exercise={exercise} lastSets={[]} todaySets={[]} editMode={false} isFirst isLast
-        onOpen={() => {}} onDelete={() => {}} onMove={() => {}} onRename={() => {}} />,
+      <ExerciseRow exercise={exercise} lastSets={[]} todaySets={[]} editMode={false}
+        onOpen={() => {}} onDelete={() => {}} onRename={() => {}} />,
     );
     expect(container.querySelector('[data-part="mark"]')).toHaveClass("border-dim");
   });

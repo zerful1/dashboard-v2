@@ -1,5 +1,16 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import type { Exercise, WorkoutSet } from "@dashboard/shared";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -55,15 +66,35 @@ export function ExerciseList({
   }, {});
   const done = exercises.filter((e) => (byName[e.exercise_name]?.length ?? 0) > 0).length;
 
-  const move = (index: number, dir: "up" | "down") => {
-    const target = dir === "up" ? index - 1 : index + 1;
-    if (target < 0 || target >= exercises.length) return;
+  // Pointer covers mouse and touch; the keyboard (Space, arrows, Space) keeps
+  // reordering open to anyone without either.
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const nameOf = (id: string | number) => exercises.find((e) => e.id === id)?.exercise_name ?? "Exercise";
+
+  // reorder takes the FINAL ordering, so a drag is one request on drop, never
+  // one per row it passes.
+  const drop = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
     const ids = exercises.map((e) => e.id);
-    [ids[index], ids[target]] = [ids[target]!, ids[index]!];
-    // reorder takes the FINAL ordering, so a nudge is one request whose
-    // outcome does not depend on how many nudges preceded it.
-    onReorder(ids);
+    onReorder(arrayMove(ids, ids.indexOf(String(active.id)), ids.indexOf(String(over.id))));
   };
+
+  const rows = exercises.map((e) => (
+    <ExerciseRow
+      key={e.id}
+      exercise={e}
+      lastSets={lastSets[e.exercise_name] ?? []}
+      lastPending={lastPending}
+      todaySets={byName[e.exercise_name] ?? []}
+      editMode={editMode}
+      onOpen={() => onOpen(e)}
+      onDelete={() => onDelete(e.id)}
+      onRename={() => onRename(e.exercise_name)}
+    />
+  ));
 
   return (
     <List>
@@ -76,22 +107,32 @@ export function ExerciseList({
         )}
       </div>
 
-      {exercises.map((e, i) => (
-        <ExerciseRow
-          key={e.id}
-          exercise={e}
-          lastSets={lastSets[e.exercise_name] ?? []}
-          lastPending={lastPending}
-          todaySets={byName[e.exercise_name] ?? []}
-          editMode={editMode}
-          isFirst={i === 0}
-          isLast={i === exercises.length - 1}
-          onOpen={() => onOpen(e)}
-          onDelete={() => onDelete(e.id)}
-          onMove={(dir) => move(i, dir)}
-          onRename={() => onRename(e.exercise_name)}
-        />
-      ))}
+      {editMode ? (
+        // Vertical and inside the list: a row dragged sideways would reach
+        // past the screen's edge, and iOS pans the page for it (CLAUDE.md).
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+          onDragEnd={drop}
+          accessibility={{
+            announcements: {
+              onDragStart: ({ active }) => `Picked up ${nameOf(active.id)}.`,
+              onDragOver: ({ active, over }) =>
+                over ? `${nameOf(active.id)} is over ${nameOf(over.id)}.` : `${nameOf(active.id)} is over no position.`,
+              onDragEnd: ({ active, over }) =>
+                over ? `${nameOf(active.id)} dropped at ${nameOf(over.id)}'s place.` : `${nameOf(active.id)} dropped.`,
+              onDragCancel: ({ active }) => `Moving ${nameOf(active.id)} cancelled.`,
+            },
+          }}
+        >
+          <SortableContext items={exercises.map((e) => e.id)} strategy={verticalListSortingStrategy}>
+            {rows}
+          </SortableContext>
+        </DndContext>
+      ) : (
+        rows
+      )}
 
       {exercises.length === 0 && !editMode && (
         <p className="py-6 text-center text-sm text-muted">

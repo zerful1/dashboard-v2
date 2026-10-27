@@ -43,8 +43,10 @@ describe("goalPlacement", () => {
   const line = [{ date: "2026-09-01", kg: 83.8 }, { date: "2026-10-01", kg: 80.8 }];
 
   it("draws a goal that falls inside the chart's range", () => {
-    expect(goalPlacement(pts, line, 80)).toBe("in");
-    expect(goalPlacement(pts, line, 79.6)).toBe("in"); // the 1 kg margin counts
+    expect(goalPlacement(pts, line, 80)).toBe("in"); // the axis runs 80 to 84
+  });
+  it("names a goal just past the axis's end rather than widen the axis for it", () => {
+    expect(goalPlacement(pts, line, 79.6)).toBe("below");
   });
   it("names a goal below the chart instead of stretching to it", () => {
     expect(goalPlacement(pts, line, 70)).toBe("below");

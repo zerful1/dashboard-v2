@@ -1,6 +1,7 @@
 import { rollingAverage, shiftISO, trendFit, windowMean } from "@dashboard/shared";
 import type { AveragePoint, BodyWeightEntry, PeriodKind, TrendFit } from "@dashboard/shared";
 import type { ChartPoint } from "./WeightChart";
+import { axisDomain } from "@/lib/axisDomain";
 
 export interface WeightSummary {
   latest: number | null;
@@ -43,8 +44,8 @@ export function deriveWeightSummary(entries: BodyWeightEntry[], today: string): 
 }
 
 /**
- * Where the weight goal sits against the chart's y-range — everything plotted
- * ± 1 kg, as `weightDomain`. Only a goal inside the range is drawn:
+ * Where the weight goal sits against the chart's y-range, `axisDomain` of
+ * everything plotted. Only a goal inside the range is drawn:
  * stretching the axis to reach a distant goal squashed the line flat, so one
  * outside it is named beside the chart instead. Null: no goal, or nothing yet.
  */
@@ -54,9 +55,9 @@ export function goalPlacement(
   goalKg: number | null,
 ): "in" | "below" | "above" | null {
   if (goalKg === null || points.length === 0) return null;
-  const plotted = [...points, ...line].map((p) => p.kg);
-  if (goalKg < Math.min(...plotted) - 1) return "below";
-  if (goalKg > Math.max(...plotted) + 1) return "above";
+  const [lo, hi] = axisDomain([...points, ...line].map((p) => p.kg));
+  if (goalKg < lo) return "below";
+  if (goalKg > hi) return "above";
   return "in";
 }
 

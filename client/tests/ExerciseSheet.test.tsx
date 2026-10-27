@@ -326,6 +326,86 @@ describe("ExerciseSheet, last time", () => {
 
 // Deferred from #32: opened before today's sets arrived, the sheet numbered the
 // next set 1, and the server's upsert then overwrote the real set 1.
+// The grey hints are last time's numbers. Doing the same again is the common
+// case, so an empty field takes its hint rather than make you type it out.
+describe("ExerciseSheet, the hints count as values", () => {
+  it("logs set 1 from last time's hints with nothing typed", async () => {
+    mockCoaching(null);
+    const { onLogSet } = renderSheet({ last: lastTime([aSet(1, { weight_kg: 80, reps: 8 })]) });
+    await userEvent.click(screen.getByRole("button", { name: /add set 1/i }));
+    expect(onLogSet).toHaveBeenCalledWith(80, 8, false, 1);
+  });
+
+  it("clicks through every set the same way, each from its own hint", async () => {
+    mockCoaching(null);
+    const last = lastTime([aSet(1, { weight_kg: 80, reps: 8 }), aSet(2, { weight_kg: 80, reps: 7 })]);
+    const { onLogSet, update } = renderSheet({ last });
+    await userEvent.click(screen.getByRole("button", { name: /add set 1/i }));
+    update({ last, todaySets: [aSet(1, { weight_kg: 80, reps: 8 })] });
+    await userEvent.click(screen.getByRole("button", { name: /add set 2/i }));
+    expect(onLogSet).toHaveBeenLastCalledWith(80, 7, false, 2);
+  });
+
+  it("takes a typed number over its hint", async () => {
+    mockCoaching(null);
+    const { onLogSet } = renderSheet({ last: lastTime([aSet(1, { weight_kg: 80, reps: 8 })]) });
+    await userEvent.type(reps(), "10");
+    await userEvent.click(screen.getByRole("button", { name: /add set 1/i }));
+    expect(onLogSet).toHaveBeenCalledWith(80, 10, false, 1);
+  });
+
+  it("logs each side from its hint when Left / right is on", async () => {
+    mockCoaching(null);
+    const { onLogSet } = renderSheet({
+      last: lastTime([aSet(1, { weight_kg: 20, reps: 10, reps_left: 10, reps_right: 9 })]),
+    });
+    await userEvent.click(screen.getByRole("button", { name: /add set 1/i }));
+    expect(onLogSet).toHaveBeenCalledWith(20, { left: 10, right: 9 }, false, 1);
+  });
+
+  // Android's number keyboard has an action key, which presses Enter: the
+  // first moves across, the next logs. (An iPhone's has none, so there it is
+  // Safari's arrows above the keyboard, then Add set.)
+  it("moves from weight to reps on Enter, and logs on the next", async () => {
+    mockCoaching(null);
+    const { onLogSet } = renderSheet({ last: lastTime([aSet(1, { weight_kg: 80, reps: 8 })]) });
+    await userEvent.click(weight());
+    await userEvent.keyboard("{Enter}");
+    expect(reps()).toHaveFocus();
+    expect(onLogSet).not.toHaveBeenCalled();
+    await userEvent.keyboard("{Enter}");
+    expect(onLogSet).toHaveBeenCalledWith(80, 8, false, 1);
+  });
+
+  it("moves weight, left, right on Enter when Left / right is on, and logs from right", async () => {
+    mockCoaching(null);
+    const { onLogSet } = renderSheet({
+      last: lastTime([aSet(1, { weight_kg: 20, reps: 10, reps_left: 10, reps_right: 9 })]),
+    });
+    await userEvent.click(weight());
+    await userEvent.keyboard("{Enter}");
+    expect(screen.getByLabelText("Left")).toHaveFocus();
+    await userEvent.keyboard("{Enter}");
+    expect(screen.getByLabelText("Right")).toHaveFocus();
+    expect(onLogSet).not.toHaveBeenCalled();
+    await userEvent.keyboard("{Enter}");
+    expect(onLogSet).toHaveBeenCalledWith(20, { left: 10, right: 9 }, false, 1);
+  });
+
+  it("labels the keyboard's action key Next, then Done", () => {
+    mockCoaching(null);
+    renderSheet();
+    expect(weight()).toHaveAttribute("enterkeyhint", "next");
+    expect(reps()).toHaveAttribute("enterkeyhint", "done");
+  });
+
+  it("still needs a number where there is no hint", () => {
+    mockCoaching(null);
+    renderSheet();
+    expect(screen.getByRole("button", { name: /add set 1/i })).toBeDisabled();
+  });
+});
+
 describe("ExerciseSheet, before today's sets load", () => {
   it("won't log a set, or number it, until today's sets are in", async () => {
     mockCoaching(null);

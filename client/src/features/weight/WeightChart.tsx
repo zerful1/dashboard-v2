@@ -13,6 +13,7 @@ import { daysBetweenISO, linearTrend, nextMonthStart, shiftISO, trendPoint, type
 import { useMotionSafe } from "@/lib/motion";
 import { listDate, monthTick } from "@/lib/dates";
 import { dayMonth } from "@/features/insights/format";
+import { axisDomain } from "@/lib/axisDomain";
 import { goalPlacement } from "./deriveWeight";
 
 export interface ChartPoint {
@@ -73,10 +74,6 @@ export function weightTicks(start: string, today: string, weekly: boolean): { x:
   return ticks;
 }
 
-/** Whole-number ends a kilogram beyond everything plotted (goalPlacement's ±1 kg). */
-export function weightDomain(values: number[]): [number, number] {
-  return [Math.floor(Math.min(...values) - 1), Math.ceil(Math.max(...values) + 1)];
-}
 
 interface Props {
   /** Every weigh-in, oldest first. */
@@ -159,7 +156,7 @@ export function WeightChart({ points, line, start, today, goalKg, span, weekly }
               tickLine={false}
               axisLine={false}
               width={44}
-              domain={weightDomain([...dots.map((d) => d.kg), ...avgs.map((a) => a.kg)])}
+              domain={axisDomain([...dots.map((d) => d.kg), ...avgs.map((a) => a.kg)])}
               allowDecimals={false}
               tickFormatter={(v: number) => String(Math.round(v))}
             />
@@ -295,14 +292,6 @@ export function WeightSparkline({ line }: { line: AveragePoint[] }) {
 /** Tick text for LiftChart: muted, because axis labels are words to read (CLAUDE.md). */
 export const LIFT_TICK = { fontSize: 10, fill: "var(--color-muted)" };
 
-/**
- * Whole-number ends two below and above the data. A fixed "dataMin - 2" gave
- * decimal ticks such as 128.7, whose leading digit the margin clipped.
- */
-export function liftDomain(values: number[]): [number, number] {
-  return [Math.floor(Math.min(...values) - 2), Math.ceil(Math.max(...values) + 2)];
-}
-
 export const liftTick = (v: number) => String(Math.round(v));
 
 /**
@@ -342,7 +331,7 @@ export function LiftChart({ points, unit, allHistory = false }: { points: LiftCh
             tickLine={false}
             axisLine={false}
             width={44}
-            domain={liftDomain(points.map((p) => p.value))}
+            domain={axisDomain(points.map((p) => p.value))}
             allowDecimals={false}
           />
           <Line
