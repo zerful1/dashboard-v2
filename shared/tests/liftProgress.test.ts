@@ -121,8 +121,29 @@ describe('liftDetail', () => {
       ['2026-09-15', false],
       ['2026-09-22', true],
     ])
-    expect(d.points[0]!.value).toBe(88.7)
+    expect(d.points[0]!.value).toBe(70)
     expect(d.chartAll).toBe(false)
+  })
+
+  // An Epley estimate plotted 19.3 × 8 at 24.4, above anything lifted.
+  it('charts the heaviest weight lifted in each session, not an estimate', () => {
+    const d = liftDetail('Cuffed Tricep Extension', [
+      set('Cuffed Tricep Extension', '2026-09-29', 19.3, 8, { set_number: 1 }),
+      set('Cuffed Tricep Extension', '2026-10-02', 20, 3, { set_number: 1 }),
+      set('Cuffed Tricep Extension', '2026-10-02', 19.3, 8, { set_number: 2 }),
+      set('Cuffed Tricep Extension', '2026-10-02', 0, 12, { set_number: 3, is_bodyweight: true }),
+    ], TODAY)!
+    expect(d.points.map((p) => [p.date, p.value])).toEqual([
+      ['2026-09-29', 19.3],
+      ['2026-10-02', 20],
+    ])
+    // The best is still the set Epley ranks highest, and 20 × 3 is not it.
+    expect(d.progress.best).toMatchObject({ weight_kg: 19.3, reps: 8 })
+  })
+
+  it('charts reps for a bodyweight-only lift', () => {
+    const d = liftDetail('Dip', [bw('Dip', '2026-09-29', 10), bw('Dip', '2026-10-02', 12)], TODAY)!
+    expect(d.points.map((p) => p.value)).toEqual([10, 12])
   })
 
   // Most production lifts are v1-era, with nothing in the span.
@@ -147,7 +168,7 @@ describe('liftDetail', () => {
       set('Row', '2026-09-01', 70, 8, { session_id: 'a' }),
     ], TODAY)!
     expect(d.points).toHaveLength(1)
-    expect(d.points[0]!.value).toBeCloseTo(101.3, 1)
+    expect(d.points[0]!.value).toBe(80)
     expect(d.sessions.map((s) => s.session_id).sort()).toEqual(['a', 'b'])
   })
 
