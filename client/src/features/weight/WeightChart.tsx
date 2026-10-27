@@ -295,8 +295,8 @@ export const LIFT_TICK = { fontSize: 10, fill: "var(--color-muted)" };
 export const liftTick = (v: number) => String(Math.round(v));
 
 /**
- * One lift over the trend span: each session's best as an estimated 1RM (or
- * reps), new bests white and the rest dim, with a dashed fitted line that never
+ * One lift over the trend span: each session's heaviest weight (or reps), new
+ * highs white and the rest dim, with a dashed fitted line that never
  * reads as measurement. It lives here because this file is the one charting
  * boundary; ProgressionChart broke that rule and is gone.
  */
@@ -319,7 +319,7 @@ export function LiftChart({ points, unit, allHistory = false }: { points: LiftCh
     <div
       className="h-48"
       role="img"
-      aria-label={`${unit === "kg" ? "Estimated 1RM" : "Reps"} per session, ${points.length} sessions${allHistory ? ", all history" : ""}`}
+      aria-label={`${unit === "kg" ? "Heaviest weight" : "Reps"} per session, ${points.length} sessions${allHistory ? ", all history" : ""}`}
     >
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -12 }}>
