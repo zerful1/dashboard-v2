@@ -49,8 +49,9 @@ export interface LiftProgress {
 
 export interface LiftChartPoint {
   date: string
+  /** The day's heaviest weighted set in kg, or its most reps for a bodyweight-only lift. */
   value: number
-  /** A new best within the span: drawn white. */
+  /** A new high within the span: drawn white. */
   isBest: boolean
 }
 
@@ -175,9 +176,17 @@ export function liftDetail(name: string, sets: LiftSetRow[], today: string): Lif
 
   // A lift with nothing in the span (most v1-era lifts) charts its whole history instead.
   const chartAll = span.length === 0
+  const charted = new Set((chartAll ? bests : span).map((s) => s.session_id))
+  // The chart plots what was lifted: the heaviest weighted set, or reps for a
+  // bodyweight-only lift. Epley ranks the best set, but plotted it put 19.3 × 8
+  // at 24.4, above anything on the bar.
+  const plotted = (s: LiftSetRow) => (bodyweightOnly ? s.reps : s.weight_kg)
   // One point per date: two sessions of one lift on a day (two day types) are one day trained.
   const byDate = new Map<string, number>()
-  for (const s of chartAll ? bests : span) byDate.set(s.date, Math.max(byDate.get(s.date) ?? -Infinity, s.value))
+  for (const s of sets) {
+    if (!charted.has(s.session_id) || (s.is_bodyweight && !bodyweightOnly)) continue
+    byDate.set(s.date, Math.max(byDate.get(s.date) ?? -Infinity, plotted(s)))
+  }
   let running = -Infinity
   const points = [...byDate.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
