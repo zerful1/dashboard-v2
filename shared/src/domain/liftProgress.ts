@@ -53,6 +53,8 @@ export interface LiftChartPoint {
   value: number
   /** A new high within the span: drawn white. */
   isBest: boolean
+  /** The set plotted: the line is its weight and the bar under it its counted reps. */
+  set: DatedSet
 }
 
 export interface LiftSession {
@@ -181,19 +183,26 @@ export function liftDetail(name: string, sets: LiftSetRow[], today: string): Lif
   // bodyweight-only lift. Epley ranks the best set, but plotted it put 19.3 × 8
   // at 24.4, above anything on the bar.
   const plotted = (s: LiftSetRow) => (bodyweightOnly ? s.reps : s.weight_kg)
+  // Heavier wins, and at one weight more reps: the bar under the line is the
+  // reps of the set the line plots, so a rep gain at a weight shows.
+  const outranks = (a: LiftSetRow, b: LiftSetRow) =>
+    plotted(a) > plotted(b) || (plotted(a) === plotted(b) && a.reps > b.reps)
   // One point per date: two sessions of one lift on a day (two day types) are one day trained.
-  const byDate = new Map<string, number>()
+  const byDate = new Map<string, LiftSetRow>()
   for (const s of sets) {
     if (!charted.has(s.session_id) || (s.is_bodyweight && !bodyweightOnly)) continue
-    byDate.set(s.date, Math.max(byDate.get(s.date) ?? -Infinity, plotted(s)))
+    const held = byDate.get(s.date)
+    if (!held || outranks(s, held)) byDate.set(s.date, s)
   }
-  let running = -Infinity
+  // A new high outranks every earlier day by the same rule: a heavier weight,
+  // or more reps at the heaviest so far. More reps at a lighter weight is not.
+  let running: LiftSetRow | null = null
   const points = [...byDate.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, value]) => {
-      const isBest = value > running
-      if (isBest) running = value
-      return { date, value: Math.round(value * 10) / 10, isBest }
+    .map(([date, s]) => {
+      const isBest = !running || outranks(s, running)
+      if (isBest) running = s
+      return { date, value: Math.round(plotted(s) * 10) / 10, isBest, set: dated(s) }
     })
 
   const sessions = [...groupBy(sets, (s) => s.session_id).values()]

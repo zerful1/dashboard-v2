@@ -1,5 +1,9 @@
 import {
+  Bar,
   CartesianGrid,
+  Cell,
+  ComposedChart,
+  LabelList,
   Line,
   LineChart,
   ReferenceLine,
@@ -7,13 +11,16 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  usePlotArea,
+  type PlotArea,
 } from "recharts";
-import { useMemo } from "react";
-import { daysBetweenISO, linearTrend, nextMonthStart, shiftISO, trendPoint, type AveragePoint, type LiftChartPoint } from "@dashboard/shared";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { daysBetweenISO, nextMonthStart, setCell, shiftISO, type AveragePoint, type LiftChartPoint } from "@dashboard/shared";
 import { useMotionSafe } from "@/lib/motion";
 import { listDate, monthTick } from "@/lib/dates";
 import { dayMonth } from "@/features/insights/format";
 import { axisDomain } from "@/lib/axisDomain";
+import { cn } from "@/lib/cn";
 import { goalPlacement } from "./deriveWeight";
 
 export interface ChartPoint {
@@ -294,75 +301,249 @@ export const LIFT_TICK = { fontSize: 10, fill: "var(--color-muted)" };
 
 export const liftTick = (v: number) => String(Math.round(v));
 
+/** The tapped day in words: "2 Oct · 75 × 8 · new high". */
+export function liftReadout(p: LiftChartPoint, today: string): string {
+  return `${dayMonth(p.date, today)} · ${setCell(p.set)}${p.isBest ? " · new high" : ""}`;
+}
+
 /**
- * One lift over the trend span: each session's heaviest weight (or reps), new
- * highs white and the rest dim, with a dashed fitted line that never
- * reads as measurement. It lives here because this file is the one charting
- * boundary; ProgressionChart broke that rule and is gone.
+ * The day whose column x falls in: the bars share the plot's width equally, one
+ * column a day. A tap in an axis gutter takes the nearest day.
  */
-export function LiftChart({ points, unit, allHistory = false }: { points: LiftChartPoint[]; unit: "kg" | "reps"; allHistory?: boolean }) {
-  const data = useMemo(() => {
-    if (points.length < 2) return [];
-    // linearTrend takes {x,y}[] and trendPoint is (x, line): both compile the wrong way round.
-    const line = linearTrend(points.map((p, i) => ({ x: i, y: p.value })));
-    return points.map((p, i) => ({
-      ...p,
-      trend: i === 0 || i === points.length - 1 ? trendPoint(i, line) : undefined,
-    }));
-  }, [points]);
+export function dayAt(x: number, plot: { x: number; width: number }, count: number): number {
+  const i = Math.floor(((x - plot.x) / plot.width) * count);
+  return Math.min(count - 1, Math.max(0, i));
+}
+
+/** A two-digit count at the tick size needs about this much room to stand clear of the next. */
+const COUNT_ROOM = 16;
+
+/** Every day's count when they fit side by side; on a crowded chart, only the picked day's. */
+export function repCountShown(columnWidth: number, index: number, shown: number): boolean {
+  return columnWidth >= COUNT_ROOM || index === shown;
+}
+
+/**
+ * A bar's rep count, over it. Recharts clones this per bar with the bar's box
+ * as `viewBox`. Muted, as words to read (CLAUDE.md); the picked day's in the
+ * text colour, beside its white bar.
+ */
+function RepCount({
+  viewBox,
+  value,
+  index,
+  shown,
+  count,
+}: {
+  viewBox?: { x?: number; y?: number; width?: number };
+  value?: unknown;
+  index?: number;
+  shown: number;
+  count: number;
+}) {
+  const plot = usePlotArea();
+  if (!plot || index == null || viewBox?.x == null || viewBox.y == null) return null;
+  if (!repCountShown(plot.width / count, index, shown)) return null;
+  return (
+    <text
+      className="lift-rep-count tnum"
+      x={viewBox.x + (viewBox.width ?? 0) / 2}
+      y={viewBox.y - 4}
+      textAnchor="middle"
+      fontSize={LIFT_TICK.fontSize}
+      fill={index === shown ? "var(--color-text)" : LIFT_TICK.fill}
+    >
+      {String(value)}
+    </text>
+  );
+}
+
+/** Hands the chart's plot area out of Recharts, whose hooks only work inside a chart. */
+function PlotAreaInto({ into }: { into: { current: PlotArea | null } }) {
+  const plot = usePlotArea();
+  useEffect(() => {
+    into.current = plot ?? null;
+  });
+  return null;
+}
+
+/** The share of the plot the rep bars take, at the bottom, and the line's gap above them. */
+const BARS = 0.28;
+// Room for a rep count over the tallest bar, and a dot's radius, before the line.
+const GAP = 0.1;
+
+/**
+ * The kg axis, stretched below the data so the line keeps clear of the bars:
+ * the data's whole-number ends fill the top of the plot, and the ticks (and so
+ * the gridlines) stay among the data, never in the bar strip.
+ */
+export function liftKgAxis(values: number[]): { domain: [number, number]; ticks: number[] } {
+  const [lo, hi] = axisDomain(values);
+  const below = ((hi - lo) * (BARS + GAP)) / (1 - BARS - GAP);
+  const mid = Math.round((lo + hi) / 2);
+  return { domain: [lo - below, hi], ticks: [...new Set([lo, mid, hi])] };
+}
+
+/** With no line above (a bodyweight lift), the share of the height the bars may take: the rest is room for counts. */
+const BARS_ALONE = 0.85;
+
+/** The reps axis: from zero, so a bar's height is its reps, topping out at the bar strip, or below the counts' room. */
+export function liftRepsDomain(reps: number[], bars: boolean): [number, number] {
+  const max = Math.max(...reps, 1);
+  return [0, max / (bars ? BARS : BARS_ALONE)];
+}
+
+/** The reps axis's labels, when it shows: zero, halfway and the most reps done. The headroom above goes unlabelled. */
+export function liftRepsTicks(reps: number[]): number[] {
+  const max = Math.max(...reps, 1);
+  return [...new Set([0, Math.round(max / 2), max])];
+}
+
+/**
+ * One lift over the trend span. The line is each day's heaviest weight, new
+ * highs white and the rest dim; under it a bar per day for the reps done at
+ * that weight, so a rep gain shows where the line stays flat. A bodyweight-only
+ * lift has no weight to draw and shows its bars alone.
+ *
+ * A tap, click or hover picks a day and the line above the chart names its
+ * exact set. A fixed line rather than a floating tooltip, which could reach
+ * past the screen's edge on a phone (CLAUDE.md). One chart, not a line chart
+ * over a bar chart, so the two share one x axis and can't drift apart.
+ *
+ * It lives here because this file is the one charting boundary;
+ * ProgressionChart broke that rule and is gone.
+ */
+export function LiftChart({
+  points,
+  unit,
+  today,
+  allHistory = false,
+}: {
+  points: LiftChartPoint[];
+  unit: "kg" | "reps";
+  today: string;
+  allHistory?: boolean;
+}) {
+  const [picked, setPicked] = useState<number | null>(null);
+  const plot = useRef<PlotArea | null>(null);
+  const data = useMemo(() => points.map((p) => ({ ...p, reps: p.set.reps })), [points]);
+  const weighted = unit === "kg";
+  const kgAxis = useMemo(() => (weighted && points.length > 0 ? liftKgAxis(points.map((p) => p.value)) : null), [weighted, points]);
 
   if (points.length < 2) {
     return <p className="py-6 text-center text-sm text-muted">Not enough sessions to chart yet.</p>;
   }
 
+  // A stale pick (the lift's points changed under it) falls back to the latest day.
+  const shown = picked !== null && picked < points.length ? picked : points.length - 1;
+  // Worked out from where the pointer is, not from Recharts' tooltip state: on
+  // a phone a tap's click carries no active day, since Recharts tracks only
+  // hover and drag. Bubbling to the wrapper, a tap on a bar, a dot or the space
+  // between all count.
+  const pickAt = (e: { clientX: number; currentTarget: HTMLElement }) => {
+    if (!plot.current) return;
+    setPicked(dayAt(e.clientX - e.currentTarget.getBoundingClientRect().left, plot.current, points.length));
+  };
+
   return (
-    <div
-      className="h-48"
-      role="img"
-      aria-label={`${unit === "kg" ? "Heaviest weight" : "Reps"} per session, ${points.length} sessions${allHistory ? ", all history" : ""}`}
-    >
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -12 }}>
-          <CartesianGrid stroke="var(--color-raised)" vertical={false} />
-          <XAxis dataKey="date" tick={LIFT_TICK} tickLine={false} axisLine={false} minTickGap={28} />
-          <YAxis
-            tick={LIFT_TICK}
-            tickFormatter={liftTick}
-            tickLine={false}
-            axisLine={false}
-            width={44}
-            domain={axisDomain(points.map((p) => p.value))}
-            allowDecimals={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="value"
-            stroke="var(--color-accent)"
-            strokeWidth={2}
-            isAnimationActive={false}
-            dot={(props: { cx?: number; cy?: number; index?: number; payload?: LiftChartPoint }) => (
-              <circle
-                key={props.index}
-                cx={props.cx}
-                cy={props.cy}
-                r={props.payload?.isBest ? 3 : 2}
-                fill={props.payload?.isBest ? "var(--color-accent)" : "var(--color-dim)"}
-                stroke="none"
+    <div>
+      <p className="tnum text-xs text-text" aria-live="polite">
+        {liftReadout(points[shown]!, today)}
+      </p>
+      <div
+        className={cn("mt-2 cursor-pointer", weighted ? "h-56" : "h-40")}
+        role="img"
+        aria-label={`${weighted ? "Heaviest weight and its reps" : "Reps"} per session, ${points.length} sessions${allHistory ? ", all history" : ""}`}
+        onClick={pickAt}
+        // Hover picks on a desktop; on a touch screen a move is a scroll, not a pick.
+        onPointerMove={(e) => e.pointerType === "mouse" && pickAt(e)}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -12 }}>
+            <PlotAreaInto into={plot} />
+            {weighted && <CartesianGrid stroke="var(--color-raised)" vertical={false} yAxisId="kg" syncWithTicks />}
+            <XAxis
+              dataKey="date"
+              tick={LIFT_TICK}
+              tickFormatter={(d: string) => dayMonth(d, today)}
+              tickLine={false}
+              axisLine={false}
+              minTickGap={28}
+            />
+            {kgAxis && (
+              <YAxis
+                yAxisId="kg"
+                tick={LIFT_TICK}
+                tickFormatter={liftTick}
+                tickLine={false}
+                axisLine={false}
+                width={44}
+                domain={kgAxis.domain}
+                ticks={kgAxis.ticks}
               />
             )}
-          />
-          <Line
-            type="linear"
-            dataKey="trend"
-            stroke="var(--color-dim)"
-            strokeWidth={1.5}
-            strokeDasharray="4 4"
-            dot={false}
-            connectNulls
-            isAnimationActive={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+            <YAxis
+              yAxisId="reps"
+              hide={weighted}
+              tick={LIFT_TICK}
+              tickFormatter={liftTick}
+              tickLine={false}
+              axisLine={false}
+              width={44}
+              allowDecimals={false}
+              domain={liftRepsDomain(data.map((d) => d.reps), weighted)}
+              ticks={liftRepsTicks(data.map((d) => d.reps))}
+            />
+            {/* Reps from zero. Data, so muted (never dim or raised); the picked day white. */}
+            <Bar yAxisId="reps" dataKey="reps" maxBarSize={10} radius={[2, 2, 0, 0]} isAnimationActive={false}>
+              {data.map((d, i) => (
+                <Cell key={d.date} fill={i === shown ? "var(--color-accent)" : "var(--color-muted)"} />
+              ))}
+              <LabelList dataKey="reps" content={<RepCount shown={shown} count={points.length} />} />
+            </Bar>
+            {weighted && (
+              <Line
+                yAxisId="kg"
+                type="monotone"
+                dataKey="value"
+                stroke="var(--color-accent)"
+                strokeWidth={2}
+                isAnimationActive={false}
+                activeDot={false}
+                dot={(props: { cx?: number; cy?: number; index?: number; payload?: LiftChartPoint }) => {
+                  const { cx, cy, index, payload } = props;
+                  const key = `dot-${index}`;
+                  if (cx == null || cy == null) return <g key={key} />;
+                  // The picked day: a white ring, as the Weight chart marks its latest.
+                  if (index === shown) {
+                    return <circle key={key} cx={cx} cy={cy} r={4} fill="var(--color-bg)" stroke="var(--color-accent)" strokeWidth={2} />;
+                  }
+                  return (
+                    <circle
+                      key={key}
+                      cx={cx}
+                      cy={cy}
+                      r={payload?.isBest ? 3 : 2}
+                      fill={payload?.isBest ? "var(--color-accent)" : "var(--color-dim)"}
+                      stroke="none"
+                    />
+                  );
+                }}
+              />
+            )}
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="mt-2 flex gap-4 text-[11px] text-muted">
+        {weighted && (
+          <span className="inline-flex items-center gap-1.5">
+            <span aria-hidden className="w-3 border-t-2 border-text" /> heaviest kg
+          </span>
+        )}
+        <span className="inline-flex items-center gap-1.5">
+          <span aria-hidden className="h-2 w-1 rounded-[1px] bg-muted" /> {weighted ? "reps at it" : "reps"}
+        </span>
+      </div>
     </div>
   );
 }

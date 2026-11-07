@@ -18,8 +18,12 @@ const yLabels = (c: HTMLElement) =>
   [...c.querySelectorAll('text[orientation="left"]')].map((t) => Number(t.textContent));
 
 function lift(values: number[]) {
-  const points = values.map((value, i) => ({ date: `2026-10-${String(i + 1).padStart(2, "0")}`, value, isBest: false }));
-  return yLabels(render(<LiftChart unit="kg" points={points} />).container);
+  const points = values.map((value, i) => {
+    const date = `2026-10-${String(i + 1).padStart(2, "0")}`;
+    const set = { date, weight_kg: value, reps: 8, reps_left: null, reps_right: null, is_bodyweight: false };
+    return { date, value, isBest: false, set };
+  });
+  return yLabels(render(<LiftChart unit="kg" points={points} today="2026-10-31" />).container);
 }
 
 function weight(kgs: number[]) {
