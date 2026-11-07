@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { LiftChartPoint } from "@dashboard/shared";
-import { dayAt, LIFT_TICK, liftReadout, liftTick } from "../src/features/weight/WeightChart";
+import { dayAt, LIFT_TICK, liftReadout, liftTick, repCountShown } from "../src/features/weight/WeightChart";
 import { axisDomain } from "../src/lib/axisDomain";
 
 const point = (date: string, set: Partial<LiftChartPoint["set"]>, isBest = false): LiftChartPoint => ({
@@ -25,6 +25,21 @@ describe("LiftChart's tap target", () => {
   it("clamps a tap in the axis gutters to the nearest day", () => {
     expect(dayAt(5, plot, 4)).toBe(0);
     expect(dayAt(360, plot, 4)).toBe(3);
+  });
+});
+
+// Counts over the bars, so a rep gained reads as a number, not a few pixels.
+// Two digits need about 16 px: narrower, they'd run into each other, and only
+// the picked day keeps its count.
+describe("LiftChart's rep counts", () => {
+  it("shows every day's count when the columns have room", () => {
+    expect(repCountShown(16, 0, 5)).toBe(true);
+    expect(repCountShown(40, 3, 5)).toBe(true);
+  });
+
+  it("shows only the picked day's count on a crowded chart", () => {
+    expect(repCountShown(15.9, 0, 5)).toBe(false);
+    expect(repCountShown(6, 5, 5)).toBe(true);
   });
 });
 

@@ -74,6 +74,58 @@ describe("LiftChart's rep bars and readout", () => {
     expect(screen.getByText("8 Oct · 60 × 9 · new high")).toBeInTheDocument();
   });
 
+  const counts = (c: HTMLElement) => [...c.querySelectorAll<SVGTextElement>("text.lift-rep-count")];
+
+  it("prints each day's reps over its bar, the picked day's in white", () => {
+    const { container } = render(<LiftChart unit="kg" points={points} today={TODAY} />);
+    expect(counts(container).map((t) => t.textContent)).toEqual(["8", "9", "10"]);
+    expect(counts(container).map((t) => t.getAttribute("fill"))).toEqual([
+      "var(--color-muted)",
+      "var(--color-muted)",
+      "var(--color-text)",
+    ]);
+    // Each sits over its own bar.
+    bars(container).forEach((b, i) => {
+      const centre = Number(b.getAttribute("x")) + Number(b.getAttribute("width")) / 2;
+      expect(Math.abs(Number(counts(container)[i]!.getAttribute("x")) - centre)).toBeLessThan(1);
+      expect(Number(counts(container)[i]!.getAttribute("y"))).toBeLessThan(Number(b.getAttribute("y")));
+    });
+  });
+
+  // 40 days in 320 px is 8 px a column: the counts would run together.
+  it("keeps only the picked day's count when the chart is crowded", () => {
+    const many = Array.from({ length: 40 }, (_, i) =>
+      day(`2026-0${8 + Math.floor(i / 28)}-${String((i % 28) + 1).padStart(2, "0")}`, 60, 8 + (i % 3)),
+    );
+    const { container } = render(<LiftChart unit="kg" points={many} today={TODAY} />);
+    expect(counts(container).map((t) => t.textContent)).toEqual([String(8 + (39 % 3))]);
+  });
+
+  // The counts stand in the gap between the bars and the line. The tight case:
+  // the lightest day has the most reps, so its dot sits lowest over the tallest bar.
+  it("keeps the line clear of the counts", () => {
+    const tight = [day("2026-10-01", 60, 12), day("2026-10-08", 62.5, 8), day("2026-10-15", 65, 6)];
+    const { container } = render(<LiftChart unit="kg" points={tight} today={TODAY} />);
+    const lowestDot = Math.max(...[...container.querySelectorAll(".recharts-line-dots circle")].map((d) => Number(d.getAttribute("cy")) + Number(d.getAttribute("r"))));
+    // y is the text's baseline; at the 10 px tick size its top is ~8 px above.
+    const highestCountTop = Math.min(...counts(container).map((t) => Number(t.getAttribute("y")) - 8));
+    expect(lowestDot).toBeLessThan(highestCountTop);
+  });
+
+  // With no line above them, the tallest bars once reached the top and their
+  // counts were cut off: in the browser, Pull Ups' two 9s were missing.
+  it("leaves room over a bodyweight lift's tallest bar for its count", () => {
+    const bw = [day("2026-10-01", 0, 5, false, true), day("2026-10-08", 0, 9, false, true), day("2026-10-15", 0, 8, false, true)];
+    const { container } = render(<LiftChart unit="reps" points={bw} today={TODAY} />);
+    expect(counts(container).map((t) => t.textContent)).toEqual(["5", "9", "8"]);
+    // The plot's top is the chart's 4 px margin; a count's top is ~8 px over its baseline.
+    for (const t of counts(container)) expect(Number(t.getAttribute("y")) - 8).toBeGreaterThanOrEqual(4);
+    // The headroom is not labelled: the axis tops out at the most reps done,
+    // not at an uneven "11" that nobody did.
+    const ticks = [...container.querySelectorAll('text[orientation="left"]')].map((t) => t.textContent);
+    expect(ticks).toEqual(["0", "5", "9"]);
+  });
+
   it("draws a bodyweight-only lift as bars alone", () => {
     const bw = [day("2026-10-01", 0, 10, true, true), day("2026-10-08", 0, 12, true, true)];
     const { container } = render(<LiftChart unit="reps" points={bw} today={TODAY} />);
