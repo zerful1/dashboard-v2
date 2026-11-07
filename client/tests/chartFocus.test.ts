@@ -16,6 +16,13 @@ describe("the chart's focus outline", () => {
     );
   });
 
+  // Recharts 3 makes a Bar's layer focusable at tabindex -1, so tapping the
+  // lift chart's rep bars boxed them in white. Tab never reaches tabindex -1,
+  // so hiding its outline hides nothing from the keyboard.
+  it("is hidden on the chart's tabindex -1 layers, which only a pointer can focus", () => {
+    expect(CSS).toMatch(/\.recharts-wrapper \[tabindex="-1"\]:focus\s*\{[^}]*outline:\s*none/);
+  });
+
   // The positive complement: the keyboard still sees where focus is.
   it("is kept for keyboard focus", () => {
     expect(CSS).toMatch(/:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--color-accent\)/);

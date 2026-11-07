@@ -58,7 +58,7 @@ export function LiftDetailView({ name, today, onBack }: { name: string; today: s
           )}
 
           {detail.chartAll && <div className="lbl">All history</div>}
-          <LiftChart points={detail.points} unit={detail.bodyweightOnly ? "reps" : "kg"} allHistory={detail.chartAll} />
+          <LiftChart points={detail.points} unit={detail.bodyweightOnly ? "reps" : "kg"} today={today} allHistory={detail.chartAll} />
 
           <section aria-label="Recent sessions">
             <div className="lbl pb-2">Recent sessions · {detail.sessions.length} in all</div>

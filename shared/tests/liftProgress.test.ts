@@ -182,6 +182,41 @@ describe('liftDetail', () => {
     expect(d.sessions[1]!.sets.map((s) => s.set_number)).toEqual([1, 2])
   })
 
+  // The bar under the line is the reps of the very set the line plots.
+  it("carries each day's plotted set: the heaviest, and on a tie in weight the most reps", () => {
+    const d = liftDetail('Row', [
+      set('Row', '2026-09-01', 70, 10, { set_number: 1 }),
+      set('Row', '2026-09-01', 75, 6, { set_number: 2 }),
+      set('Row', '2026-09-01', 75, 8, { set_number: 3, reps_left: 8, reps_right: 9 }),
+      set('Row', '2026-09-01', 75, 7, { set_number: 4 }),
+    ], TODAY)!
+    expect(d.points).toHaveLength(1)
+    expect(d.points[0]!.value).toBe(75)
+    expect(d.points[0]!.set).toEqual({
+      date: '2026-09-01', weight_kg: 75, reps: 8, reps_left: 8, reps_right: 9, is_bodyweight: false,
+    })
+  })
+
+  // The user's ask: progress "even if it's by a rep" must not draw as a plateau.
+  it('marks a new high for more reps at the top weight, not for more reps at a lighter one', () => {
+    const d = liftDetail('Row', [
+      set('Row', '2026-09-01', 60, 8),
+      set('Row', '2026-09-08', 60, 9),
+      set('Row', '2026-09-15', 62.5, 6),
+      set('Row', '2026-09-22', 60, 12),
+      set('Row', '2026-09-29', 62.5, 6),
+      set('Row', '2026-10-02', 62.5, 7),
+    ], TODAY)!
+    expect(d.points.map((p) => [p.date, p.isBest])).toEqual([
+      ['2026-09-01', true],
+      ['2026-09-08', true],
+      ['2026-09-15', true],
+      ['2026-09-22', false],
+      ['2026-09-29', false],
+      ['2026-10-02', true],
+    ])
+  })
+
   it('is null for a lift with no sets', () => {
     expect(liftDetail('Row', [], TODAY)).toBeNull()
   })
