@@ -125,15 +125,27 @@ describe("ExerciseSheet, logging", () => {
   });
 
   it("renders coaching when the API returns a recommendation", async () => {
-    mockCoaching({ tag: "ADD WEIGHT", color: "green", headline: "Add 2.5 kg next session" });
+    mockCoaching({ tag: "ADD WEIGHT", color: "green", headline: "Go up to 82.5 kg, then work back to 8" });
     renderSheet();
     expect(await screen.findByText("Add weight")).toBeInTheDocument();
+    expect(screen.getByText("Go up to 82.5 kg, then work back to 8")).toBeInTheDocument();
+  });
+
+  // An overshoot is heavy, not a failure: caution, never the error red.
+  it("renders an overshoot as Heavy, in caution", async () => {
+    mockCoaching({
+      tag: "HEAVY",
+      color: "amber",
+      headline: "Heavy for now — stay at 12.5 kg if it moved well, or go back to 11.3 kg and build to 8",
+    });
+    renderSheet();
+    expect(await screen.findByText("Heavy")).toHaveClass("text-caution");
   });
 
   it("renders nothing for coaching when the API returns null", async () => {
     mockCoaching(null);
     renderSheet();
-    await waitFor(() => expect(screen.queryByText(/Add weight|Repeat|Deload/)).toBeNull());
+    await waitFor(() => expect(screen.queryByText(/Add weight|Repeat|Heavy/)).toBeNull());
   });
 });
 

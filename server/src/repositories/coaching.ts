@@ -7,9 +7,10 @@ import type { SessionGroup } from "@dashboard/shared";
  * flat list of its sets.
  *
  * Order is load-bearing, not cosmetic. computeRecommendation reads index 0 as
- * the most recent session (`const latest = sessionGroups[0]`) and its deload
- * rule inspects the first three. Reversing this produces confident advice based
- * on the oldest sessions — which would look entirely plausible and be wrong.
+ * the most recent session (`const latest = sessionGroups[0]`), index 1 as the
+ * one it may have jumped from, and liftStep learns the step from the jumps in
+ * order. Reversing this produces confident advice based on the oldest
+ * sessions — which would look entirely plausible and be wrong.
  */
 export async function recentSessionGroups(
   userId: string,
