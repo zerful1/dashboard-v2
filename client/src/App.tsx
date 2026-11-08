@@ -25,7 +25,8 @@ export function App() {
         // v3: WorkoutSet gained reps_left / reps_right (single-sided sets).
         // v4: /api/workouts/stats returns LiftSetRow[] (Gym Stats).
         // v5: WeeklyReview gained days (Insights).
-        buster: "v5",
+        // v6: CoachingResult's tag gained HEAVY and lost DELOAD (coaching rule).
+        buster: "v6",
         dehydrateOptions: { shouldDehydrateQuery: shouldPersistQuery },
       }}
     >

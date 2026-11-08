@@ -186,10 +186,12 @@ workoutsRouter.get(
   async (req, res, next) => {
     try {
       const { exercise_name } = req.query as unknown as { exercise_name: string };
-      const groups = await recentSessionGroups(req.userId, exercise_name, 3);
+      // 20 dates, not just the last few: the lift's step is learned from its
+      // own jumps (liftStep), which can lie further back.
+      const groups = await recentSessionGroups(req.userId, exercise_name, 20);
       // null for an exercise with no history — the client renders nothing
       // rather than inventing encouragement.
-      res.json(computeRecommendation(groups, exercise_name));
+      res.json(computeRecommendation(groups));
     } catch (err) {
       next(err);
     }

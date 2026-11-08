@@ -60,6 +60,23 @@ describe("coaching", () => {
     expect(res.body.headline).toContain("82.5");
   });
 
+  // The step is learned from the lift's own jumps, which can lie further back than
+  // the last 3 dates the advice once read: here every jump is 4+ dates ago.
+  it("goes up by a step learned from older sessions", async () => {
+    const agent = await signedIn(alice);
+    const eights = (w: number) => [{ w, r: 8 }, { w, r: 8 }];
+    await logSets(agent, "2026-08-01", eights(50));
+    await logSets(agent, "2026-08-04", eights(55));
+    await logSets(agent, "2026-08-07", eights(60));
+    await logSets(agent, "2026-08-10", eights(60));
+    await logSets(agent, "2026-08-13", eights(60));
+
+    const res = await agent
+      .get("/api/workouts/coaching?exercise_name=Bench%20Press")
+      .expect(200);
+    expect(res.body.headline).toBe("Go up to 65 kg, then work back to 8");
+  });
+
   it("says ADD A REP when only some top-weight sets reached 8", async () => {
     const agent = await signedIn(alice);
     await logSets(agent, "2026-08-16", [

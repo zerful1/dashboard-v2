@@ -1,12 +1,12 @@
 import type { CoachingResult } from "@dashboard/shared";
 
-// The domain returns green/amber/red; the palette speaks good/caution/negative.
-// Mapping here keeps the domain free of presentation — computeRecommendation
-// has no idea what colours this app uses, and should not.
+// The domain returns green/amber; the palette speaks good/caution. Mapping
+// here keeps the domain free of presentation — computeRecommendation has no
+// idea what colours this app uses, and should not. No advice is red: with the
+// deload gone, nothing the card says is an error (CLAUDE.md, signal colours).
 const TONE = {
   green: { text: "text-good", edge: "border-l-good" },
   amber: { text: "text-caution", edge: "border-l-caution" },
-  red: { text: "text-negative", edge: "border-l-negative" },
 } as const;
 
 /** The domain's tags are capitals ("ADD WEIGHT"); labels are sentence case now. */
