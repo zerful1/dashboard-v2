@@ -62,5 +62,9 @@ export default defineConfig({
   output: {
     distPath: { root: 'dist' },
     copy: [{ from: ZXING_WASM, to: `static/wasm/zxing_reader-${ZXING_VERSION}.wasm` }],
+    // Every file the build emitted, at /asset-manifest.json. lib/warmCache.ts
+    // reads it to save the chunks of pages not opened yet, so they open with
+    // no signal. Not "manifest.json": that name reads as the web app manifest.
+    manifest: 'asset-manifest.json',
   },
 });

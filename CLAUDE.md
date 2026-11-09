@@ -281,6 +281,20 @@ query or write while signed in makes `AuthProvider` ask `/me`, and `/me` decides
 401 signs the device out and purges, 200 means it was a wrong password and
 nothing changes. A failed check (offline, a 500) purges nothing.
 
+**The page saves the other pages' code, not the worker.** Every page is its own
+chunk and `sw.js` saves a chunk only when asked for it, so after a deploy a page
+not opened since had nothing saved. `lib/warmCache.ts` fetches the rest once the
+app is up, from the list the build writes (`/asset-manifest.json`), and drops
+the previous deploy's code. It runs from the page because a worker installs
+again only when `sw.js` itself changes, and that file is the same in every
+deploy. It writes to the worker's cache by name, so `OFFLINE_CACHE` there and
+`CACHE` in `sw.js` change together.
+
+**A missing `/static/` file is a 404.** The catch-all rewrite in `vercel.json`
+excludes `/static/`, and `sw.js` and the warm-up both refuse to save HTML under
+an asset's name. Before, a chunk from the previous deploy came back as
+`index.html` with a 200 and was cached as that chunk.
+
 **Writes are not queued offline, in any feature.** They fail with a toast and
 are logged again once back online, and a banner says so, because a silent
 failure looks like success. The rule is `networkMode: "always"` in
@@ -379,8 +393,8 @@ silently loses its picture. `public/og.png` is rendered from
 `barcode-detector` ponyfill, whose `locateFile` points at
 `/static/wasm/zxing_reader-<version>.wasm`; `rsbuild.config.ts` copies that file
 into the build (`output.copy`) under zxing-wasm's own version. Remove the copy
-and Vercel answers the URL with `index.html` and a 200, `sw.js` caches that
-HTML, and scanning breaks on every iPhone until `CACHE` is bumped. Remove
+and the URL is a 404, so scanning fails on every iPhone (it no longer comes
+back as `index.html` to be cached as the decoder: see Offline). Remove
 `locateFile` and the ponyfill fetches from jsDelivr at scan time. A future
 Content Security Policy must allow `'wasm-unsafe-eval'`.
 

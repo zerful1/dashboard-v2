@@ -4,7 +4,7 @@
   "outputDirectory": "client/dist",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|static/).*)", "destination": "/index.html" }
   ],
   "crons": [{ "path": "/api/cron/keepalive", "schedule": "0 6 * * *" }]
 }
