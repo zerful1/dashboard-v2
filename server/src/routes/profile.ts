@@ -27,11 +27,29 @@ profileRouter.get("/", async (req, res, next) => {
   }
 });
 
+/**
+ * An IANA zone name ("Europe/London") or UTC, known to this runtime.
+ *
+ * By name only. Intl also takes a bare offset such as "+01:00", and Postgres
+ * reads that the POSIX way, with the sign reversed: an hour east would be
+ * stored and then applied as an hour west.
+ */
+export function isTimeZone(zone: string): boolean {
+  if (zone !== "UTC" && !/^[A-Za-z_]+(\/[A-Za-z0-9_+-]+)+$/.test(zone)) return false;
+  try {
+    new Intl.DateTimeFormat("en-GB", { timeZone: zone });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const patchBody = z
   .object({
-    // A permissive check; the value is only ever passed to Intl, which throws on
-    // a genuinely unknown zone at the point of use.
-    timezone: z.string().min(1).max(60).optional(),
+    // A zone both sides know. It is not only passed to Intl: copyDay hands it
+    // to Postgres (AT TIME ZONE), where an unknown name was a 500 on every
+    // later copy.
+    timezone: z.string().min(1).max(60).refine(isTimeZone, "Unknown time zone").optional(),
     // Optional body details for the nutrition TDEE hint. The DB CHECKs repeat
     // these bounds, so a request that slipped past here would still fail.
     // Nullable: null clears a detail.

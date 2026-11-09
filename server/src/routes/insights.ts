@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
-import { isMonday, isRealDate, PROJECTION_RULES, projectGoal, recordEvents, shiftISO, weeklyReview } from "@dashboard/shared";
+import { isMonday, PROJECTION_RULES, projectGoal, recordEvents, shiftISO, weeklyReview } from "@dashboard/shared";
 import { requireAuth } from "../middleware/requireAuth";
 import { validate } from "../middleware/validate";
+import { isoDate } from "../validation";
 import { getSplit } from "../repositories/split";
 import { listTargets } from "../repositories/nutritionTargets";
 import { recordRows, reviewInputs } from "../repositories/insights";
@@ -38,7 +39,7 @@ insightsRouter.get("/records", async (req, res, next) => {
   }
 });
 
-const todayQuery = z.object({ today: z.string().refine(isRealDate, "Expected a date as YYYY-MM-DD") });
+const todayQuery = z.object({ today: isoDate });
 
 insightsRouter.get("/projections", validate({ query: todayQuery }), async (req, res, next) => {
   try {

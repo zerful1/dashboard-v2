@@ -127,7 +127,10 @@ export async function listSessions(
       WHERE ws.user_id = $1
         AND ($2::text IS NULL OR ws.day_name = $2)
         AND ($5::date IS NULL OR ws.date >= $5)
-      ORDER BY ws.date DESC
+      -- A total order. Two sessions can share a date (two day types), and
+      -- with date alone their order was the planner's to choose per query:
+      -- across pages, one could show twice and the other not at all.
+      ORDER BY ws.date DESC, ws.created_at DESC, ws.id DESC
       LIMIT $3 OFFSET $4`,
     [userId, opts.dayName ?? null, opts.limit, opts.offset, opts.since ?? null],
   );

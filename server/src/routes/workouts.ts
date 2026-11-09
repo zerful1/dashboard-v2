@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../middleware/requireAuth";
 import { validate } from "../middleware/validate";
+import { isoDate } from "../validation";
 import {
   findSession,
   listSessions,
@@ -18,7 +19,6 @@ import { NotFound } from "../errors";
 export const workoutsRouter = Router();
 workoutsRouter.use(requireAuth);
 
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
 
 workoutsRouter.get(
   "/session",

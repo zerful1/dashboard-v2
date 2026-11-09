@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../middleware/requireAuth";
 import { validate } from "../middleware/validate";
+import { isoDate } from "../validation";
 import { listTargets, insertTarget } from "../repositories/nutritionTargets";
 import { NotFound } from "../errors";
 import {
@@ -19,10 +20,6 @@ export const nutritionRouter = Router();
 
 // Router level, so a route added to this file is protected by default.
 nutritionRouter.use(requireAuth);
-
-// The client resolves its own calendar day and sends it. The server never
-// infers one: a deployed host is UTC for everyone.
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
 
 const targetBody = z.object({
   effective_from: isoDate,
