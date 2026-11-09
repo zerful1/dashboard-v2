@@ -12,7 +12,7 @@ const envelope = z.object({
   format: z.literal("dashboard-export"),
   version: z.literal(1),
   account: z.object({ email: z.string() }),
-  tables: z.record(z.array(z.record(z.unknown()))),
+  tables: z.record(z.string(), z.array(z.record(z.string(), z.unknown()))),
 });
 
 export const restoreRouter = Router();

@@ -89,7 +89,9 @@ exercisesRouter.delete(
 
 const reorderBody = z.object({
   day_type: z.number().int().positive(),
-  ordered_ids: z.array(z.string().uuid()).min(1),
+  // Bounded: each id is one UPDATE in reorderExercises, and a day holds a
+  // dozen exercises, not a megabyte of ids.
+  ordered_ids: z.array(z.string().uuid()).min(1).max(200),
 });
 
 exercisesRouter.post("/reorder", validate({ body: reorderBody }), async (req, res, next) => {

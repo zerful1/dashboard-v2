@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
+import { scheduleWarmOfflineCache } from "./lib/warmCache";
 import "@fontsource-variable/inter";
 import "./styles.css";
 
@@ -18,5 +19,8 @@ if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
       // A failed registration costs offline support and nothing else. The app
       // works; there is nothing to tell the user.
     });
+    // The pages not opened yet, saved for a start with no signal. Only beside
+    // a worker: nothing else reads the store this fills.
+    scheduleWarmOfflineCache();
   });
 }

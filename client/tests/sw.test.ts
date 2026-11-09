@@ -173,4 +173,26 @@ describe("service worker", () => {
     await settle(respondWith);
     expect(cache.put).not.toHaveBeenCalled();
   });
+
+  it("caches hashed build output it fetched", async () => {
+    // The complement of the next test: an asset that IS one gets saved.
+    const { listeners, cache } = loadWorker({
+      response: () => new Response("export{}", { headers: { "content-type": "text/javascript" } }),
+    });
+    const respondWith = fire(listeners, "https://app.test/static/js/async/1.abc.js");
+    await settle(respondWith);
+    expect(cache.put).toHaveBeenCalledTimes(1);
+  });
+
+  it("does NOT cache the app's HTML under an asset's name", async () => {
+    // A host that answers a missing /static/ file with the shell and a 200
+    // (as the SPA rewrite did) would have it saved for good as that chunk, or
+    // as the barcode decoder, breaking it until CACHE is bumped.
+    const { listeners, cache } = loadWorker({
+      response: () => new Response("<!doctype html>", { headers: { "content-type": "text/html; charset=utf-8" } }),
+    });
+    const respondWith = fire(listeners, "https://app.test/static/js/async/1.gone.js");
+    await settle(respondWith);
+    expect(cache.put).not.toHaveBeenCalled();
+  });
 });

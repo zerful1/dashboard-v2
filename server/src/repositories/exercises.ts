@@ -1,6 +1,7 @@
 import { pool, withTransaction } from "../db/pool";
 import { T } from "../config";
 import type { Exercise, ExerciseNameRow } from "@dashboard/shared";
+import { Conflict } from "../errors";
 
 export async function listExercises(userId: string, dayType: number): Promise<Exercise[]> {
   const { rows } = await pool.query<Exercise>(
@@ -108,6 +109,13 @@ export interface RenameResult {
  * between them left history under a name the template no longer contained:
  * workout_sets.exercise_name is denormalised with no foreign key, so nothing in
  * the database would have flagged the inconsistency.
+ *
+ * Throws Conflict, having changed nothing, when one of the user's workouts
+ * holds the same set number under both names. The new name need not be in the
+ * template for that: a pruned exercise lives on in workout_sets, where
+ * UNIQUE (session_id, exercise_name, set_number) would refuse the rename, and
+ * the route's own check reads the template only. Checked here, inside the
+ * transaction, so the answer is a sentence rather than a constraint's 500.
  */
 export async function renameExercise(
   userId: string,
@@ -116,6 +124,18 @@ export async function renameExercise(
 ): Promise<RenameResult> {
   const trimmed = newName.trim();
   return withTransaction(async (client) => {
+    const clash = await client.query(
+      `SELECT 1 FROM ${T.workoutSets} a
+         JOIN ${T.workoutSets} b
+           ON b.session_id = a.session_id AND b.set_number = a.set_number
+        WHERE a.user_id = $1 AND b.user_id = $1
+          AND a.exercise_name = $2 AND b.exercise_name = $3 AND $2 <> $3
+        LIMIT 1`,
+      [userId, oldName, trimmed],
+    );
+    if ((clash.rowCount ?? 0) > 0) {
+      throw new Conflict("You've logged both in the same workout, so one can't take the other's name");
+    }
     const ex = await client.query(
       `UPDATE ${T.exercises} SET exercise_name = $3
         WHERE user_id = $1 AND exercise_name = $2`,

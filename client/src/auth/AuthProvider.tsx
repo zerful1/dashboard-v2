@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { persister } from "@/lib/persister";
 import { toast } from "sonner";
@@ -74,6 +74,13 @@ const AuthContext = createContext<AuthContextValue | null>(null);
  * previous account's data in the cache, and sign-in is where it would be handed
  * to somebody new.
  *
+ * A session that ENDS ELSEWHERE is a transition too: it expired, or a password
+ * reset signed every device out. Nobody pressed anything here, so the only
+ * signal is a 401. `/me` answering 401 clears both copies of the cache, and a
+ * 401 from any query or write while signed in asks `/me` (the effect below),
+ * so the screen stops showing an account the server no longer serves and its
+ * data stops sitting on a device that was told to forget it.
+ *
  * This is also why AuthProvider must be rendered inside QueryClientProvider.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -81,16 +88,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [sessionError, setSessionError] = useState<Error | null>(null);
+  // Whether someone is signed in, readable by the cache listener below without
+  // waiting a render: state still names the user for one more pass after a 401.
+  const signedIn = useRef(false);
 
   const refreshAuth = useCallback(async (): Promise<AuthUser | null> => {
     try {
       const me = await api<AuthUser>("/api/auth/me");
+      signedIn.current = true;
       setUser(me);
       setSessionError(null);
       return me;
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         // 401 is the normal signed-out case, not an error worth surfacing.
+        // It is also how a session that ended elsewhere is found out. The
+        // server has just said this device holds nobody's session, so neither
+        // copy of the cache may outlive it: harmless when nothing was cached,
+        // as for any signed-out visitor.
+        signedIn.current = false;
+        qc.clear();
+        void persister.removeClient();
         setUser(null);
         setSessionError(null);
       } else {
@@ -104,11 +122,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [qc]);
 
   useEffect(() => {
     void refreshAuth();
   }, [refreshAuth]);
+
+  // A 401 while signed in: the session may have ended elsewhere. Ask /me, which
+  // settles it either way - a wrong current password is a 401 too, and then
+  // /me answers 200 and nothing changes. One check at a time: a page's queries
+  // fail together, and the refetches that clearing sets off fail again before
+  // React has rendered the sign-out.
+  useEffect(() => {
+    let checking = false;
+    const onError = (err: unknown) => {
+      if (!(err instanceof ApiError) || err.status !== 401 || !signedIn.current || checking) return;
+      checking = true;
+      void refreshAuth().finally(() => {
+        checking = false;
+      });
+    };
+    const offQueries = qc.getQueryCache().subscribe((e) => {
+      if (e.type === "updated" && e.action.type === "error") onError(e.action.error);
+    });
+    const offWrites = qc.getMutationCache().subscribe((e) => {
+      if (e.type === "updated" && e.action.type === "error") onError(e.action.error);
+    });
+    return () => {
+      offQueries();
+      offWrites();
+    };
+  }, [qc, refreshAuth]);
 
   // Everything that has to happen for this device to be signed out, in one
   // place so no caller can do half of it. See the cache note above.
@@ -120,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // may also use. That is exactly the cross-account leak clear() was added to
     // fix, reintroduced by persistence.
     void persister.removeClient();
+    signedIn.current = false;
     setUser(null);
     setSessionError(null);
   }, [qc]);

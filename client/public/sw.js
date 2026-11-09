@@ -50,7 +50,13 @@ self.addEventListener('fetch', (e) => {
         (hit) =>
           hit ||
           fetch(request).then((res) => {
-            if (res.ok) {
+            // Never the app's HTML under an asset's name. A host that answers
+            // a missing file with the shell and a 200 would otherwise have it
+            // saved here for good, as the chunk or the decoder it stood in for.
+            // vercel.json no longer does that for /static/; this is the same
+            // rule held on this side.
+            const html = (res.headers.get('content-type') || '').includes('text/html');
+            if (res.ok && !html) {
               const copy = res.clone();
               caches.open(CACHE).then((c) => c.put(request, copy));
             }

@@ -1,6 +1,7 @@
 import { pool } from "../db/pool";
 import { T } from "../config";
 import type { LastTime, WorkoutSet } from "@dashboard/shared";
+import { deleteFromSession } from "./sessions";
 
 const COLS = `id, user_id, session_id, exercise_name, set_number,
               weight_kg::float8 AS weight_kg, reps, reps_left, reps_right, is_bodyweight`;
@@ -65,12 +66,9 @@ export async function upsertSet(userId: string, input: SetInput): Promise<Workou
   return rows[0]!;
 }
 
-export async function deleteSet(userId: string, id: string): Promise<boolean> {
-  const res = await pool.query(`DELETE FROM ${T.workoutSets} WHERE user_id = $1 AND id = $2`, [
-    userId,
-    id,
-  ]);
-  return (res.rowCount ?? 0) > 0;
+/** Takes the session with it when this was the last thing in it (deleteFromSession). */
+export function deleteSet(userId: string, id: string): Promise<boolean> {
+  return deleteFromSession(userId, T.workoutSets, id);
 }
 
 /**
