@@ -125,6 +125,19 @@ What the demo code won't tell you:
 
 ---
 
+## Rate limits are in memory, and off in the tests
+
+`middleware/rateLimit.ts` counts sign-in attempts, reset requests and food
+searches per caller, in the memory of each warm instance. A shared counter
+would live in Postgres and be a write on a GET, which the demo rule forbids, so
+the limits are approximate by design. `createApp` leaves them off under
+`NODE_ENV=test`, where every request comes from one address; a test that needs
+them builds `createApp({ rateLimits: true })`, so **no other test proves a route
+works with them on**. A new route that costs something per call (a hash, an
+email, an outbound request) needs a limit mounted in `createApp`.
+
+---
+
 ## The database: two connection paths, three schemas
 
 | | port | used by | why |

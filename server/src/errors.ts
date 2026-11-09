@@ -51,3 +51,10 @@ export class Conflict extends AppError {
     super(409, message, "conflict");
   }
 }
+
+/** A caller past a rate limit (middleware/rateLimit.ts). The handler sets Retry-After. */
+export class TooManyRequests extends AppError {
+  constructor(message = "Too many attempts. Try again in a few minutes.") {
+    super(429, message, "too_many_requests");
+  }
+}

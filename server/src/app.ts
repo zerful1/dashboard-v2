@@ -20,6 +20,7 @@ import { restoreRouter } from "./routes/restore";
 import { pool } from "./db/pool";
 import { config } from "./config";
 import { parseSignupPolicy, type SignupPolicy } from "./signups";
+import { buildRateLimits } from "./middleware/rateLimit";
 
 /**
  * Builds the Express app. A factory rather than a module-level singleton so tests
@@ -28,8 +29,11 @@ import { parseSignupPolicy, type SignupPolicy } from "./signups";
  *
  * `signups` defaults to SIGNUP_ALLOWLIST. Tests pass one explicitly to exercise
  * a closed or listed policy while the rest of the suite registers freely.
+ *
+ * `rateLimits` is on everywhere but the test suite, whose every request comes
+ * from one address and would trip them; tests/rateLimit.test.ts turns it on.
  */
-export function createApp(options: { signups?: SignupPolicy } = {}): Express {
+export function createApp(options: { signups?: SignupPolicy; rateLimits?: boolean } = {}): Express {
   const app = express();
 
   // Per app instance, read by the register route through req.app.locals.
@@ -64,6 +68,15 @@ export function createApp(options: { signups?: SignupPolicy } = {}): Express {
     }
     next();
   });
+
+  // Before the session, so a refused request costs no database read, and after
+  // the body parser, which the reset limit reads the address from.
+  if (options.rateLimits ?? !config.isTest) {
+    const limits = buildRateLimits();
+    app.use("/api/auth", limits.auth);
+    app.use("/api/auth/forgot-password", limits.forgotPassword);
+    app.use("/api/food", limits.food);
+  }
 
   app.use(sessionMiddleware);
   app.use(demoReadOnly);
