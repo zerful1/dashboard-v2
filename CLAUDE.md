@@ -281,6 +281,17 @@ query or write while signed in makes `AuthProvider` ask `/me`, and `/me` decides
 401 signs the device out and purges, 200 means it was a wrong password and
 nothing changes. A failed check (offline, a 500) purges nothing.
 
+**A start with no signal opens on the remembered user.** `/me` can't answer, so
+`AuthProvider` falls back to the identity `savedUser.ts` keeps in localStorage,
+and the saved cache has a name to be read under. Only when the server was not
+reached at all (fetch failed, or `api()` timed out): a 5xx is an answer, and
+still shows the retry card. The remembered user is not a credential and must
+never outlive the cache, so **it is forgotten wherever the cache is purged**,
+and on the way into a new sign-in, so a dropped signal can't open the app as
+the previous person. When the signal returns `/me` is asked again. The cost,
+accepted: a device signed out elsewhere shows its cached data until it next
+reaches the server.
+
 **The page saves the other pages' code, not the worker.** Every page is its own
 chunk and `sw.js` saves a chunk only when asked for it, so after a deploy a page
 not opened since had nothing saved. `lib/warmCache.ts` fetches the rest once the

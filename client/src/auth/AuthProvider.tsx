@@ -3,6 +3,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { persister } from "@/lib/persister";
 import { toast } from "sonner";
 import { api, ApiError } from "@/lib/api";
+import { forgetSavedUser, readSavedUser, saveUser } from "./savedUser";
+
+/**
+ * The check never reached the server: fetch itself failed (no signal), or
+ * api() gave up waiting (dead wifi, status 0). A 5xx is not this: the server
+ * answered, and what it said is not "carry on".
+ */
+const unreachable = (err: unknown) => !(err instanceof ApiError) || err.status === 0;
 
 export interface AuthUser {
   id: string;
@@ -91,11 +99,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Whether someone is signed in, readable by the cache listener below without
   // waiting a render: state still names the user for one more pass after a 401.
   const signedIn = useRef(false);
+  // True while the user on screen is the one this device remembers rather than
+  // one the server has just confirmed: the app opened with no signal.
+  const unconfirmed = useRef(false);
 
   const refreshAuth = useCallback(async (): Promise<AuthUser | null> => {
     try {
       const me = await api<AuthUser>("/api/auth/me");
       signedIn.current = true;
+      unconfirmed.current = false;
+      // Remembered for a start with no signal (savedUser.ts).
+      saveUser(me);
       setUser(me);
       setSessionError(null);
       return me;
@@ -107,15 +121,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // copy of the cache may outlive it: harmless when nothing was cached,
         // as for any signed-out visitor.
         signedIn.current = false;
+        unconfirmed.current = false;
         qc.clear();
         void persister.removeClient();
+        forgetSavedUser();
         setUser(null);
         setSessionError(null);
+      } else if (unreachable(err) && (signedIn.current || readSavedUser())) {
+        // No answer at all, on a device that knows who was signed in: open on
+        // that person's saved data rather than on a card saying the session
+        // couldn't be checked. This is the whole of offline reading from a
+        // cold start: the cache was on the device all along, and the only
+        // thing missing was a name to read it under. Nothing is granted by
+        // it. Reads come from the cache, writes fail and say so, and the first
+        // request to reach the server settles who is really signed in: the
+        // "online" listener below asks /me, and a 401 anywhere signs out.
+        if (!signedIn.current) {
+          signedIn.current = true;
+          unconfirmed.current = true;
+          setUser(readSavedUser());
+        }
+        setSessionError(null);
       } else {
-        // Non-401 ApiError (5xx, etc.) or a network-level TypeError from
-        // fetch itself: we can't tell whether the session is actually gone,
-        // so don't guess by clearing a user we already know about — record
-        // the failure instead and let the caller decide what to do with it.
+        // The server answered and it was not "signed out" (a 5xx), or nobody
+        // is remembered here: we can't tell whether the session is gone, so
+        // don't guess by clearing a user we already know about — record the
+        // failure instead and let the caller decide what to do with it.
         setSessionError(err instanceof Error ? err : new Error(String(err)));
       }
       return null;
@@ -126,6 +157,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void refreshAuth();
+  }, [refreshAuth]);
+
+  // The signal is back on a device that opened without it: ask now, rather
+  // than leave a remembered user on screen until some query happens to be
+  // refused. Only then: a confirmed session needs no second opinion each time
+  // the wifi flickers.
+  useEffect(() => {
+    const onOnline = () => {
+      if (unconfirmed.current) void refreshAuth();
+    };
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
   }, [refreshAuth]);
 
   // A 401 while signed in: the session may have ended elsewhere. Ask /me, which
@@ -164,10 +207,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // may also use. That is exactly the cross-account leak clear() was added to
     // fix, reintroduced by persistence.
     void persister.removeClient();
+    forgetSavedUser();
     signedIn.current = false;
+    unconfirmed.current = false;
     setUser(null);
     setSessionError(null);
   }, [qc]);
+
+  // On the way into a new identity: whoever this device remembered is not who
+  // is signing in, so the check that follows must not fall back to them if the
+  // signal drops between the POST and /me.
+  const forgetIdentity = useCallback(() => {
+    forgetSavedUser();
+    signedIn.current = false;
+    unconfirmed.current = false;
+  }, []);
 
   const login = useCallback(
     async (email: string, password: string) => {
@@ -176,6 +230,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Same reason as endSession: clear() never touches the persisted copy,
       // and signing in as someone else is an identity transition too.
       void persister.removeClient();
+      forgetIdentity();
       // The POST succeeding only proves the credentials were right; it does not
       // prove the browser kept the cookie. Without this check a session that
       // failed to stick resolves as success, the page navigates to "/",
@@ -184,7 +239,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const me = await refreshAuth();
       if (!me) throw new Error("Signed in, but the session did not stick on this device.");
     },
-    [qc, refreshAuth],
+    [qc, refreshAuth, forgetIdentity],
   );
 
   const register = useCallback(
@@ -196,10 +251,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       qc.clear();
       // Same reason as endSession.
       void persister.removeClient();
+      forgetIdentity();
       const me = await refreshAuth();
       if (!me) throw new Error("Account created, but the session did not stick on this device.");
     },
-    [qc, refreshAuth],
+    [qc, refreshAuth, forgetIdentity],
   );
 
   const enterDemo = useCallback(async () => {
@@ -207,9 +263,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     qc.clear();
     // Same reason as login: a new identity, so neither copy of the cache may survive.
     void persister.removeClient();
+    forgetIdentity();
     const me = await refreshAuth();
     if (!me) throw new Error("Opened the demo, but the session did not stick on this device.");
-  }, [qc, refreshAuth]);
+  }, [qc, refreshAuth, forgetIdentity]);
 
   const logout = useCallback(async () => {
     try {
