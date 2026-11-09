@@ -1,6 +1,7 @@
 import { pool } from "../db/pool";
 import { T } from "../config";
 import type { CardioEntry } from "@dashboard/shared";
+import { deleteFromSession } from "./sessions";
 
 const COLS = `id, user_id, session_id, exercise,
               distance_miles::float8 AS distance_miles, duration_minutes,
@@ -78,10 +79,7 @@ export async function updateCardio(
   return rows[0] ?? null;
 }
 
-export async function deleteCardio(userId: string, id: string): Promise<boolean> {
-  const res = await pool.query(`DELETE FROM ${T.cardioEntries} WHERE user_id = $1 AND id = $2`, [
-    userId,
-    id,
-  ]);
-  return (res.rowCount ?? 0) > 0;
+/** Takes the session with it when this was the last thing in it (deleteFromSession). */
+export function deleteCardio(userId: string, id: string): Promise<boolean> {
+  return deleteFromSession(userId, T.cardioEntries, id);
 }

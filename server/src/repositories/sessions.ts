@@ -1,9 +1,55 @@
-import { pool } from "../db/pool";
+import { pool, withTransaction } from "../db/pool";
 import { T } from "../config";
 import { getDayName } from "@dashboard/shared";
 import type { SessionSummary, SplitConfig, WorkoutSession } from "@dashboard/shared";
 
 const COLS = `id, user_id, date::text AS date, day_type, day_name, notes, created_at`;
+
+/**
+ * Deletes one of the user's sets or cardio entries, and the session with it
+ * when that was the last thing in it.
+ *
+ * A session exists because something was logged in it (getOrCreateSession), so
+ * one with nothing left is a workout that never happened: History listed it,
+ * and the weekly review counted it as a day trained, with no way to remove it.
+ * A session carrying a note is kept: the imported history has them, and a
+ * delete of one set must not take words with it.
+ *
+ * One transaction, with the session locked first. A set being logged to the
+ * same session from another device then waits, and fails loudly if the session
+ * went, rather than landing in a session about to be deleted under it.
+ *
+ * `table` is T.workoutSets or T.cardioEntries, never caller input. False when
+ * the row is not the user's, as every scoped delete here reports.
+ */
+export async function deleteFromSession(
+  userId: string,
+  table: typeof T.workoutSets | typeof T.cardioEntries,
+  id: string,
+): Promise<boolean> {
+  return withTransaction(async (client) => {
+    const { rows } = await client.query<{ id: string }>(
+      `SELECT ws.id FROM ${T.workoutSessions} ws
+        WHERE ws.user_id = $1
+          AND ws.id = (SELECT session_id FROM ${table} WHERE user_id = $1 AND id = $2)
+          FOR UPDATE`,
+      [userId, id],
+    );
+    const sessionId = rows[0]?.id;
+    if (!sessionId) return false;
+    const gone = await client.query(`DELETE FROM ${table} WHERE user_id = $1 AND id = $2`, [userId, id]);
+    if ((gone.rowCount ?? 0) === 0) return false;
+    await client.query(
+      `DELETE FROM ${T.workoutSessions} ws
+        WHERE ws.user_id = $1 AND ws.id = $2
+          AND coalesce(ws.notes, '') = ''
+          AND NOT EXISTS (SELECT 1 FROM ${T.workoutSets} s WHERE s.session_id = ws.id)
+          AND NOT EXISTS (SELECT 1 FROM ${T.cardioEntries} c WHERE c.session_id = ws.id)`,
+      [userId, sessionId],
+    );
+    return true;
+  });
+}
 
 export async function findSession(
   userId: string,
