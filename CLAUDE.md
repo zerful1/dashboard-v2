@@ -272,8 +272,14 @@ the browser can read it.
 
 Offline reads come from the persisted query cache instead, purged at every
 identity change in `AuthProvider` (sign-in, registration, entering the demo,
-sign-out). `qc.clear()` empties memory only, so `persister.removeClient()`
-accompanies every one.
+sign-out, and `/me` answering 401). `qc.clear()` empties memory only, so
+`persister.removeClient()` accompanies every one.
+
+**A session can end without anyone pressing sign-out**: it expires, or a
+password reset signs every device out. The only news is a 401, so a 401 from any
+query or write while signed in makes `AuthProvider` ask `/me`, and `/me` decides:
+401 signs the device out and purges, 200 means it was a wrong password and
+nothing changes. A failed check (offline, a 500) purges nothing.
 
 **Writes are not queued offline, in any feature.** They fail with a toast and
 are logged again once back online, and a banner says so, because a silent
