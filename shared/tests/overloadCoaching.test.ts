@@ -30,9 +30,25 @@ describe('liftStep: the jump you make on this lift', () => {
     expect(liftStep(tops.map((t) => [w(t + 100, 8)]).reverse())).toBe(5)
   })
 
-  it('ignores drops and repeats, and rounds to 0.1 kg', () => {
+  it('ignores drops and repeats, and rounds away float noise', () => {
     // A cable stack: 10.2 → 11.3 → 11.3 → 10.2 → 11.3. In floats 11.3 - 10.2 is 1.1000000000000014.
     expect(liftStep([[w(11.3, 8)], [w(10.2, 8)], [w(11.3, 8)], [w(11.3, 8)], [w(10.2, 8)]])).toBe(1.1)
+  })
+
+  // At one decimal 1.25 became 1.3, and 13.75 kg was told to go up to 15.1.
+  it('keeps a 1.25 kg step as 1.25', () => {
+    expect(liftStep([[w(13.75, 8)], [w(12.5, 8)]])).toBe(1.25)
+  })
+
+  // 57.5 → 60, down to 55 for form, back to 60. The return used to count as a
+  // 5 kg step, and as the latest rise it won the tie against the real 2.5.
+  it('does not learn a step from coming back up after a drop', () => {
+    expect(liftStep([[w(60, 8)], [w(55, 8)], [w(60, 6)], [w(57.5, 8)]])).toBe(2.5)
+  })
+
+  it('measures a new high from the high it beat, not from the dip before it', () => {
+    // 60, down to 55, then 62.5: 2.5 over the old high, not 7.5 over the dip.
+    expect(liftStep([[w(62.5, 8)], [w(55, 8)], [w(60, 8)]])).toBe(2.5)
   })
 
   it('reads the heaviest weighted set of each session', () => {
@@ -98,6 +114,45 @@ describe('computeRecommendation', () => {
       const r = computeRecommendation([[w(66, 8), w(66, 8), w(66, 8)], [w(73, 8), w(73, 6)], [w(66, 8)]])
       expect(r?.headline).toBe('Go up to 73 kg, then work back to 8')
     })
+
+    it('goes up by a 1.25 kg step to a weight that exists', () => {
+      const r = computeRecommendation([[w(13.75, 8), w(13.75, 8)], [w(12.5, 8)]])
+      expect(r?.headline).toBe('Go up to 15 kg, then work back to 8')
+    })
+
+    it('goes up by the real step after a drop and return', () => {
+      const r = computeRecommendation([[w(60, 8), w(60, 8)], [w(55, 8)], [w(60, 6)], [w(57.5, 8)]])
+      expect(r?.headline).toBe('Go up to 62.5 kg, then work back to 8')
+    })
+
+    // A stack in pounds logs as 13.6, 15.9, 18.1: its step reads 2.3 or 2.2 by
+    // turns. Where the lift has been heavier, that weight is the one on the stack.
+    it('names the next weight the lift has been loaded to, not weight + step', () => {
+      const sessions = [
+        [w(15.9, 8), w(15.9, 8)],
+        [w(18.1, 4)],
+        [w(15.9, 8)],
+        [w(13.6, 8)],
+        [w(11.3, 8)],
+        [w(9.1, 8)],
+        [w(6.8, 8)],
+      ]
+      // Rises 2.3, 2.2, 2.3, 2.3, 2.2: the step is 2.3, and 15.9 + 2.3 is 18.2,
+      // which is not a plate. 18.1 is, because it has been lifted.
+      expect(liftStep(sessions)).toBe(2.3)
+      expect(computeRecommendation(sessions)?.headline).toBe('Go up to 18.1 kg, then work back to 8')
+    })
+
+    it('uses the step at an all-time high, where there is no heavier weight to read', () => {
+      const r = computeRecommendation([[w(15.9, 8), w(15.9, 8)], [w(13.6, 8)], [w(11.3, 8)], [w(9.1, 8)], [w(6.8, 8)]])
+      expect(r?.headline).toBe('Go up to 18.2 kg, then work back to 8')
+    })
+
+    it('falls back to the step when the only heavier weight is far above', () => {
+      // A one-off 100 kg single is not the next rung from 60.
+      const r = computeRecommendation([[w(60, 8), w(60, 8)], [w(100, 1)], [w(60, 7)], [w(57.5, 8)]])
+      expect(r?.headline).toBe('Go up to 62.5 kg, then work back to 8')
+    })
   })
 
   it('holds at ADD A REP when the best set is 8+ but others lag', () => {
@@ -123,9 +178,25 @@ describe('computeRecommendation', () => {
       })
     })
 
-    it('at a weight you chose to stay at, says build back to 5', () => {
+    // 60 for 8, then 65 for 4, and 4 again. The second session used to read
+    // "build back to 5" at a weight that never had 5, with the way back gone.
+    it('is still heavy at the next session, while the new weight has never had 5', () => {
+      const r = computeRecommendation([[w(65, 4)], [w(65, 4)], [w(60, 8), w(60, 8)]])
+      expect(r).toEqual({
+        tag: 'HEAVY',
+        color: 'amber',
+        headline: 'Heavy for now — stay at 65 kg if it moved well, or go back to 60 kg and build to 8',
+      })
+    })
+
+    it('says build back to 5 once the weight has had 5, and no longer offers the way back', () => {
+      const r = computeRecommendation([[w(65, 4)], [w(65, 6)], [w(60, 8)]])
+      expect(r).toEqual({ tag: 'REPEAT', color: 'amber', headline: 'Stay at 65 kg — build back to 5 reps' })
+    })
+
+    it('says build to 5, not back, at a weight that has never had 5', () => {
       const r = computeRecommendation([[w(80, 4)], [w(80, 4)]])
-      expect(r).toEqual({ tag: 'REPEAT', color: 'amber', headline: 'Stay at 80 kg — build back to 5 reps' })
+      expect(r).toEqual({ tag: 'REPEAT', color: 'amber', headline: 'Stay at 80 kg — build to 5 reps' })
     })
 
     it('on a first session, or after a drop, is not an overshoot', () => {
