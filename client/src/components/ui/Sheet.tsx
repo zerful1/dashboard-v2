@@ -35,13 +35,24 @@ export function Sheet({ open, onClose, title, children }: Props) {
   // a phone raises the keyboard over a sheet nobody has read yet. A child that
   // asks for focus itself (autoFocus) keeps it. Keyed on `open` alone, so a new
   // onClose each render can't re-run this and mistake the sheet for the opener.
+  //
+  // The opener is read during the render where `open` flips on, not in the
+  // effect: React focuses an autoFocus child while committing, before any effect
+  // or layout effect runs, so by then activeElement is that child, which is
+  // unmounted on close and leaves focus nowhere.
+  const opener = useRef<HTMLElement | null>(null);
+  const wasOpen = useRef(false);
+  if (open && !wasOpen.current) {
+    opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  }
   useEffect(() => {
+    wasOpen.current = open;
     if (!open) return;
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const from = opener.current;
     const el = panel.current;
     if (el && !el.contains(document.activeElement)) el.focus({ preventScroll: true });
     return () => {
-      if (opener?.isConnected) opener.focus({ preventScroll: true });
+      if (from?.isConnected) from.focus({ preventScroll: true });
     };
   }, [open]);
 
@@ -52,7 +63,16 @@ export function Sheet({ open, onClose, title, children }: Props) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
       if (e.key !== "Tab" || !panel.current) return;
-      const stops = [...panel.current.querySelectorAll<HTMLElement>(FOCUSABLE)];
+      const root = panel.current;
+      // jsdom has no layout, so the rendered-box check only counts when the
+      // panel itself has one.
+      const hasLayout = root.getClientRects().length > 0;
+      const stops = [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+        (n) =>
+          !n.closest("[hidden], [inert]") &&
+          !n.closest("fieldset:disabled") &&
+          (!hasLayout || n.getClientRects().length > 0),
+      );
       const first = stops[0];
       const last = stops[stops.length - 1];
       const at = document.activeElement;

@@ -97,4 +97,40 @@ describe("Sheet focus", () => {
 
     await waitFor(() => expect(screen.getByText("open")).toHaveFocus());
   });
+
+  it("gives focus back to the opener when a child took focus with autoFocus", async () => {
+    const user = userEvent.setup();
+    render(
+      <Harness>
+        <input aria-label="name" autoFocus />
+      </Harness>,
+    );
+    await user.click(screen.getByText("open"));
+    expect(screen.getByLabelText("name")).toHaveFocus();
+
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => expect(screen.getByText("open")).toHaveFocus());
+  });
+
+  it("does not trap Tab on a hidden last stop", async () => {
+    const user = userEvent.setup();
+    render(
+      <Harness>
+        <input aria-label="first" />
+        <button>last</button>
+        <button hidden>ghost</button>
+      </Harness>,
+    );
+    await user.click(screen.getByText("open"));
+    await user.tab();
+    await user.tab();
+    expect(screen.getByText("last")).toHaveFocus();
+
+    // "last" is the real end, so Tab wraps to the start.
+    await user.tab();
+    expect(screen.getByLabelText("first")).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(screen.getByText("last")).toHaveFocus();
+  });
 });
