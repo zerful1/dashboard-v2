@@ -143,6 +143,33 @@ describe('computeRecommendation', () => {
       expect(computeRecommendation(sessions)?.headline).toBe('Go up to 18.1 kg, then work back to 8')
     })
 
+    // 61 is 1 kg above 60 with a 2.5 kg step: a micro-load, not the next weight.
+    it('ignores a stray weight much smaller than a step above', () => {
+      const r = computeRecommendation([
+        [w(60, 8), w(60, 8), w(60, 8)],
+        [w(57.5, 8), w(57.5, 8)],
+        [w(55, 8), w(55, 8)],
+        [w(50, 8), w(61, 1)],
+      ])
+      expect(r?.headline).toBe('Go up to 62.5 kg, then work back to 8')
+    })
+
+    it('uses a heavier weight inside the window, even one logged once', () => {
+      const r = computeRecommendation([
+        [w(60, 8), w(60, 8)],
+        [w(57.5, 8)],
+        [w(55, 8)],
+        [w(61.5, 1)],
+      ])
+      expect(r?.headline).toBe('Go up to 61.5 kg, then work back to 8')
+    })
+
+    // The window is inclusive: exactly half a step above counts (60 -> 61.25, step 2.5).
+    it('counts a rung exactly half a step above', () => {
+      const r = computeRecommendation([[w(60, 8)], [w(57.5, 8)], [w(55, 8)], [w(61.25, 8)]])
+      expect(r?.headline).toBe('Go up to 61.25 kg, then work back to 8')
+    })
+
     it('uses the step at an all-time high, where there is no heavier weight to read', () => {
       const r = computeRecommendation([[w(15.9, 8), w(15.9, 8)], [w(13.6, 8)], [w(11.3, 8)], [w(9.1, 8)], [w(6.8, 8)]])
       expect(r?.headline).toBe('Go up to 18.2 kg, then work back to 8')

@@ -31,6 +31,15 @@ const SMALL_RISE = 2.5
 const CLIMB_SHARE = 0.15
 
 /**
+ * The window, in steps above the current weight, in which a heavier logged
+ * weight is "the next rung". Under RUNG_MIN it is a one-off micro-load (a
+ * 61 kg set on a lift that moves in 2.5s), not the machine's next weight.
+ * Over RUNG_REACH it is a climb or a one-off, and the step is the better guide.
+ */
+const RUNG_MIN = 0.5
+const RUNG_REACH = 1.5
+
+/**
  * To the hundredth, not the tenth: a 1.25 kg plate is a real step, and at one
  * decimal it became 1.3, so 13.75 kg was told to go up to 15.1.
  */
@@ -102,17 +111,17 @@ export function liftStep(sessionGroups: SessionGroup[]): number {
  * 15.9 + 2.3 is 18.2). At an all-time high there is nothing to read, and it
  * is weight + step.
  *
- * "About a step": within one and a half. A weight further off is a climb or a
- * one-off, not the next rung, and the step is the better guide.
+ * "About a step": between RUNG_MIN and RUNG_REACH steps above, inclusive. Reps
+ * do not matter: 18.1 kg exists on the stack even if it was lifted for 4.
  */
 function nextWeight(sessionGroups: SessionGroup[], weight: number): number {
   const step = liftStep(sessionGroups)
-  const above = sessionGroups
+  const rungs = sessionGroups
     .flat()
-    .filter(s => !s.is_bodyweight && s.weight_kg > weight + 0.01)
+    .filter(s => !s.is_bodyweight)
     .map(s => s.weight_kg)
-  const rung = above.length ? Math.min(...above) : null
-  return rung !== null && rung - weight <= step * 1.5 + 0.01 ? round2(rung) : round2(weight + step)
+    .filter(x => x - weight >= step * RUNG_MIN - 0.01 && x - weight <= step * RUNG_REACH + 0.01)
+  return rungs.length ? round2(Math.min(...rungs)) : round2(weight + step)
 }
 
 /**
