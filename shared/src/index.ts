@@ -28,3 +28,4 @@ export * from "./domain/nutrition/tdeeInputs";
 export * from "./domain/nutrition/adherence";
 export * from "./domain/nutrition/weekStrip";
 export * from "./restore";
+export * from "./domain/plates";
