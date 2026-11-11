@@ -241,3 +241,18 @@ describe("Gym, when the split fails to load", () => {
     expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("Push");
   });
 });
+
+describe("Gym's sub-tabs", () => {
+  // The Plates tab is the plate calculator. It replaces the Log tab's content
+  // while the Gym header stays above it.
+  it("opens the plate calculator on Plates, in place of the Log", async () => {
+    freeze();
+    mockByPath();
+    renderPage();
+    expect(await screen.findByText("Row & Press")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Plates" }));
+    expect(await screen.findByText("Machine starts at")).toBeInTheDocument();
+    expect(screen.queryByText("Row & Press")).toBeNull();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Pull");
+  });
+});

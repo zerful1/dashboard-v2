@@ -21,16 +21,18 @@ import { RenameExerciseSheet } from "./RenameExerciseSheet";
 import { CardioSection } from "./CardioSection";
 import { StatsTab } from "./StatsTab";
 import { HistoryTab } from "./HistoryTab";
+import { PlatesTab } from "./PlatesTab";
 import { cn } from "@/lib/cn";
 import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
 
-type SubTab = "log" | "stats" | "history";
+type SubTab = "log" | "stats" | "history" | "plates";
 
 const SUB_TABS: { key: SubTab; label: string }[] = [
   { key: "log", label: "Log" },
   { key: "stats", label: "Stats" },
   { key: "history", label: "History" },
+  { key: "plates", label: "Plates" },
 ];
 
 export function GymPage() {
@@ -140,6 +142,9 @@ export function GymPage() {
       </div>
 
       {tab === "stats" && <StatsTab />}
+
+      {tab === "plates" && <PlatesTab />}
+
 
       {tab === "history" && (
         <HistoryTab
