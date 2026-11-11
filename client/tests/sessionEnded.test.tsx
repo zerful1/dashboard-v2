@@ -64,7 +64,12 @@ function renderApp() {
 
 const meCalls = (spy: ReturnType<typeof mockApi>) => spy.mock.calls.filter((c) => c[0] === "/api/auth/me").length;
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  // A signed-in test leaves its user remembered (savedUser.ts), and the last
+  // test here is about a device that remembers nobody.
+  window.localStorage.clear();
+});
 
 describe("a session that ended elsewhere", () => {
   it("signs this device out, and empties both copies of the cache, when a query is refused", async () => {
