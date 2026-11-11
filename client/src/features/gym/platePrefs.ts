@@ -1,4 +1,5 @@
 import { STANDARD_PLATES_KG } from "@dashboard/shared";
+import { parseDecimal } from "@/lib/number";
 
 // Remembered on this device only (not the account): the starting weight, which
 // plates the gym has, and the last mode. Totals are deliberately not kept.
@@ -21,7 +22,7 @@ export function readPrefs(): PlatePrefs {
     if (typeof raw !== "object" || raw === null) return prefs;
     const r = raw as Record<string, unknown>;
     if (r.mode === "me" || r.mode === "buddy") prefs.mode = r.mode;
-    if (typeof r.start === "string" && Number.isFinite(Number(r.start))) prefs.start = r.start;
+    if (typeof r.start === "string" && parseDecimal(r.start) !== null) prefs.start = r.start;
     if (Array.isArray(r.plates)) {
       const kept = STANDARD_PLATES_KG.filter((p) => (r.plates as unknown[]).includes(p));
       if (kept.length > 0) prefs.plates = kept;

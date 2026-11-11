@@ -109,6 +109,7 @@ function Stepper({
 }
 
 export function PlatesTab() {
+  const platesLabelId = useId();
   const [saved] = useState(readPrefs);
   const [mode, setMode] = useState<PlateMode>(saved.mode);
   const [start, setStart] = useState(saved.start);
@@ -127,6 +128,8 @@ export function PlatesTab() {
   const totalKg = parseDecimal(total);
   const youKg = parseDecimal(you);
   const buddyKg = parseDecimal(buddy);
+  const shown = mode === "me" ? [startKg, totalKg] : [startKg, youKg, buddyKg];
+  const tooBig = shown.some((n) => n !== null && n > 1000);
   const load = usable(startKg) && usable(totalKg) ? loadFor(startKg, totalKg, available) : null;
   const pair =
     usable(startKg) && usable(youKg) && usable(buddyKg)
@@ -144,7 +147,7 @@ export function PlatesTab() {
   const buddyFigure = <Figure key="buddy" label={buddyLabel} load={pair.buddy} plates={!swap} />;
   return (
     <div className="space-y-6">
-      <div className="flex gap-1">
+      <div role="group" aria-label="Mode" className="flex gap-1">
         {(
           [
             ["me", "Just me"],
@@ -172,6 +175,7 @@ export function PlatesTab() {
           <Stepper label="Buddy" value={buddy} step={step} onChange={setBuddy} />
         </>
       )}
+      {tooBig && <p className="text-sm text-muted">Up to 1000 kg</p>}
       {mode === "me" && load?.kind === "below" && (
         <p className="text-sm text-muted">Less than the machine on its own</p>
       )}
@@ -215,25 +219,34 @@ export function PlatesTab() {
         </div>
       )}
       <div className="space-y-2">
-        <p className="lbl">Plates at your gym</p>
-        <div className="flex flex-wrap gap-2">
-          {STANDARD_PLATES_KG.map((p) => (
-            <Button
-              key={p}
-              type="button"
-              variant={on.includes(p) ? "selected" : "subtle"}
-              aria-pressed={on.includes(p)}
-              aria-label={`${kg(p)} kg plate`}
-              onClick={() => toggle(p)}
-              // Off is outlined so it still reads as something to tap; on is tinted.
-              className={cn(
-                "border px-3 py-1.5 text-xs font-normal tabular-nums",
-                on.includes(p) ? "border-transparent" : "border-edge",
-              )}
-            >
-              {kg(p)}
-            </Button>
-          ))}
+        <p id={platesLabelId} className="lbl">
+          Plates at your gym
+        </p>
+        <div role="group" aria-labelledby={platesLabelId} className="flex flex-wrap gap-2">
+          {STANDARD_PLATES_KG.map((p) => {
+            const isOn = on.includes(p);
+            // The only plate left on ignores taps: aria-disabled keeps it focusable, and it reads muted.
+            const isLast = isOn && on.length === 1;
+            return (
+              <Button
+                key={p}
+                type="button"
+                variant={isOn && !isLast ? "selected" : "subtle"}
+                aria-pressed={isOn}
+                aria-disabled={isLast || undefined}
+                aria-label={`${kg(p)} kg plate`}
+                onClick={() => toggle(p)}
+                // Off is outlined so it still reads as something to tap; on is tinted.
+                className={cn(
+                  "border px-3 py-1.5 text-xs font-normal tabular-nums",
+                  isOn && !isLast ? "border-transparent" : "border-edge",
+                  isLast && "cursor-not-allowed opacity-60 hover:text-muted",
+                )}
+              >
+                {kg(p)}
+              </Button>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -80,6 +80,17 @@ describe("Plates tab, just me", () => {
     expect(plateChip("1.25")).toHaveAttribute("aria-pressed", "true");
   });
 
+  it("marks the last plate on as disabled, and only that one", async () => {
+    render(<PlatesTab />);
+    expect(plateChip("1.25")).not.toHaveAttribute("aria-disabled");
+    for (const p of ["25", "20", "15", "10", "5", "2.5"]) await userEvent.click(plateChip(p));
+    expect(plateChip("1.25")).toHaveAttribute("aria-disabled", "true");
+    expect(plateChip("1.25")).not.toBeDisabled();
+    expect(plateChip("25")).not.toHaveAttribute("aria-disabled");
+    await userEvent.click(plateChip("25"));
+    expect(plateChip("1.25")).not.toHaveAttribute("aria-disabled");
+  });
+
   it("shows the plates as chips under the figure", async () => {
     render(<PlatesTab />);
     await type("Machine starts at", "20");
@@ -115,6 +126,29 @@ describe("Plates tab, just me", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
+  it("says the limit, quietly, when a weight is over 1000 kg", async () => {
+    render(<PlatesTab />);
+    await type("Machine starts at", "20");
+    expect(screen.queryByText("Up to 1000 kg")).not.toBeInTheDocument();
+    await type("Total weight", "1001");
+    const note = screen.getByText("Up to 1000 kg");
+    expect(note).toHaveClass("text-muted");
+    expect(note).not.toHaveClass("text-negative");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    await type("Total weight", "1000");
+    expect(screen.queryByText("Up to 1000 kg")).not.toBeInTheDocument();
+  });
+
+  it("says the limit when the starting weight or a buddy's weight is over 1000 kg", async () => {
+    render(<PlatesTab />);
+    await type("Machine starts at", "1500");
+    expect(screen.getByText("Up to 1000 kg")).toBeInTheDocument();
+    await type("Machine starts at", "20");
+    await toBuddy();
+    await type("Buddy", "2000");
+    expect(screen.getByText("Up to 1000 kg")).toBeInTheDocument();
+  });
+
   it("still answers at exactly 1000 kg", async () => {
     render(<PlatesTab />);
     await type("Machine starts at", "0");
@@ -144,6 +178,14 @@ describe("Plates tab, with a buddy", () => {
     expect(screen.getByLabelText("Buddy")).toBeInTheDocument();
     expect(screen.queryByLabelText("Total weight")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Machine starts at")).toBeInTheDocument();
+  });
+
+  it("names the two toggle groups", async () => {
+    render(<PlatesTab />);
+    const mode = screen.getByRole("group", { name: "Mode" });
+    expect(within(mode).getAllByRole("button").map((b) => b.textContent)).toEqual(["Just me", "With a buddy"]);
+    const plates = screen.getByRole("group", { name: "Plates at your gym" });
+    expect(within(plates).getAllByRole("button")).toHaveLength(7);
   });
 
   it("keeps the lighter lifter's plates on and shows what to swap", async () => {
@@ -268,6 +310,14 @@ describe("Plates tab, remembered on the device", () => {
     expect(plateChip("20")).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByLabelText("You")).toHaveValue("");
     expect(screen.getByLabelText("Buddy")).toHaveValue("");
+  });
+
+  it("remembers a starting weight typed with a comma", async () => {
+    const first = render(<PlatesTab />);
+    await type("Machine starts at", "77,5");
+    first.unmount();
+    render(<PlatesTab />);
+    expect(screen.getByLabelText("Machine starts at")).toHaveValue("77,5");
   });
 
   it("does not remember the total for just me", async () => {
