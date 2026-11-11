@@ -1,3 +1,5 @@
+import { cn } from "@/lib/cn";
+
 export interface PlateSleeveProps {
   /** Plates that stay on, heaviest first, kg. Drawn solid. */
   inner: number[];
@@ -31,7 +33,7 @@ export function PlateSleeve({ inner, outer = [] }: PlateSleeveProps) {
     ...outer.map((kg) => ({ kg, moves: true })),
   ];
   return (
-    <div role="img" aria-label={sleeveLabel(inner, outer)} className="flex items-center gap-1">
+    <div role="img" aria-label={sleeveLabel(inner, outer)} className="flex max-w-full items-center gap-1 overflow-x-auto">
       {/* The bar stub and the collar that holds the plates on. Decoration only. */}
       <div aria-hidden="true" className="h-2 w-3 bg-raised" />
       <div aria-hidden="true" className="h-8 w-1.5 bg-raised" />
@@ -41,7 +43,10 @@ export function PlateSleeve({ inner, outer = [] }: PlateSleeveProps) {
           aria-hidden="true"
           data-moves={String(moves)}
           style={{ height: `${Math.max(MIN_PLATE_PX, kg * PX_PER_KG)}px` }}
-          className={`flex w-7 items-center justify-center border text-label text-muted tabular-nums ${moves ? "border-dashed border-muted" : "border-text"}`}
+          className={cn(
+            "flex w-7 items-center justify-center border text-label text-muted tabular-nums",
+            moves ? "border-dashed border-muted" : "border-text",
+          )}
         >
           {String(kg)}
         </div>

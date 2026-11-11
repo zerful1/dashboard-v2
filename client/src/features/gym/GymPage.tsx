@@ -145,7 +145,6 @@ export function GymPage() {
 
       {tab === "plates" && <PlatesTab />}
 
-
       {tab === "history" && (
         <HistoryTab
           onEditInLog={(s) => {

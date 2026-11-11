@@ -42,4 +42,11 @@ describe("PlateSleeve", () => {
     expect(height("25")).toBeGreaterThan(height("10"));
     expect(height("1.25")).toBeGreaterThanOrEqual(20);
   });
+
+  it("scrolls inside its own box rather than pushing the page wider than the screen", () => {
+    render(<PlateSleeve inner={Array(40).fill(1.25)} />);
+    const img = screen.getByRole("img");
+    expect(img).toHaveClass("max-w-full");
+    expect(img).toHaveClass("overflow-x-auto");
+  });
 });

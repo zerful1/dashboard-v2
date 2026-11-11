@@ -1,5 +1,8 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { buddyLoadFor, loadFor, stepFor, STANDARD_PLATES_KG, type Load } from "@dashboard/shared";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { cn } from "@/lib/cn";
 import { parseDecimal } from "@/lib/number";
 import { PlateSleeve } from "./PlateSleeve";
 import { readPrefs, writePrefs, type PlateMode } from "./platePrefs";
@@ -28,7 +31,11 @@ function Figure({ label, load, plates }: { label: string; load: Load | null; pla
       {load?.kind === "below" && <p className="text-sm text-muted">Less than the machine on its own</p>}
       {load?.kind === "ok" && (
         <>
-          <p className="figure">{kg(load.perSideKg)} kg</p>
+          {plates && load.plates.length === 0 ? (
+            <p className="text-sm text-muted">Just the machine</p>
+          ) : (
+            <p className="figure">{kg(load.perSideKg)} kg</p>
+          )}
           <Closest load={load} />
           {plates && load.plates.length > 0 && (
             <>
@@ -48,7 +55,10 @@ function PlateChips({ plates, label = "Plates each side", dashed = false }: { pl
       {plates.map((p, i) => (
         <li
           key={i}
-          className={`rounded-full border px-3 py-1 text-xs tabular-nums text-muted ${dashed ? "border-dashed border-muted" : "border-muted"}`}
+          className={cn(
+            "rounded-full border border-muted px-3 py-1 text-xs tabular-nums text-muted",
+            dashed && "border-dashed",
+          )}
         >
           {kg(p)}
         </li>
@@ -83,12 +93,12 @@ function Stepper({
         <button type="button" aria-label={`Less ${label}`} onClick={() => nudge(-1)} className={btn}>
           −
         </button>
-        <input
+        <Input
           id={id}
           inputMode="decimal"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-24 rounded-xl border border-edge bg-surface px-3 py-2 text-center text-sm tabular-nums text-text focus:outline-hidden focus:border-accent"
+          className="w-24 text-center tabular-nums"
         />
         <button type="button" aria-label={`More ${label}`} onClick={() => nudge(1)} className={btn}>
           +
@@ -106,29 +116,30 @@ export function PlatesTab() {
   const [you, setYou] = useState("");
   const [buddy, setBuddy] = useState("");
   const [on, setOn] = useState<number[]>(saved.plates);
-  const available = STANDARD_PLATES_KG.filter((p) => on.includes(p));
+  const available = useMemo(() => STANDARD_PLATES_KG.filter((plate) => on.includes(plate)), [on]);
   const toggle = (p: number) => {
     if (on.includes(p) && on.length === 1) return;
     setOn(on.includes(p) ? on.filter((x) => x !== p) : [...on, p]);
   };
-  useEffect(() => writePrefs({ mode, start, plates: available }), [mode, start, available.join()]);
+  useEffect(() => writePrefs({ mode, start, plates: available }), [mode, start, available]);
   const step = stepFor(available);
-  const s = parseDecimal(start);
-  const t = parseDecimal(total);
-  const y = parseDecimal(you);
-  const b = parseDecimal(buddy);
-  const load = usable(s) && usable(t) ? loadFor(s, t, available) : null;
+  const startKg = parseDecimal(start);
+  const totalKg = parseDecimal(total);
+  const youKg = parseDecimal(you);
+  const buddyKg = parseDecimal(buddy);
+  const load = usable(startKg) && usable(totalKg) ? loadFor(startKg, totalKg, available) : null;
   const pair =
-    usable(s) && usable(y) && usable(b)
-      ? buddyLoadFor(s, y, b, available)
+    usable(startKg) && usable(youKg) && usable(buddyKg)
+      ? buddyLoadFor(startKg, youKg, buddyKg, available)
       : {
-          you: usable(s) && usable(y) ? loadFor(s, y, available) : null,
-          buddy: usable(s) && usable(b) ? loadFor(s, b, available) : null,
+          you: usable(startKg) && usable(youKg) ? loadFor(startKg, youKg, available) : null,
+          buddy: usable(startKg) && usable(buddyKg) ? loadFor(startKg, buddyKg, available) : null,
           swap: null,
         };
   const swap = pair.swap;
-  const youLabel = swap ? (swap.inside === "you" ? "You · solid" : "You · solid + dashed") : "You";
-  const buddyLabel = swap ? (swap.inside === "buddy" ? "Buddy · solid" : "Buddy · solid + dashed") : "Buddy";
+  const hasDashed = swap !== null && swap.outer.length > 0;
+  const youLabel = hasDashed ? (swap.inside === "you" ? "You · solid" : "You · solid + dashed") : "You";
+  const buddyLabel = hasDashed ? (swap.inside === "buddy" ? "Buddy · solid" : "Buddy · solid + dashed") : "Buddy";
   const youFigure = <Figure key="you" label={youLabel} load={pair.you} plates={!swap} />;
   const buddyFigure = <Figure key="buddy" label={buddyLabel} load={pair.buddy} plates={!swap} />;
   return (
@@ -140,15 +151,16 @@ export function PlatesTab() {
             ["buddy", "With a buddy"],
           ] as const
         ).map(([key, text]) => (
-          <button
+          <Button
             key={key}
             type="button"
+            variant={mode === key ? "selected" : "subtle"}
             aria-pressed={mode === key}
             onClick={() => setMode(key)}
-            className={`flex-1 rounded-full py-1.5 text-xs font-medium ${mode === key ? "bg-accent/10 text-accent" : "text-muted"}`}
+            className="flex-1 px-0 py-1.5 text-xs"
           >
             {text}
-          </button>
+          </Button>
         ))}
       </div>
       <Stepper label="Machine starts at" value={start} step={step} onChange={setStart} />
@@ -206,17 +218,21 @@ export function PlatesTab() {
         <p className="lbl">Plates at your gym</p>
         <div className="flex flex-wrap gap-2">
           {STANDARD_PLATES_KG.map((p) => (
-            <button
+            <Button
               key={p}
               type="button"
+              variant={on.includes(p) ? "selected" : "subtle"}
               aria-pressed={on.includes(p)}
               aria-label={`${kg(p)} kg plate`}
               onClick={() => toggle(p)}
               // Off is outlined so it still reads as something to tap; on is tinted.
-              className={`rounded-full border px-3 py-1.5 text-xs tabular-nums ${on.includes(p) ? "border-transparent bg-accent/10 text-accent" : "border-edge text-muted"}`}
+              className={cn(
+                "border px-3 py-1.5 text-xs font-normal tabular-nums",
+                on.includes(p) ? "border-transparent" : "border-edge",
+              )}
             >
               {kg(p)}
-            </button>
+            </Button>
           ))}
         </div>
       </div>

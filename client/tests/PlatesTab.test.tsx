@@ -214,6 +214,29 @@ describe("Plates tab, with a buddy", () => {
     expect(screen.getByRole("img", { name: "Each side: 25 kg and 2.5 kg" })).toBeInTheDocument();
   });
 
+  it("says Just the machine, not 0 kg, for a lifter whose total is the machine", async () => {
+    render(<PlatesTab />);
+    await toBuddy();
+    await type("Machine starts at", "20");
+    await type("You", "20");
+    await type("Buddy", "15");
+    expect(screen.getByText("Just the machine")).toBeInTheDocument();
+    expect(screen.queryByText("0 kg")).not.toBeInTheDocument();
+    expect(screen.queryByText("To swap")).not.toBeInTheDocument();
+  });
+
+  it("drops solid and dashed from the labels when nothing is dashed", async () => {
+    render(<PlatesTab />);
+    await toBuddy();
+    await type("Machine starts at", "20");
+    await type("You", "75");
+    await type("Buddy", "75");
+    expect(screen.getByText("Same weight, nothing to swap")).toBeInTheDocument();
+    expect(screen.queryByText(/solid/)).not.toBeInTheDocument();
+    expect(screen.getAllByText("You")).toHaveLength(2);
+    expect(screen.getAllByText("Buddy")).toHaveLength(2);
+  });
+
   it("shows a dash for a lifter whose weight is not typed yet, and no swap", async () => {
     render(<PlatesTab />);
     await toBuddy();
