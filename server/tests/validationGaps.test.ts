@@ -7,7 +7,7 @@ import { T } from "../src/config";
 import { errorHandler } from "../src/middleware/errorHandler";
 import { getOrCreateSession } from "../src/repositories/sessions";
 import { findUserByEmail } from "../src/repositories/users";
-import { isTimeZone } from "../src/routes/profile";
+import { isTimeZone } from "../src/validation";
 import { DEFAULT_SPLIT } from "@dashboard/shared";
 
 const app = createApp();

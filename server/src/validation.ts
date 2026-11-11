@@ -11,3 +11,20 @@ import { isRealDate } from "@dashboard/shared";
  * is the only thing standing between that string and a `date` column.
  */
 export const isoDate = z.string().refine(isRealDate, "Expected a date as YYYY-MM-DD");
+
+/**
+ * An IANA zone name ("Europe/London") or UTC, known to this runtime.
+ *
+ * By name only. Intl also takes a bare offset such as "+01:00", and Postgres
+ * reads that the POSIX way, with the sign reversed: an hour east would be
+ * stored and then applied as an hour west.
+ */
+export function isTimeZone(zone: string): boolean {
+  if (zone !== "UTC" && !/^[A-Za-z_]+(\/[A-Za-z0-9_+-]+)+$/.test(zone)) return false;
+  try {
+    new Intl.DateTimeFormat("en-GB", { timeZone: zone });
+    return true;
+  } catch {
+    return false;
+  }
+}

@@ -19,7 +19,6 @@ import { NotFound } from "../errors";
 export const workoutsRouter = Router();
 workoutsRouter.use(requireAuth);
 
-
 workoutsRouter.get(
   "/session",
   validate({ query: z.object({ date: isoDate, day_type: z.coerce.number().int().positive() }) }),

@@ -6,6 +6,7 @@ import { getProfile, updateProfile, deleteAccount } from "../repositories/profil
 import { findUserByIdWithPassword } from "../repositories/users";
 import { verifyPassword } from "../services/password";
 import { NotFound, Unauthorized } from "../errors";
+import { isTimeZone } from "../validation";
 import { PASSWORD_MAX_LENGTH } from "@dashboard/shared";
 
 export const profileRouter = Router();
@@ -26,23 +27,6 @@ profileRouter.get("/", async (req, res, next) => {
     next(err);
   }
 });
-
-/**
- * An IANA zone name ("Europe/London") or UTC, known to this runtime.
- *
- * By name only. Intl also takes a bare offset such as "+01:00", and Postgres
- * reads that the POSIX way, with the sign reversed: an hour east would be
- * stored and then applied as an hour west.
- */
-export function isTimeZone(zone: string): boolean {
-  if (zone !== "UTC" && !/^[A-Za-z_]+(\/[A-Za-z0-9_+-]+)+$/.test(zone)) return false;
-  try {
-    new Intl.DateTimeFormat("en-GB", { timeZone: zone });
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 const patchBody = z
   .object({
