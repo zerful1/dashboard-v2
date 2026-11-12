@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../middleware/requireAuth";
 import { validate } from "../middleware/validate";
+import { isoDate } from "../validation";
 import { getSplit } from "../repositories/split";
 import { getOrCreateSession } from "../repositories/sessions";
 import { listCardio, addCardio, updateCardio, deleteCardio } from "../repositories/cardio";
@@ -22,7 +23,7 @@ const fields = z.object({
 });
 
 const createBody = fields.extend({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: isoDate,
   day_type: z.number().int().positive(),
 });
 

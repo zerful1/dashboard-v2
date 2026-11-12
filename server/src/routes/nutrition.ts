@@ -2,6 +2,8 @@ import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../middleware/requireAuth";
 import { validate } from "../middleware/validate";
+import { isoDate } from "../validation";
+import { isRealDate } from "@dashboard/shared";
 import { listTargets, insertTarget } from "../repositories/nutritionTargets";
 import { NotFound } from "../errors";
 import {
@@ -19,10 +21,6 @@ export const nutritionRouter = Router();
 
 // Router level, so a route added to this file is protected by default.
 nutritionRouter.use(requireAuth);
-
-// The client resolves its own calendar day and sends it. The server never
-// infers one: a deployed host is UTC for everyone.
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
 
 const targetBody = z.object({
   effective_from: isoDate,
@@ -118,14 +116,13 @@ nutritionRouter.get("/diary", validate({ query: z.object({ date: isoDate }) }), 
 });
 
 // Food's 7-day strip. Bounded, so a query string can't
-// ask for years. The refinements check the shape first: zod runs them even
-// when a field has already failed its regex, and shiftISO throws on a
-// malformed date, which would turn a 400 into a 500.
-const ISO = /^\d{4}-\d{2}-\d{2}$/;
+// ask for years. The refinements still check each date first: zod runs an
+// object-level refine even when a field's own refine (isoDate) has failed, and
+// shiftISO throws on a malformed date, which would turn a 400 into a 500.
 const daysQuery = z
   .object({ from: isoDate, to: isoDate })
-  .refine((q) => !ISO.test(q.from) || !ISO.test(q.to) || q.from <= q.to, { message: "from must not be after to" })
-  .refine((q) => !ISO.test(q.from) || !ISO.test(q.to) || q.to <= shiftISO(q.from, 30), { message: "At most 31 days" });
+  .refine((q) => !isRealDate(q.from) || !isRealDate(q.to) || q.from <= q.to, { message: "from must not be after to" })
+  .refine((q) => !isRealDate(q.from) || !isRealDate(q.to) || q.to <= shiftISO(q.from, 30), { message: "At most 31 days" });
 
 nutritionRouter.get("/days", validate({ query: daysQuery }), async (req, res, next) => {
   try {

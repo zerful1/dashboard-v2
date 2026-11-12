@@ -6,6 +6,7 @@ import { getProfile, updateProfile, deleteAccount } from "../repositories/profil
 import { findUserByIdWithPassword } from "../repositories/users";
 import { verifyPassword } from "../services/password";
 import { NotFound, Unauthorized } from "../errors";
+import { isTimeZone } from "../validation";
 import { PASSWORD_MAX_LENGTH } from "@dashboard/shared";
 
 export const profileRouter = Router();
@@ -29,9 +30,10 @@ profileRouter.get("/", async (req, res, next) => {
 
 const patchBody = z
   .object({
-    // A permissive check; the value is only ever passed to Intl, which throws on
-    // a genuinely unknown zone at the point of use.
-    timezone: z.string().min(1).max(60).optional(),
+    // A zone both sides know. It is not only passed to Intl: copyDay hands it
+    // to Postgres (AT TIME ZONE), where an unknown name was a 500 on every
+    // later copy.
+    timezone: z.string().min(1).max(60).refine(isTimeZone, "Unknown time zone").optional(),
     // Optional body details for the nutrition TDEE hint. The DB CHECKs repeat
     // these bounds, so a request that slipped past here would still fail.
     // Nullable: null clears a detail.

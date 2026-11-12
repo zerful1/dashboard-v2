@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
-import { isRealDate, MAX_HABITS } from "@dashboard/shared";
+import { MAX_HABITS } from "@dashboard/shared";
 import { requireAuth } from "../middleware/requireAuth";
 import { validate } from "../middleware/validate";
+import { isoDate } from "../validation";
 import { BadRequest, Conflict, NotFound } from "../errors";
 import { addHabit, deleteHabit, listHabits, reorderHabits, setDone, updateHabit } from "../repositories/habits";
 
@@ -10,7 +11,6 @@ export const habitsRouter = Router();
 // Router level, so a route added to this file is protected by default.
 habitsRouter.use(requireAuth);
 
-const isoDate = z.string().refine(isRealDate, "Expected a date as YYYY-MM-DD");
 const idParams = z.object({ id: z.string().uuid() });
 const dayParams = z.object({ id: z.string().uuid(), date: isoDate });
 const name = z.string().trim().min(1, "Give the habit a name").max(40, "Keep the name to 40 characters");

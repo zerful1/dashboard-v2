@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { TRANSITIONS, useMotionSafe, springOrNone } from "@/lib/motion";
 
 interface Props {
@@ -18,14 +18,77 @@ interface Props {
  * removing the animation would be the worst of both — the sheet would still
  * follow a finger but arrive without the motion that explains where it went.
  */
+/** What Tab can land on inside the sheet. */
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 export function Sheet({ open, onClose, title, children }: Props) {
   const safe = useMotionSafe();
+  const panel = useRef<HTMLDivElement>(null);
 
-  // Escape closes, and the page behind must not scroll while a sheet is open.
+  // The sheet says aria-modal, so it has to behave like one for a keyboard or
+  // a screen reader: focus comes in when it opens and goes back where it was
+  // when it closes. Before, focus stayed on the button behind the backdrop,
+  // and Tab walked the page underneath.
+  //
+  // Focus lands on the sheet itself, not its first field: focusing an input on
+  // a phone raises the keyboard over a sheet nobody has read yet. A child that
+  // asks for focus itself (autoFocus) keeps it. Keyed on `open` alone, so a new
+  // onClose each render can't re-run this and mistake the sheet for the opener.
+  //
+  // The opener is read during the render where `open` flips on, not in the
+  // effect: React focuses an autoFocus child while committing, before any effect
+  // or layout effect runs, so by then activeElement is that child, which is
+  // unmounted on close and leaves focus nowhere.
+  const opener = useRef<HTMLElement | null>(null);
+  const wasOpen = useRef(false);
+  if (open && !wasOpen.current) {
+    opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  }
+  useEffect(() => {
+    wasOpen.current = open;
+    if (!open) return;
+    const from = opener.current;
+    const el = panel.current;
+    if (el && !el.contains(document.activeElement)) el.focus({ preventScroll: true });
+    return () => {
+      if (from?.isConnected) from.focus({ preventScroll: true });
+    };
+  }, [open]);
+
+  // Escape closes, Tab stays inside, and the page behind must not scroll while
+  // a sheet is open.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
+      if (e.key !== "Tab" || !panel.current) return;
+      const root = panel.current;
+      // jsdom has no layout, so the rendered-box check only counts when the
+      // panel itself has one.
+      const hasLayout = root.getClientRects().length > 0;
+      const stops = [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+        (n) =>
+          !n.closest("[hidden], [inert]") &&
+          !n.closest("fieldset:disabled") &&
+          (!hasLayout || n.getClientRects().length > 0),
+      );
+      const first = stops[0];
+      const last = stops[stops.length - 1];
+      const at = document.activeElement;
+      if (!first || !last) {
+        // Nothing to move to: stay on the sheet rather than fall behind it.
+        e.preventDefault();
+      } else if (!panel.current.contains(at) || at === panel.current) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+      } else if (e.shiftKey && at === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && at === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
@@ -49,10 +112,13 @@ export function Sheet({ open, onClose, title, children }: Props) {
             onClick={onClose}
           />
           <motion.div
+            ref={panel}
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            className="fixed inset-x-0 bottom-0 z-50 rounded-t-[22px] border-t border-edge bg-surface
+            // Focusable by script only, as the place focus lands on opening.
+            tabIndex={-1}
+            className="fixed inset-x-0 bottom-0 z-50 rounded-t-[22px] border-t border-edge bg-surface outline-hidden
                        p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]
                        sm:inset-x-auto sm:left-1/2 sm:bottom-auto sm:top-1/2 sm:w-[26rem]
                        sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[22px] sm:border sm:border-edge"

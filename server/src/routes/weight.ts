@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../middleware/requireAuth";
 import { validate } from "../middleware/validate";
+import { isoDate } from "../validation";
 import { listWeights, upsertWeight, deleteWeight } from "../repositories/bodyWeight";
 import { NotFound } from "../errors";
 import { fillWeightGoalStart } from "../repositories/goals";
@@ -17,7 +18,7 @@ const entryBody = z.object({
   // The client resolves its own calendar day and sends it; the server never
   // infers one. A server-side "today" would be wrong for anyone not sharing the
   // deployment's timezone, and would silently change meaning at midnight UTC.
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD"),
+  date: isoDate,
   weight_kg: z.number().positive().max(500),
   notes: z.string().max(500).nullish(),
 });
