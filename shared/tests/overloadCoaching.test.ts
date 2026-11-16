@@ -87,6 +87,28 @@ describe('computeRecommendation', () => {
     expect(r?.headline).toBe('Push for 9 reps')
   })
 
+  describe('a newest session well under the last working weight', () => {
+    it('is skipped: a deload or a mistyped weight leaves the advice where it was', () => {
+      const r = computeRecommendation([[w(50, 8)], [w(100, 6), w(100, 6)], [w(97.5, 8)]])
+      expect(r?.headline).toBe('Stay at 100 kg — push for 7 reps')
+    })
+
+    it('counts from 80% up, so a drop for form still coaches', () => {
+      const r = computeRecommendation([[w(80, 8)], [w(100, 6)]])
+      expect(r?.headline).toBe('Go up to 82.5 kg, then work back to 8')
+    })
+
+    it('counts once it is the one before too: a comeback coaches from its second session', () => {
+      const r = computeRecommendation([[w(62.5, 6)], [w(60, 8)], [w(100, 8)]])
+      expect(r?.headline).toBe('Stay at 62.5 kg — push for 7 reps')
+    })
+
+    it('ignores a heavy single before it, which is not a working weight', () => {
+      const r = computeRecommendation([[w(60, 8)], [w(100, 1)], [w(60, 7)]])
+      expect(r?.tag).toBe('ADD WEIGHT')
+    })
+  })
+
   describe('every set at the top weight on 8+', () => {
     it('goes up, and the target after the jump is 8 again', () => {
       const r = computeRecommendation([[w(80, 8), w(80, 8), w(80, 9)]])
