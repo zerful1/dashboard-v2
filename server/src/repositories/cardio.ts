@@ -19,7 +19,7 @@ export interface CardioFields {
 export async function listCardio(userId: string, sessionId: string): Promise<CardioEntry[]> {
   const { rows } = await pool.query<CardioEntry>(
     `SELECT ${COLS} FROM ${T.cardioEntries}
-      WHERE user_id = $1 AND session_id = $2 ORDER BY id`,
+      WHERE user_id = $1 AND session_id = $2 ORDER BY created_at NULLS FIRST, id`,
     [userId, sessionId],
   );
   return rows;
