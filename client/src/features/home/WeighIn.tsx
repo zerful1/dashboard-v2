@@ -14,12 +14,7 @@ export function WeighIn({ latest, latestDate, today, save }: {
   today: string;
   save: ReturnType<typeof useWeights>["saveWeight"];
 }) {
-  // A failed save gives back what was typed. The optimistic weigh-in unmounts
-  // this field and the rollback remounts it, so the value comes from the
-  // mutation, not from state. The rollback is written before the error is
-  // recorded, but TanStack renders it on a later tick, and the error is recorded
-  // first (none of this hook's callbacks awaits a request), so the remounted
-  // field already reads isError.
+  // A failed save gives back what was typed: the rollback remounts the field, so the value comes from the mutation.
   const [kg, setKg] = useState(() =>
     save.isError && save.variables?.date === today ? String(save.variables.weight_kg) : "",
   );

@@ -4,13 +4,7 @@ import { createApp } from "../src/app";
 
 const app = createApp();
 
-/**
- * Security headers, asserted rather than eyeballed once in a browser.
- *
- * helmet sets these, so the test doubles as the check that helmet is still
- * mounted at all — a middleware that silently stops being applied is otherwise
- * invisible until someone runs a scanner.
- */
+/** helmet sets these, so this doubles as the check that helmet is still mounted. */
 describe("security headers", () => {
   it("sets nosniff and denies framing", async () => {
     const res = await request(app).get("/api/health").expect(200);
@@ -21,23 +15,19 @@ describe("security headers", () => {
   });
 
   it("does not advertise Express", async () => {
-    // app.disable("x-powered-by") was removed when helmet arrived, on the
-    // grounds that helmet does it. This is what makes that claim checkable.
+    // Removing app.disable("x-powered-by") relied on helmet doing it; this makes that checkable.
     const res = await request(app).get("/api/health").expect(200);
     expect(res.headers["x-powered-by"]).toBeUndefined();
   });
 
   it("sets them on an error response too, not just a happy path", async () => {
-    // Headers set by middleware can be lost on paths that bypass it. 401 is the
-    // most common response this API gives an unauthenticated caller.
+    // Headers set by middleware can be lost on paths that bypass it; 401 is the most common such response.
     const res = await request(app).get("/api/profile").expect(401);
     expect(res.headers["x-content-type-options"]).toBe("nosniff");
   });
 
   it("still sends the credentialed CORS headers", async () => {
-    // helmet is mounted before the CORS middleware, so this pins that it did
-    // not displace it — a wildcard or a missing origin here would stop the
-    // session cookie being sent at all.
+    // helmet is mounted before CORS; a wildcard or missing origin here would stop the session cookie being sent.
     const res = await request(app).get("/api/health").expect(200);
     expect(res.headers["access-control-allow-credentials"]).toBe("true");
     expect(res.headers["access-control-allow-origin"]).toBeDefined();

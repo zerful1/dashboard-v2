@@ -20,8 +20,7 @@ export function InsightsPage() {
   // One clock for the page (CLAUDE.md).
   const today = useToday();
   const latest = lastFullWeek(today);
-  // Only a week stepped back to is state: until then the page follows the clock,
-  // so an app left open over Sunday night moves on (the Food page's rule).
+  // Only a week stepped back to is state: until then the page follows the clock (the Food page's rule).
   const [picked, setPicked] = useState<string | null>(null);
   const week = picked ?? latest;
   const setWeek = (w: string) => setPicked(w >= latest ? null : w);
@@ -30,11 +29,7 @@ export function InsightsPage() {
   const records = useRecords();
   const goals = useGoals();
   const historyNames = useHistoryExerciseNames();
-  // The weight change is coloured by the goal: wait for it, or its failure (isPending, CLAUDE.md).
-  // Not while paused offline with nothing saved, though: that would spin for good,
-  // so the rows draw uncoloured until the goals arrive (the Weight page's rule).
-  // And only until the week has drawn once: the signal returning starts the
-  // goals' fetch (pending again), and spinning then hid a drawn week (Weight's `drawn`).
+  // Wait for goals (isPending) as they colour the weight change, but not when paused offline or once drawn (Weight's rule).
   const goalsSettled = !goals.isPending || goals.isPaused;
   const [drawn, setDrawn] = useState(false);
   const showWeek = !!review.data && (goalsSettled || drawn);

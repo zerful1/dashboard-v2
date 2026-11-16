@@ -4,17 +4,10 @@ import { RESET_TTL_MINUTES } from "@dashboard/shared";
 
 const client = config.RESEND_API_KEY ? new Resend(config.RESEND_API_KEY) : null;
 
-/**
- * Send a password-reset link.
- *
- * With no API key configured (tests, local development) the link is logged instead
- * of sent. Failing the request would make the whole flow untestable without a
- * third-party account, and the endpoint deliberately returns 204 regardless.
- */
+/** Sends a password-reset link, or logs it when no API key is set (the endpoint returns 204 regardless). */
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<void> {
   if (!client) {
-    // In production the link is a live credential for someone's account, and
-    // the logs are not the place for it.
+    // In production the link is a live credential, so it is not logged.
     if (config.isProduction) {
       console.error("[email] RESEND_API_KEY is not set; a password reset was not sent");
       return;
@@ -33,9 +26,7 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
         `If you did not request this, you can ignore this email.`,
     });
   } catch (err) {
-    // A delivery failure must not change the HTTP response — that would turn the
-    // endpoint back into an enumeration oracle, since unknown addresses never
-    // attempt a send at all.
+    // A delivery failure must not change the response, or the endpoint becomes an enumeration oracle.
     console.error("Password reset email failed to send:", err);
   }
 }

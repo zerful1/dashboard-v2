@@ -75,11 +75,7 @@ describe("api", () => {
   });
 });
 
-/**
- * A fetch that honours its signal, as the real one does, body included: it
- * answers after `answerAfter` ms (never, if undefined), and its body after
- * `bodyAfter` more. An abort rejects whichever is still waiting.
- */
+/** A fetch that honours its signal, body included. */
 function slowFetch(answerAfter?: number, bodyAfter = 0) {
   const aborted = (signal: AbortSignal | null | undefined, reject: (e: unknown) => void) =>
     signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
@@ -130,8 +126,7 @@ describe("api, on a connection that never answers", () => {
     expect(call.value).toEqual({ a: 1 });
   });
 
-  // Only the wait for an answer is timed: the export streams every row, and a
-  // slow body arriving is progress, not a dead connection.
+  // Only the wait for an answer is timed: the export streams every row, and a slow body is progress.
   it("does not cut off a slow body once the answer has started", async () => {
     vi.useFakeTimers();
     vi.stubGlobal("fetch", slowFetch(100, 30_000));

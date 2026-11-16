@@ -2,12 +2,7 @@ import type { GridDay, SessionSummary, TrainingGrid as Grid } from "@dashboard/s
 import { listDate } from "@/lib/dates";
 import { cn } from "@/lib/cn";
 
-/**
- * Twelve weeks at a glance: weeks are columns, Monday on
- * top. A trained day is a small white square, a done mark under 24 px, and the
- * only kind a screen reader is told about. Capped at max-w-xs, so it stays a
- * mark on a desktop.
- */
+/** Twelve weeks at a glance, weeks as columns; a trained day is a small white square (a done mark). */
 export function TrainingGrid({ grid, today, onOpen }: {
   grid: Grid<SessionSummary>;
   today: string;

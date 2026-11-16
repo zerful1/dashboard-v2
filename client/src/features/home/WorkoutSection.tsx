@@ -45,8 +45,7 @@ export function WorkoutSection({ workout, prominent = false }: { workout: HomeWo
   const p = workout.progress;
   if (!p) return null;
   const verb = p.started ? "Continue" : "Start";
-  // Open Gym on the day named here: on a swapped day the scheduled one would
-  // show nothing ticked, and the sets would look gone.
+  // Open Gym on the day named here: on a swapped day the scheduled one would show nothing ticked.
   const toDay = workout.dayType === null ? undefined : { gymDay: workout.dayType };
 
   if (prominent) {

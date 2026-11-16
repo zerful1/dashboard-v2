@@ -2,10 +2,7 @@ import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/cn";
 import type { DaySummary, MacroBar } from "./deriveDay";
 
-/**
- * The open day: what's left, or eaten with no target, in
- * Home's figure, over the macro bars.
- */
+/** The open day: what's left, or eaten with no target, in Home's figure, over the macro bars. */
 export function DayFigure({ summary, onSetTargets }: { summary: DaySummary; onSetTargets: () => void }) {
   const { kcal, target, left, bars } = summary;
   const over = left !== null && left < 0;
@@ -44,8 +41,7 @@ export function DayFigure({ summary, onSetTargets }: { summary: DaySummary; onSe
 
 function MacroMeter({ bar }: { bar: MacroBar }) {
   const ratio = bar.target > 0 ? bar.eaten / bar.target : 0;
-  // Over target the bar is full: white up to the target's notch, amber stripes
-  // past it. Otherwise the fill is the share eaten.
+  // Over target the bar is full, white up to the target's notch and amber stripes past it; else the share eaten.
   const targetPct = bar.over && ratio > 0 ? 100 / ratio : 100;
   const fillPct = bar.over ? targetPct : Math.min(100, ratio * 100);
   return (
@@ -56,8 +52,7 @@ function MacroMeter({ bar }: { bar: MacroBar }) {
           {bar.eaten} / {bar.target} g
         </span>
       </div>
-      {/* The track is chrome, so `raised` is allowed; the fill is data, white,
-          and only the excess is amber. */}
+      {/* The track is chrome, so `raised` is allowed; the fill is data, white, and only the excess is amber. */}
       <div
         role="progressbar"
         aria-label={bar.label}

@@ -1,8 +1,7 @@
 import { STANDARD_PLATES_KG } from "@dashboard/shared";
 import { parseDecimal } from "@/lib/number";
 
-// Remembered on this device only (not the account): the starting weight, which
-// plates the gym has, and the last mode. Totals are deliberately not kept.
+// Remembered on this device only (not the account); totals are deliberately not kept.
 const KEY = "plates.prefs";
 
 export type PlateMode = "me" | "buddy";

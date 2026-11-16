@@ -44,10 +44,7 @@ function freeze() {
   vi.setSystemTime(new Date(2026, 9, 6, 12)); // Tue 2026-10-06
 }
 
-/**
- * Inside a <main>, the app's scroll container (AppLayout), whose scrollTop is
- * recorded. `seed` fills the cache first, as a restored one would be.
- */
+/** Inside a <main>, the app's scroll container (AppLayout), whose scrollTop is recorded. */
 function renderTab(seed?: (qc: QueryClient) => void) {
   const qc = createQueryClient();
   const def = qc.getDefaultOptions();
@@ -240,8 +237,7 @@ describe("Stats, a lift's detail", () => {
   });
 });
 
-// Deferred from #33: the overview is keyed by today, so a new day is a key with
-// nothing cached, and offline it waited for the network with a spinner.
+// The overview is keyed by today, so a new day is a key with nothing cached.
 describe("Stats, offline on a new day", () => {
   afterEach(() => onlineManager.setOnline(true));
 

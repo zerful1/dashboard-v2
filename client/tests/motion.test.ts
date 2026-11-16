@@ -7,8 +7,7 @@ describe("motion presets", () => {
   });
 
   it("orders them from fastest to slowest by stiffness", () => {
-    // The names are only meaningful if the values agree with them. A "gentle"
-    // stiffer than "snappy" would be a comment that lies, in numeric form.
+    // The names only mean something if the values agree: "gentle" stiffer than "snappy" lies.
     expect(TRANSITIONS.snappy.stiffness).toBeGreaterThan(TRANSITIONS.smooth.stiffness);
     expect(TRANSITIONS.smooth.stiffness).toBeGreaterThan(TRANSITIONS.gentle.stiffness);
   });

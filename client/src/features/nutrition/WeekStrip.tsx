@@ -36,10 +36,7 @@ interface Props {
   onNext: () => void;
 }
 
-/**
- * Food's 7-day strip: each day's kcal against its own target, and the day
- * picker. Plain elements: WeightChart.tsx stays the only chart import.
- */
+/** Food's 7-day strip: each day's kcal against its own target, and the day picker, in plain elements. */
 export function WeekStrip({ end, today, open, strip, failed, todayUnknown, onOpen, onPrev, onNext }: Props) {
   const labelId = useId();
   const dates = stripDates(end);

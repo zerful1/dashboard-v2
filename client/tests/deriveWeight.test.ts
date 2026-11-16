@@ -26,18 +26,14 @@ describe("deriveWeightSummary", () => {
   });
 
   it("is unaffected by the machine timezone", () => {
-    // Dates are strings and `today` is an argument, so there is nothing to
-    // shift. 26 September is inside BST, the case that would move if any of
-    // this went through a Date.
+    // Dates are strings and `today` is an argument, so nothing shifts; 26 September is inside BST.
     const s = deriveWeightSummary([e("2025-09-26", 84), e("2025-09-27", 83.8)], "2025-09-27");
     expect(s.latestDate).toBe("2025-09-27");
     expect(s.points.map((p) => p.date)).toEqual(["2025-09-26", "2025-09-27"]);
   });
 });
 
-// The chart's y-range is the data ± 1 kg. A goal far outside it used to stretch
-// the axis to reach it and squash the line flat; now it is
-// drawn only inside the range, and named beside the chart otherwise.
+// The chart's y-range is the data ± 1 kg; a goal far outside it is drawn only inside the range and named beside the chart otherwise.
 describe("goalPlacement", () => {
   const pts = [{ date: "2026-09-01", kg: 84 }, { date: "2026-10-01", kg: 80.6 }];
   const line = [{ date: "2026-09-01", kg: 83.8 }, { date: "2026-10-01", kg: 80.8 }];

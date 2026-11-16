@@ -1,7 +1,4 @@
-/**
- * The build running, stamped by rsbuild.config.ts (`source.define`). Guarded
- * with typeof so a test, which has no define, reads it as a local build.
- */
+/** The build running, from rsbuild's `source.define`; typeof guards a test with no define, read as local. */
 export const BUILD_SHA: string = typeof __BUILD_SHA__ === "undefined" ? "" : __BUILD_SHA__;
 export const BUILD_DATE: string = typeof __BUILD_DATE__ === "undefined" ? "" : __BUILD_DATE__;
 

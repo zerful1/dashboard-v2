@@ -5,8 +5,7 @@ import { generateDemo, DEMO_WEEKS } from "../src/demo/generate";
 const TODAY = "2026-10-04";
 const d = generateDemo(TODAY);
 const dateOf = new Map(d.sessions.map((s) => [s.key, s.date]));
-// Windows that start on the same weekday draw the same numbers, so the
-// generator makes seven distinct people: one for each weekday "today" can be.
+// Windows starting on the same weekday draw the same numbers, so the generator makes seven distinct people.
 const WEEK = Array.from({ length: 7 }, (_, i) => shiftISO(TODAY, i));
 
 describe("generateDemo", () => {
@@ -71,9 +70,7 @@ describe("generateDemo", () => {
     expect(later.weights.at(-1)!.date).toBe("2026-10-10");
   });
 
-  // These are the generator's figures for TODAY before habits
-  // existed. Habits draw from their own random stream; drawing one from the
-  // shared stream would move every value after it, and with them these.
+  // Habits draw from their own random stream; drawing one from the shared stream would move every value after it.
   it("leaves the rest of the demo exactly as it was", () => {
     expect({
       sessions: d.sessions.length, sets: d.sets.length, weights: d.weights.length, food: d.food.length,

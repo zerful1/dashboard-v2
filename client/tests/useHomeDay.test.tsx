@@ -139,9 +139,7 @@ describe("useHomeDay", () => {
     expect(result.current.top).toBe("workout");
   });
 
-  // The slot is a conclusion, so it waits for every source. One case per
-  // source: each fails when its source leaves the gate, so "Weigh in" can't
-  // flash before today's weigh-in arrives.
+  // The slot is a conclusion, so it waits for every source.
   it.each([
     ["the split", "/api/split"],
     ["this week's sessions", "/api/workouts/sessions"],
@@ -173,10 +171,7 @@ describe("useHomeDay", () => {
     expect(result.current.isPending).toBe(false);
   });
 
-  // TanStack keeps the data when a refetch fails and
-  // still sets isError. A phone refetches on every focus, and one opened with no
-  // signal refetches everything, so a failure with the data in hand must not
-  // move the slot or turn the sections into "Couldn't load".
+  // TanStack keeps the data when a refetch fails and still sets isError.
   it("keeps the slot and the sections when a refetch fails with the data in hand", async () => {
     freeze(WED);
     const down = { now: false };
@@ -233,8 +228,7 @@ describe("useHomeDay", () => {
   });
 });
 
-// Deferred from #31: useSplit falls back to DEFAULT_SPLIT, so a split that failed
-// with nothing cached named the default split's day as if it were today's.
+// useSplit falls back to DEFAULT_SPLIT, so a split that failed with nothing cached named the default's day as if it were today's.
 describe("useHomeDay, when the split fails to load", () => {
   it("says the workout couldn't load, and claims no day or target", async () => {
     freeze(WED);

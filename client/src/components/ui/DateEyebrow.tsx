@@ -4,14 +4,7 @@ import { longDate } from "@/lib/dates";
 import { FOCUS } from "@/lib/focus";
 import { cn } from "@/lib/cn";
 
-/**
- * A page's date as its eyebrow, and the control that changes it (Gym, Food).
- * "Back to today" sits beside it whenever the date is not today.
- *
- * A page that keeps its own today (useToday) passes it in. Read here instead,
- * it runs ahead of the page's for up to a minute after midnight, and "today"
- * is then a day the page still calls tomorrow.
- */
+/** A page's date eyebrow and control; pass the page's own today, as a second clock runs ahead after midnight. */
 export function DateEyebrow({
   date,
   onDate,

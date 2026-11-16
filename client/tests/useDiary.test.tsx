@@ -81,9 +81,7 @@ describe("useDiary", () => {
     expect(result.current.entries.map((e) => e.name)).toEqual(["Oats"]);
   });
 
-  // CLAUDE.md: writes are not queued offline. TanStack's default PAUSES a
-  // mutation while offline and replays it on reconnect - the optimistic row
-  // looks saved, and closing the app loses it. Found in the browser.
+  // Writes are not queued offline: TanStack's default PAUSES a mutation while offline.
   it("fails an add made offline instead of queueing it", async () => {
     mockApi([
       ["POST /api/nutrition/diary", () => Promise.reject(new TypeError("Failed to fetch"))],

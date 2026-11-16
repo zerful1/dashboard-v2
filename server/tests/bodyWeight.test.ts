@@ -27,16 +27,7 @@ describe("body weight", () => {
     expect(res.body.map((r: { date: string }) => r.date)).toEqual(["2026-08-15", "2026-08-13"]);
   });
 
-  /*
-   * The regression guard for the whole phase's reason to exist.
-   *
-   * node-pg parses a `date` into a JS Date at local midnight; during BST that
-   * is 23:00 UTC the previous day, so serialising it back yields the day
-   * before. It is correct during GMT, so a suite that only used winter dates
-   * would pass while half of ten months of history silently shifted.
-   * 26 September is inside BST — the same date, as it happens, as the earliest
-   * migrated session.
-   */
+  /* node-pg parses a `date` at local midnight, so during BST it serialises a day early; the winter dates alone would miss it. */
   it("returns dates as plain strings, unshifted", async () => {
     const agent = request.agent(app);
     await agent.post("/api/auth/register").send(alice);
@@ -97,13 +88,11 @@ describe("body weight ownership scoping", () => {
     expect(seen.body).toHaveLength(1);
     expect(seen.body[0].weight_kg).toBe(95);
 
-    // Bob cannot delete Alice's, and gets 404 rather than 403 — a 403 would
-    // confirm the row exists.
+    // Bob gets 404 rather than 403, which would confirm the row exists.
     await bobAgent.delete(`/api/weight/${aliceEntry.id}`).expect(404);
     expect(await listWeights(aliceId)).toHaveLength(1);
 
-    // Directly at the repository, too: the scoping is in the SQL, not in the
-    // route, so bypassing HTTP must not bypass ownership.
+    // Directly at the repository too: the scoping is in the SQL, so bypassing HTTP must not bypass ownership.
     expect(await deleteWeight(bobId, aliceEntry.id)).toBe(false);
     expect(await listWeights(aliceId)).toHaveLength(1);
   });

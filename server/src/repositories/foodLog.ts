@@ -24,12 +24,7 @@ export async function listDiary(userId: string, date: string): Promise<FoodLogEn
   return rows;
 }
 
-/**
- * Log one entry. With `food`, the food is stored in the library first and
- * linked; with `food_item_id`, it must be the caller's own, and null is
- * returned when it is not - the route answers 404, as for a foreign diary id.
- * One transaction, so a failed insert never leaves an orphan food behind.
- */
+/** Logs one entry in one transaction, so a failed insert leaves no orphan food; null if `food_item_id` isn't theirs. */
 export async function addEntry(userId: string, input: DiaryEntryInput): Promise<FoodLogEntry | null> {
   return withTransaction(async (client) => {
     let foodItemId: string | null = null;
@@ -55,11 +50,7 @@ export async function addEntry(userId: string, input: DiaryEntryInput): Promise<
   });
 }
 
-/**
- * Change the amount. The snapshot is linear in quantity, so every nutrient
- * scales by new/old - in SQL, where SET expressions all read the row's OLD
- * values. NULL scales to NULL, so an unknown stays unknown.
- */
+/** Scales every nutrient by new/old in SQL (SET reads OLD values); NULL stays NULL. */
 export async function rescaleEntry(userId: string, id: string, quantity: number): Promise<FoodLogEntry | null> {
   const scaled = SNAPSHOT.map((c) => `${c} = ${c} * $3 / quantity`).join(", ");
   const { rows } = await pool.query<FoodLogEntry>(
@@ -78,11 +69,7 @@ export async function deleteEntry(userId: string, id: string): Promise<boolean> 
   return (res.rowCount ?? 0) > 0;
 }
 
-/**
- * Append a copy of every entry on `from` to `to`. Each logged_at moves by the
- * whole local days between the dates, in the user's timezone, so the copies
- * keep their wall-clock times and order.
- */
+/** Copies every entry on `from` to `to`, shifting logged_at by whole local days so wall-clock times and order are kept. */
 export async function copyDay(userId: string, from: string, to: string): Promise<FoodLogEntry[]> {
   const { rows } = await pool.query<FoodLogEntry>(
     `WITH tz AS (SELECT timezone AS z FROM ${T.profiles} WHERE user_id = $1),
@@ -106,12 +93,7 @@ export async function copyDay(userId: string, from: string, to: string): Promise
   return rows;
 }
 
-/**
- * Distinct foods the user logged most recently, each with its latest entry
- * (whose amount is the default next time) and its library item when linked.
- * Two scoped queries rather than a join, so an item can only ever come from
- * the caller's own library.
- */
+/** Distinct recent foods with their latest entry; two scoped queries rather than a join, so items come only from the caller's library. */
 export async function listRecents(userId: string, limit = 30): Promise<RecentFood[]> {
   const { rows } = await pool.query<FoodLogEntry>(
     `SELECT ${ENTRY_COLS} FROM ${T.foodLogEntries}
@@ -145,7 +127,7 @@ export async function listEntryCalories(
   return rows;
 }
 
-/** Each day's kcal and protein between two dates inclusive: Food's 7-day strip. Days with entries only. */
+/** Each day's kcal and protein between two dates inclusive, days with entries only: Food's 7-day strip. */
 export async function dayTotals(userId: string, from: string, to: string): Promise<DayTotal[]> {
   const { rows } = await pool.query<DayTotal>(
     `SELECT date::text AS date, sum(calories)::float8 AS calories, sum(protein_g)::float8 AS protein_g

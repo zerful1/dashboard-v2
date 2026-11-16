@@ -27,8 +27,7 @@ const FILE = {
   tables: { body_weight: [{ date: "2026-10-01", weight_kg: 79.4 }] },
 };
 
-// jsdom has no URL.createObjectURL, and a link's click() does not download.
-// These record what the card handed the browser instead.
+// jsdom has no URL.createObjectURL and a link's click() does not download.
 let saved: { name: string; blob: Blob }[];
 beforeEach(() => {
   saved = [];

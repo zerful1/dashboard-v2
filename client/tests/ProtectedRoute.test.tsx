@@ -8,12 +8,7 @@ import { AuthProvider } from "../src/auth/AuthProvider";
 import * as apiModule from "../src/lib/api";
 import { ApiError } from "../src/lib/api";
 
-// A real MemoryRouter with a real /login route (rather than just asserting on
-// a spinner) so "no redirect happened" is checked directly: if ProtectedRoute
-// ever regressed to redirecting on sessionError or while loading, this route
-// would render and the assertions below would fail for the right reason.
-// The QueryClientProvider is there because AuthProvider clears the query cache
-// whenever the identity changes — same shape as App.tsx.
+// A real MemoryRouter with a real /login route, so "no redirect happened" is checked directly.
 function renderProtected() {
   return render(
     <QueryClientProvider client={new QueryClient()}>
@@ -40,8 +35,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe("ProtectedRoute", () => {
   it("renders a spinner and neither the children nor /login while the session is loading", () => {
-    // Never resolves, so the component stays in the initial loading state —
-    // same "in flight" pattern used in LoginPage.test.tsx.
+    // Never resolves, so the component stays in the initial loading state.
     vi.spyOn(apiModule, "api").mockImplementation(() => new Promise(() => {}));
 
     renderProtected();
@@ -52,8 +46,7 @@ describe("ProtectedRoute", () => {
   });
 
   it("shows a retry affordance and does not redirect to /login when the session check fails", async () => {
-    // A non-401 failure: AuthProvider records it as sessionError rather than
-    // treating it as signed-out. This is the branch the ruling exists for.
+    // A non-401 failure: AuthProvider records it as sessionError rather than treating it as signed-out.
     const spy = vi.spyOn(apiModule, "api");
     spy.mockRejectedValue(new ApiError(500, "Internal Server Error"));
 
@@ -62,8 +55,7 @@ describe("ProtectedRoute", () => {
     const retry = await screen.findByRole("button", { name: /try again/i });
     expect(screen.queryByText("Login Screen")).not.toBeInTheDocument();
     expect(screen.queryByText("Protected Content")).not.toBeInTheDocument();
-    // The raw server error is not something the user can act on — only the
-    // calm retry copy and control should be present.
+    // The raw server error is not actionable; only the calm retry copy and control should be present.
     expect(screen.queryByText(/internal server error/i)).not.toBeInTheDocument();
 
     // The retry control is wired to refreshAuth(), not just decorative.

@@ -34,8 +34,7 @@ describe("habits", () => {
     await agent.post("/api/habits").send({ name: "   " }).expect(400);
   });
 
-  // The app sends emoji: null for "no emoji", and the add
-  // schema took only a string or nothing.
+  // The app sends emoji: null for "no emoji", and the add schema took only a string or nothing.
   it("adds a habit sent with emoji null, as the app sends it", async () => {
     const agent = await signedIn(alice);
     const res = await agent.post("/api/habits").send({ name: "Put on retainer", emoji: null }).expect(201);
@@ -55,8 +54,7 @@ describe("habits", () => {
     for (const d of ["2026-09-20", "2026-10-01", "2026-10-02", "2026-10-03", "2026-10-05"]) {
       await mark(agent, h.id, d).expect(204);
     }
-    // Today (10-04) unticked keeps the run; 10-05 is in the future and ignored;
-    // 09-20 is outside the strip.
+    // Today unticked keeps the run; 10-05 is in the future and ignored; 09-20 is outside the strip.
     expect((await list(agent, "2026-10-04"))[0]).toMatchObject({
       streak: 3, recent: ["2026-10-01", "2026-10-02", "2026-10-03"],
     });
@@ -96,8 +94,7 @@ describe("habits", () => {
     await agent.post("/api/habits/reorder").send({ ids: [a.id, b.id, a.id] }).expect(400);
   });
 
-  // A restore adds habits back without the 12 limit, so the list
-  // can be longer; reordering it must still work.
+  // A restore adds habits back without the 12 limit, so the list can be longer; reordering it must still work.
   it("reorders a list longer than 12, as a restore can leave", async () => {
     const agent = await signedIn(alice);
     for (let i = 0; i < 12; i++) await add(agent, `H${i}`);

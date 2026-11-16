@@ -59,9 +59,7 @@ describe("projections endpoint", () => {
     ]);
   });
 
-  // Once found broken: with no start, the
-  // direction was re-derived from the trend each time, so a goal set before
-  // any weigh-in could never be reached ("Trending away" once past it).
+  // With no start, direction was re-derived from the trend, so a goal set before any weigh-in could never be reached.
   it("reaches a weight goal set before any weigh-in, once the trend passes it", async () => {
     const agent = await signedIn(alice);
     const today = "2026-09-30";

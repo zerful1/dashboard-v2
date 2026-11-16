@@ -29,8 +29,7 @@ const num = (v: unknown): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
-// The diary POST's limits (routes/nutrition.ts foodBody): a hit beyond them
-// could never be logged, so it is trimmed or left out here (#17).
+// The diary POST's limits (routes/nutrition.ts foodBody): a hit beyond them could never be logged.
 const MAX_NAME = 200;
 const MAX_EXTERNAL_ID = 100;
 
@@ -40,11 +39,7 @@ const amount = (v: unknown): number | null => {
   return n === null || n < 0 ? null : n;
 };
 
-// Physical ceilings per 100 g: nothing holds more than 100 g of a nutrient in
-// 100 g, or much more energy than fat's 900 kcal. Real entries break both
-// (59,000 kcal; 112 g of carbohydrate), and the diary POST refuses some of them
-// outright. Impossible core values leave the hit out; impossible label values
-// become unknown.
+// Physical ceilings per 100 g: impossible core values leave the hit out, impossible label values become unknown.
 const MAX_KCAL_PER_100G = 1000;
 const MAX_GRAMS_PER_100G = 100;
 
@@ -54,12 +49,7 @@ const label = (v: unknown): number | null => {
   return n === null || n > MAX_GRAMS_PER_100G ? null : n;
 };
 
-/**
- * The user's words as literal text. Search-a-licious reads `q` as Lucene
- * syntax, so "(light" or "brand:x" was a query error that read as "Branded
- * foods are unavailable" (#17). The app's own country clause is
- * added after this, and stays syntax.
- */
+/** The user's words as literal text, since Search-a-licious reads `q` as Lucene syntax; the country clause is added after. */
 export function escapeLucene(text: string): string {
   return text.replace(/[+\-&|!(){}[\]^"~*?:\\/]/g, "\\$&");
 }
@@ -105,12 +95,7 @@ async function searchOnce(q: string, signal: AbortSignal): Promise<FoodHit[]> {
   return (body.hits ?? []).map(mapSearchHit).filter((h): h is FoodHit => h !== null);
 }
 
-/**
- * UK-tagged products first; when that leaves fewer than MIN_UK_HITS, top up
- * with unfiltered hits, deduped by code - v1's edge function, ported. One
- * deadline covers both requests, so a slow Open Food Facts costs at most
- * timeoutMs. Only the search text leaves this server: no user, no cookie.
- */
+/** UK-tagged products first, topped up with unfiltered hits when under MIN_UK_HITS; one deadline covers both requests. */
 export async function searchOpenFoodFacts(q: string, timeoutMs = OFF_TIMEOUT_MS): Promise<FoodHit[]> {
   const signal = AbortSignal.timeout(timeoutMs);
   const terms = escapeLucene(q);
@@ -135,16 +120,7 @@ export interface OffProductPage extends OffProduct {
   serving_quantity?: number | string;
 }
 
-/**
- * A product page as a hit: the search mapping's rules, plus the label
- * serving when the product gives a usable size. The serving's values are
- * scaled from the per-100 g ones, so the two can never disagree.
- *
- * The id is Open Food Facts' own code, not the one asked for: given a 12-digit
- * UPC-A it answers under the 13-digit form, which is also the id text search
- * gives the product, so a food saved from search is updated by a scan rather
- * than duplicated.
- */
+/** A product page as a hit, plus its label serving; the id is Open Food Facts' own code, so a scan updates a saved search food. */
 export function mapProduct(p: OffProductPage, code: string): FoodHit | null {
   const own = p.code === undefined ? "" : String(p.code);
   const canonical = /^\d{8,14}$/.test(own) ? own : code;
@@ -157,8 +133,7 @@ export function mapProduct(p: OffProductPage, code: string): FoodHit | null {
     const v = hit.per100g;
     const scaled = (x: number | null | undefined) => (x === null || x === undefined ? null : x * k);
     const size = p.serving_size?.trim() || `${grams} g`;
-    // First, so the amount step's serving list opens on the packet's serving,
-    // as a saved food's does.
+    // First, so the amount step's serving list opens on the packet's serving.
     servings.unshift({
       label: `1 serving (${size})`.slice(0, 100),
       grams,
@@ -169,11 +144,7 @@ export function mapProduct(p: OffProductPage, code: string): FoodHit | null {
   return { ...hit, barcode: canonical, servings };
 }
 
-/**
- * One product by barcode. Null when Open Food Facts has no such product, or
- * none that can be logged. Throws when it can't be reached, which the route
- * answers as 502.
- */
+/** One product by barcode; null when none can be logged, throws when unreachable (the route answers 502). */
 export async function lookupBarcode(code: string, timeoutMs = OFF_TIMEOUT_MS): Promise<FoodHit | null> {
   const res = await fetch(`${OFF_PRODUCT_URL}/${code}?fields=${PRODUCT_FIELDS}`, {
     headers: { "User-Agent": USER_AGENT },

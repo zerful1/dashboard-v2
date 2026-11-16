@@ -46,8 +46,7 @@ export function TodayHabitsCard() {
                 onClick={() => setDone.mutate({ id: h.id, date: today, done: !done })}
                 className="flex h-9 w-9 shrink-0 items-center justify-center disabled:opacity-40"
               >
-                {/* A white circle when ticked: a done mark (the accent rule's
-                    circle), inside a full-size tap target. */}
+                {/* A white circle when ticked is a done mark, inside a full-size tap target. */}
                 <span
                   data-part="mark"
                   className={cn(

@@ -23,10 +23,7 @@ function saveJson(filename: string, data: unknown) {
 
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
-/**
- * "Since 24 Jun 2026: 108 weigh-ins · 71 sessions · …", numbers white and
- * words muted; zero parts are left out.
- */
+/** "Since 24 Jun 2026: 108 weigh-ins · 71 sessions · …", numbers white and words muted; zero parts left out. */
 function SummaryLine({ s }: { s: DataSummary }) {
   const parts = [
     [s.weighIns, plural(s.weighIns, "weigh-in", "weigh-ins")],
@@ -51,12 +48,7 @@ function SummaryLine({ s }: { s: DataSummary }) {
   );
 }
 
-/**
- * Everything the user owns, as one JSON file: their backup, since Supabase's
- * free tier keeps none they can download. Neither a query nor a mutation, so
- * nothing is cached, and the global mutation toast doesn't apply. The failure
- * message is this card's own.
- */
+/** Everything the user owns as one JSON file, their only backup; neither a query nor a mutation, so no cache or global toast. */
 export function YourDataCard() {
   const [busy, setBusy] = useState(false);
   const [restoring, setRestoring] = useState(false);

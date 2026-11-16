@@ -10,10 +10,7 @@ import { parseDecimal } from "@/lib/number";
 
 const MAX_LIFTS = 5;
 
-/**
- * Setting and changing goals: the forms that used to sit
- * open on the page. It stays open across several changes and closes on Done.
- */
+/** Setting and changing goals; stays open across several changes and closes on Done. */
 export function GoalsSheet({ open, onClose, historyNames }: { open: boolean; onClose: () => void; historyNames: string[] }) {
   const g = useGoals();
   const [weight, setWeight] = useState("");

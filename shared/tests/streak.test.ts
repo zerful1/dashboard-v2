@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { calculateStreak } from '../src/domain/streak'
 
-// No fake timers and no TZ dependency: the current day is an argument, so these
-// tests behave identically on any machine in any timezone.
+// No fake timers and no TZ dependency: the current day is an argument.
 const TODAY = '2026-05-09'
 const YESTERDAY = '2026-05-08'
 
@@ -36,8 +35,7 @@ describe('calculateStreak', () => {
   })
 
   it('counts across the BST transition', () => {
-    // 29 March 2026 is the spring-forward day in the UK. Because dates are plain
-    // strings rather than instants, a 23-hour day is not a special case.
+    // 29 March 2026 is spring-forward in the UK; dates are plain strings, so a 23-hour day is not a special case.
     expect(calculateStreak(['2026-03-30', '2026-03-29', '2026-03-28'], '2026-03-30')).toBe(3)
   })
 

@@ -13,8 +13,7 @@ describe("rateLine", () => {
   it("leaves a rate away from the goal neutral, never amber or red", () => {
     expect(rateLine(fit(0.4), goal(78))).toMatchObject({ arrow: "▲", text: "+0.4 kg a week", tone: "neutral" });
   });
-  // Past a reached goal, carrying on is not progress. The goal line
-  // says "reached" by the same rule (weightGoalReached), so the two agree.
+  // Past a reached goal, carrying on is not progress, matching "reached" (weightGoalReached).
   it("goes neutral once the goal is reached", () => {
     expect(rateLine(fit(-0.5, 77.9), goal(78))).toMatchObject({ kind: "rate", tone: "neutral" });
     expect(rateLine(fit(-0.5, 78.1), goal(78))).toMatchObject({ tone: "good" });

@@ -104,8 +104,7 @@ export function useDiary(
     onSettled: () => invalidateNutritionReaders(qc),
   });
 
-  // Not optimistic: the copy's contents come from the server. The sheet keeps
-  // its button disabled while this is pending, so a double tap cannot copy twice.
+  // Not optimistic: the copy's contents come from the server; the sheet disables its button while pending.
   const copyDay = useMutation({
     mutationFn: ({ from, to }: { from: string; to: string }) => nutritionApi.copyDay(from, to),
     onSettled: () => invalidateNutritionReaders(qc),
@@ -116,8 +115,7 @@ export function useDiary(
     // isPending, not isLoading: a disabled query reports isLoading false (CLAUDE.md).
     isPending: query.isPending,
     isError: query.isError,
-    // A failed refetch keeps the last good data: isError alone does not mean
-    // there is nothing to show.
+    // A failed refetch keeps the last good data: isError alone does not mean there is nothing to show.
     hasData: query.data !== undefined,
     refetch: query.refetch,
     addEntry,

@@ -9,11 +9,7 @@ vi.mock("motion/react", () => ({
 
 const { useMotionSafe } = await import("../src/lib/motion");
 
-/**
- * The link between the OS preference and the boolean every animated component
- * branches on. `springOrNone` is tested separately; this is the other half —
- * without it, a correct springOrNone could still be fed a constant.
- */
+/** The link between the OS preference and the boolean every animated component branches on. */
 describe("useMotionSafe", () => {
   beforeEach(() => {
     reducedMotion.value = false;
@@ -25,18 +21,13 @@ describe("useMotionSafe", () => {
   });
 
   it("is FALSE when the OS asks for reduced motion", () => {
-    // The case that matters. Sheet reads this to decide drag={safe ? "y" : false},
-    // WeightHeadline to decide whether its figure rises in, and the Home card
-    // to decide whether it lifts on hover. If this ever returned true here, all
-    // three would animate against an explicit accessibility request.
+    // The case that matters: Sheet, WeightHeadline and the Home card read this.
     reducedMotion.value = true;
     expect(renderHook(() => useMotionSafe()).result.current).toBe(false);
   });
 
   it("treats an undetermined preference as motion-safe", () => {
-    // useReducedMotion returns null before the media query resolves. Defaulting
-    // to safe keeps the first paint animated rather than flashing static then
-    // moving, and the value corrects itself once it resolves.
+    // useReducedMotion returns null before the media query resolves.
     reducedMotion.value = null;
     expect(renderHook(() => useMotionSafe()).result.current).toBe(true);
   });

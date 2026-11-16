@@ -12,8 +12,7 @@ const BULK = { target_kg: 85, start_kg: 76 }
 const verdict = (...a: Parameters<typeof compositionLine>) => compositionLine(...a)?.verdict
 const tone = (...a: Parameters<typeof compositionLine>) => compositionLine(...a)?.tone
 
-// The weight's direction from the rate line's own fit,
-// and the strength side from Gym's lift statuses.
+// The weight's direction from the rate line's own fit, and the strength side from Gym's lift statuses.
 describe('compositionLine', () => {
   it.each([
     { f: fit(-0.4), l: lifts(6, 0, 1), g: CUT, verdict: 'Losing fat, keeping strength', tone: 'good' },
@@ -66,8 +65,7 @@ describe('compositionLine', () => {
     expect(detail(2, 5, 0)).toBe('2 lifts climbing, 5 holding')
   })
 
-  // Leaving holding out paired a green "keeping strength"
-  // with only "2 lifts slipping", the usual state on a cut.
+  // Leaving holding out paired a green "keeping strength" with only "2 lifts slipping", the usual state on a cut.
   it('shows the holding lifts a verdict rests on', () => {
     expect(compositionLine(fit(-0.4), lifts(0, 3, 2), CUT)).toMatchObject({
       verdict: 'Losing fat, keeping strength',

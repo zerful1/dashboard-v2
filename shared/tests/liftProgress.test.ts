@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { liftDetail, liftProgress, sessionBests, type LiftSetRow } from '../src'
 
-// 2026-10-06 is a Tuesday. recent = 2026-08-26..10-06; prior = 2026-02-25..08-25;
-// a last session on or before 2026-08-11 (56 days) is "old".
+// 2026-10-06 is a Tuesday; recent = 08-26..10-06, prior = 2026-02-25..08-25, "old" = last session on or before 08-11.
 const TODAY = '2026-10-06'
 
 const set = (name: string, date: string, weight: number, reps: number, over: Partial<LiftSetRow> = {}): LiftSetRow => ({
@@ -29,8 +28,7 @@ describe('sessionBests', () => {
       bw('Pull Up', '2026-09-08', 12),
     ])
     expect(r.bodyweightOnly).toBe(false)
-    // The bodyweight sets are no 0 kg best, and a session of
-    // only bodyweight sets has no value at all.
+    // Bodyweight sets are no 0 kg best, and a session of only bodyweight sets has no value at all.
     expect(r.sessions).toHaveLength(1)
     expect(r.sessions[0]!.value).toBeCloseTo(10 * (1 + 8 / 30))
   })

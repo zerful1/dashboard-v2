@@ -52,8 +52,7 @@ describe("GET /api/food/barcode/:code", () => {
     await agent.get("/api/food/barcode/1234567").expect(400);
   });
 
-  // A food scanned or added before comes back as saved, from
-  // the library, without asking Open Food Facts.
+  // A food scanned or added before comes back as saved, from the library, without asking Open Food Facts.
   it("finds the caller's own food first, as the item itself", async () => {
     const urls = stubProducts({});
     const agent = await signedIn(alice);
@@ -84,8 +83,7 @@ describe("GET /api/food/barcode/:code", () => {
     expect(serving.kcal).toBeCloseTo(body.hit.per100g.kcal * 2.5, 5);
   });
 
-  // The amount step's serving list starts with the packet's
-  // serving, as a saved food's does, not with "100 g".
+  // The amount step's serving list starts with the packet's serving, as a saved food's does, not "100 g".
   it("lists the label serving before 100 g", async () => {
     stubProducts({ "5000112548167": COKE });
     const agent = await signedIn(alice);
@@ -115,10 +113,7 @@ describe("GET /api/food/barcode/:code", () => {
     expect((await agent.get("/api/food/barcode/5000112548167").expect(502)).body.message).toBe("Product lookup is unavailable right now");
   });
 
-  // As Open Food Facts really behaves (checked
-  // live 2026-10-05): asked for a 12-digit UPC-A, it answers with the product
-  // under its own 13-digit code. That is the id text search gives the product
-  // too, so a food first saved from search is updated by a scan, not duplicated.
+  // OFF answers a 12-digit UPC-A with the product under its 13-digit code, so a food saved from search is updated, not duplicated.
   it("takes Open Food Facts' own 13-digit code for a 12-digit UPC-A", async () => {
     const page = JSON.parse(COKE);
     page.code = page.product.code = "0049000006582";

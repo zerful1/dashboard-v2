@@ -3,15 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { clientPath } from "./clientRoot";
 
-/**
- * The app's pages are static files Vercel serves itself: Express, and so
- * helmet, only ever answers /api (server/tests/headers.test.ts). Until these
- * were set in vercel.json the HTML went out with no security headers at all,
- * so any site could frame the app, and nothing said so.
- *
- * A config check, not a request: nothing local serves vercel.json. After a
- * deploy, `curl -I` on the site is the proof.
- */
+/** The pages are static files Vercel serves, never through Express/helmet. */
 const vercel = JSON.parse(readFileSync(resolve(clientPath(".."), "vercel.json"), "utf8")) as {
   headers?: { source: string; headers: { key: string; value: string }[] }[];
 };
@@ -42,16 +34,12 @@ describe("the app shell's headers", () => {
   });
 
   it("still lets the barcode scanner use the camera", () => {
-    // camera=() here would switch the scanner off on every device, and no
-    // test that mocks getUserMedia would notice.
+    // camera=() would switch the scanner off on every device, and no test that mocks getUserMedia would notice.
     expect(headersFor("/nutrition")["permissions-policy"]).toContain("camera=(self)");
   });
 
   it("sets no policy the app can't yet meet", () => {
-    // The app uses inline style attributes (Motion, Recharts) and loads a
-    // WebAssembly decoder (CLAUDE.md), so a script-src, style-src or
-    // default-src needs its own pass against the built client. Until then the
-    // policy holds only directives that restrict none of that.
+    // Inline style attributes and the WebAssembly decoder mean script-src.
     const csp = headersFor("/")["content-security-policy"]!;
     for (const directive of ["default-src", "script-src", "style-src"]) expect(csp).not.toContain(directive);
   });

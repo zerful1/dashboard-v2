@@ -4,11 +4,7 @@ import { sslFor, SUPABASE_ROOT_CA } from "../src/db/ssl";
 import { pool } from "../src/db/pool";
 import { config } from "../src/config";
 
-/**
- * node-pg connects in plaintext unless it is handed `ssl`, and nothing fails when
- * it isn't: every query still works, readable on the wire. So the choice is pinned
- * here rather than trusted to the env URL.
- */
+/** node-pg connects in plaintext unless handed `ssl` and nothing fails, so the choice is pinned here. */
 describe("sslFor", () => {
   it("verifies a Supabase pooler against Supabase's CA", () => {
     const ssl = sslFor("postgresql://postgres.ref:pw@aws-1-eu-west-2.pooler.supabase.com:6543/postgres");
@@ -20,8 +16,7 @@ describe("sslFor", () => {
   });
 
   it("leaves a local Postgres alone", () => {
-    // The positive complement: TLS for every host would pass the tests above and
-    // break the README's plain local setup.
+    // The positive complement: TLS for every host would pass the tests above and break the README's plain local setup.
     expect(sslFor("postgresql://postgres:postgres@localhost:5432/dashboard")).toBeUndefined();
   });
 

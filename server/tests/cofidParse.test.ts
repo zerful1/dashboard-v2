@@ -50,9 +50,7 @@ describe("parseCofid", () => {
     expect(() => parseCofid(broken, inorganics)).toThrow(/AOAC fibre/);
   });
 
-  // The real 2021 file gives 13-669 to both roasted aubergine and raw watercress.
-  // Two rows with one code in one upsert would fail, or let the second silently
-  // replace the first; the first is kept and the other reported instead.
+  // Two rows with one code in one upsert would fail or silently replace; the first is kept and the other reported.
   it("keeps the first of two foods sharing a code, and reports the other", () => {
     const withDupe = [...proximates, ["11-800", "Watercress, raw", "", "DG", 1.9, 0.3, "Tr", 10, 0, 1, 0]];
     // The sodium sheet repeats the code too; its first row must win as well.

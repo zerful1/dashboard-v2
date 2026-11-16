@@ -1,10 +1,6 @@
 import type { ConnectionOptions } from "node:tls";
 
-/**
- * Supabase Root 2021 CA (Project Settings → Database → SSL Configuration), valid
- * until 2031-04-26. A public certificate, not a secret. Embedded rather than read
- * from a file, so the serverless bundle cannot leave it behind.
- */
+/** Supabase Root 2021 CA, valid until 2031-04-26; public, and embedded so the serverless bundle keeps it. */
 export const SUPABASE_ROOT_CA = `-----BEGIN CERTIFICATE-----
 MIIDxDCCAqygAwIBAgIUbLxMod62P2ktCiAkxnKJwtE9VPYwDQYJKoZIhvcNAQEL
 BQAwazELMAkGA1UEBhMCVVMxEDAOBgNVBAgMB0RlbHdhcmUxEzARBgNVBAcMCk5l
@@ -30,16 +26,7 @@ o/bKiIz+Fq8=
 -----END CERTIFICATE-----
 `;
 
-/**
- * TLS for a connection string: verified against Supabase's own CA when the host is
- * Supabase's, and left to pg's defaults otherwise, so a plain local Postgres needs
- * nothing.
- *
- * node-pg sends queries in plaintext unless told otherwise, and the deployed
- * function and the database sit in different regions, so without this every query
- * and session row crossed the internet readable. An `sslmode` in the URL overrides
- * this (pg parses the URL after the options), so the URLs should carry none.
- */
+/** TLS verified against Supabase's CA for a Supabase host; an `sslmode` in the URL would override it. */
 export function sslFor(connectionString: string): ConnectionOptions | undefined {
   const { hostname } = new URL(connectionString);
   if (!/\.supabase\.(com|co)$/.test(hostname)) return undefined;

@@ -3,17 +3,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
-/**
- * Rasterises the PWA icons from `client/public/favicon.svg`.
- *
- * The SVG is the single source of the mark, so nothing here is upscaled — sharp
- * renders the vector at each target size. Run it again after editing the SVG:
- *
- *   node client/scripts/generate-icons.mjs
- *
- * The PNGs are committed, so a later `sharp` install failure cannot break a
- * build. It is a devDependency and never reaches the bundle.
- */
+/** Rasterises the PWA icons from favicon.svg (`node client/scripts/generate-icons.mjs`); the PNGs are committed. */
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = resolve(HERE, "../public");
@@ -23,26 +13,13 @@ const SOURCE = readFileSync(resolve(PUBLIC, "favicon.svg"), "utf8");
 /** The tile colour: the page's black. */
 const TILE = "#000000";
 
-/**
- * The mark alone — the source with its svg wrapper and its tile rect removed.
- * Taken from the SVG rather than restated, so editing the artwork cannot leave
- * the PNGs drawing a previous version of it.
- */
+/** The mark alone (svg wrapper and tile rect removed), taken from the SVG so the PNGs can't go stale. */
 const MARK = SOURCE.replace(/<svg[^>]*>/, "")
   .replace("</svg>", "")
   .replace(/\s*<rect[^>]*><\/rect>/, "")
   .trim();
 
-/**
- * Every PNG is FULL-BLEED black: no corner radius, no edge. iOS and Android
- * apply their own masks, and a pre-rounded tile would show the wallpaper in
- * the gap between our corners and theirs.
- *
- * `scale` shrinks the mark about the centre. Only maskable needs it: the
- * guaranteed-visible area is a circle of radius 40%, and the mark's dot edge
- * sits sqrt(8.5² + 5.5²) + 2.9 = 13.0 units from centre — 40.7% of 32, just
- * outside. At 0.8 it is 32.5%.
- */
+/** Full-bleed black tiles (iOS and Android mask them); `scale` shrinks the mark to fit maskable's 40% circle. */
 function tile(size, scale) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 32 32">
   <rect width="32" height="32" fill="${TILE}"></rect>

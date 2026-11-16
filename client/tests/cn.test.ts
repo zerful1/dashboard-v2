@@ -2,8 +2,7 @@ import { describe, it, expect } from "vitest";
 import { cn } from "../src/lib/cn";
 
 describe("cn", () => {
-  // tailwind-merge reads an unknown text-* class as a colour, so without the
-  // config the label size vanished beside any text colour.
+  // tailwind-merge reads an unknown text-* class as a colour.
   it("keeps the label size token beside a text colour", () => {
     expect(cn("text-label", "text-accent").split(" ").sort()).toEqual(["text-accent", "text-label"]);
   });

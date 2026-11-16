@@ -44,14 +44,11 @@ export function AddFoodSheet({
   const [q, setQ] = useState("");
   // A scanned code nobody has filed, carried into Custom so it is saved with the food.
   const [customBarcode, setCustomBarcode] = useState<string | null>(null);
-  // The sheet's content outlives a close by its exit animation, so a scan's
-  // lookup can land after the reset below: it checks this first.
+  // Content outlives a close by its exit animation, so a scan's lookup can land after the reset: check this first.
   const openRef = useRef(open);
   openRef.current = open;
   const recents = useRecents(open);
-  // Most adds are a repeat, so the sheet opens on Recent when there is anything
-  // to re-log (#17). Decided once the list is in, so it never flips
-  // while the user types; a tab the user picks always wins.
+  // Opens on Recent when there is anything to re-log; decided once the list is in, and a picked tab always wins.
   const shown: Tab | null =
     tab ?? (recents.isPending ? null : recents.data && recents.data.length > 0 ? "recent" : "search");
 

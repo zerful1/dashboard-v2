@@ -10,26 +10,12 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * How long a request waits for the server to start answering. Dead wifi or a
- * captive portal otherwise leaves it pending for good, and the screen spins; a
- * cold Supabase after a week idle answers well inside it.
- */
+/** How long a request waits for the server to start answering; dead wifi would otherwise spin forever. */
 export const API_TIMEOUT_MS = 15_000;
 
-/**
- * The only place fetch is called.
- *
- * `credentials: 'include'` is what makes the session cookie travel; without it
- * every authenticated request silently 401s.
- *
- * Gives up with ApiError(0, "Timed out", "timeout") when no answer has started
- * within API_TIMEOUT_MS. Only that wait is timed: once the answer starts, a slow
- * body (the export streams every row) is progress, not a dead connection.
- */
+/** The only fetch call; credentials 'include' sends the cookie, and only the wait for the answer to start is timed. */
 export async function api<T = unknown>(path: string, options?: RequestInit): Promise<T> {
-  // A controller of our own, so the timer can abort. The caller's signal is
-  // forwarded by hand: AbortSignal.any is missing on older iOS.
+  // Our own controller so the timer can abort; the caller's signal is forwarded by hand (no AbortSignal.any on old iOS).
   const controller = new AbortController();
   const caller = options?.signal;
   const forward = () => controller.abort(caller?.reason);

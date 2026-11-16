@@ -17,8 +17,7 @@ export function CustomFoodForm({ onNext, barcode = null }: { onNext: (food: Food
   const [f, setF] = useState(EMPTY);
   const set = (k: keyof typeof EMPTY) => (e: ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
 
-  // Blank macros are 0 (a label that omits fat has none worth logging);
-  // blank label nutrients are unknown.
+  // Blank macros are 0; blank label nutrients are unknown.
   const macro = (s: string) => Math.max(0, parseDecimal(s) ?? 0);
   const label = (s: string) => {
     const n = parseDecimal(s);

@@ -32,8 +32,7 @@ export function AmountStep({
   const effectiveUnit: FoodLogUnit = unit === "g" && !canWeigh ? "serving" : unit;
   const [raw, setRaw] = useState(() => String(initial?.quantity ?? (effectiveUnit === "g" ? 100 : 1)));
 
-  // One add per step. The sheet closes on Add, but its exit animation keeps this
-  // mounted and clickable for a moment, so a double tap would log it twice.
+  // One add per step: the exit animation keeps this clickable, so a double tap would log twice.
   const added = useRef(false);
 
   const parsed = parseDecimal(raw);

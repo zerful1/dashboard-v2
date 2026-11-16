@@ -3,11 +3,7 @@ import { useToday } from "@/hooks/useToday";
 import { LiftsOverview } from "./stats/LiftsOverview";
 import { LiftDetailView } from "./stats/LiftDetailView";
 
-/**
- * Gym's Stats: every lift by trend, and one lift in detail
- * within the tab. The search, the Not lately fold and the list's scroll
- * position live here, so coming back from a lift returns you to your place.
- */
+/** Gym's Stats: every lift by trend, and one lift in detail; search, fold and scroll position live here. */
 export function StatsTab() {
   const today = useToday();
   const [selected, setSelected] = useState<string | null>(null);
@@ -18,8 +14,7 @@ export function StatsTab() {
   const scroller = () => root.current?.closest("main") ?? null;
   const listTop = useRef(0);
 
-  // After the switch has rendered: a lift opens at its top, and Back returns
-  // to where the list was.
+  // After the switch has rendered: a lift opens at its top, and Back returns to the list's place.
   useLayoutEffect(() => {
     const main = scroller();
     if (main) main.scrollTop = selected === null ? listTop.current : 0;

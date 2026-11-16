@@ -8,35 +8,19 @@ interface Props {
   children: ReactNode;
 }
 
-/**
- * Wraps a control with its label, hint and error, and wires the ARIA
- * association onto the child itself — `aria-describedby` points at whichever
- * of the error or hint text is currently showing (error wins), and
- * `aria-invalid` is set for the duration of an error — so every field is
- * correct by construction rather than each page having to remember to wire
- * it up by hand. Colour is never the only signal that something is wrong:
- * the announced description is.
- */
+/** Wraps a control with its label, hint and error, wiring aria-describedby (error wins) and aria-invalid. */
 export function Field({ label, htmlFor, error, hint, children }: Props) {
   const errorId = `${htmlFor}-error`;
   const hintId = `${htmlFor}-hint`;
   const ownDescribedBy = error ? errorId : hint ? hintId : undefined;
 
-  // isValidElement is the guard: Field is also used to wrap a plain <div> of
-  // a button group, not just single inputs. `aria-describedby`/`aria-invalid`
-  // are valid on almost anything, so cloning is harmless there too — but
-  // strings, numbers, and arrays of children aren't elements at all, and get
-  // passed through untouched rather than fed to cloneElement.
+  // isValidElement guards a plain <div> or non-element children, which pass through untouched.
   const child = isValidElement<AriaAttributes>(children)
     ? cloneElement(children, {
-        // aria-describedby is a space-separated id list by spec — append
-        // rather than replace, so a caller's own value is never clobbered.
+        // aria-describedby is a space-separated id list: append, never clobber a caller's value.
         "aria-describedby":
           [children.props["aria-describedby"], ownDescribedBy].filter(Boolean).join(" ") || undefined,
-        // A boolean `true`/`undefined`, never the string "false": an absent
-        // attribute is the correct way to say "valid", and Input's
-        // `aria-[invalid=true]:border-negative` selector keys on the string
-        // "true", so a bare boolean true is what turns it on.
+        // A boolean true or undefined, never "false": Input's `aria-[invalid=true]` selector keys on it.
         "aria-invalid": error ? true : undefined,
       })
     : children;

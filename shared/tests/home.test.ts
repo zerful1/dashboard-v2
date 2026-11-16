@@ -2,8 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { deriveHome, DEFAULT_SPLIT, nextUp, todaysWorkout, workoutProgress, type SplitConfig } from '../src'
 import type { WorkoutSession } from '../src'
 
-// DEFAULT_SPLIT.week is [3,2,1,'rest',5,4,'rest'] Monday-first:
-// Mon Push(3) Tue Pull(2) Wed Legs(1) Thu rest Fri Upper(5) Sat Lower(4) Sun rest
+// DEFAULT_SPLIT.week is [3,2,1,'rest',5,4,'rest'] Monday-first: Push, Pull, Legs, rest, Upper, Lower, rest.
 const session = (date: string, dayType = 3, dayName = 'Push'): WorkoutSession => ({
   id: `s-${date}-${dayType}`,
   user_id: 'u1',
@@ -96,8 +95,7 @@ describe('deriveHome — week', () => {
   })
 
   it('treats Sunday as the END of its week, not the start', () => {
-    // Sunday 2026-08-30's Monday is 2026-08-24, not 2026-08-31. Getting this
-    // wrong makes a Sunday session vanish from its own week.
+    // Sunday 2026-08-30's Monday is 08-24, not 08-31; getting this wrong makes a Sunday session vanish from its own week.
     const h = deriveHome(DEFAULT_SPLIT, [session('2026-08-30')], '2026-08-30')
     expect(h.week.days[6]).toBe(true)
     expect(h.week.logged).toBe(1)

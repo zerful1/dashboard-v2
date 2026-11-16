@@ -24,8 +24,7 @@ function contrast(a: string, b: string): number {
 }
 
 describe("the palette", () => {
-  // Every text colour stays legible on every ground it sits on. `dim` is
-  // decoration only, so it is deliberately absent.
+  // Every text colour stays legible on every ground it sits on; `dim` is decoration only.
   for (const fg of ["text", "muted", "good", "caution", "negative"]) {
     for (const ground of ["bg", "surface"]) {
       it(`${fg} on ${ground} is at least 4.5:1`, () => {

@@ -28,17 +28,7 @@ export interface SetInput {
   isBodyweight: boolean;
 }
 
-/**
- * Insert or replace one set.
- *
- * UNIQUE (session_id, exercise_name, set_number) makes this race-proof without
- * a read-then-decide: two devices logging set 3 of the same exercise converge
- * rather than duplicating.
- *
- * weight_kg is forced to 0 when is_bodyweight, so no read site has to wonder
- * whether a stored weight was meaningful. Every read branches on the flag,
- * never on the value.
- */
+/** Insert or replace one set (UNIQUE makes it race-proof); weight_kg is forced to 0 when is_bodyweight. */
 export async function upsertSet(userId: string, input: SetInput): Promise<WorkoutSet> {
   const { rows } = await pool.query<WorkoutSet>(
     `INSERT INTO ${T.workoutSets}
@@ -71,15 +61,7 @@ export function deleteSet(userId: string, id: string): Promise<boolean> {
   return deleteFromSession(userId, T.workoutSets, id);
 }
 
-/**
- * "Last time" for each named exercise: the newest session
- * dated before `before` that holds a set of it, on ANY day type (a same-date
- * tie goes to the later session), and that session's sets of it. Strictly
- * before, so today's own sets are never offered back as last time's. day_type
- * is reused across split eras, so the same-day-type rule this replaces could
- * compare against another era's day, and showed nothing when the last
- * same-day session skipped the exercise.
- */
+/** "Last time" per exercise: the newest earlier session with a set of it on ANY day type, since day_type is reused across eras. */
 export async function lastTimes(
   userId: string,
   names: string[],

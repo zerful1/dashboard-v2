@@ -17,12 +17,7 @@ interface Props {
 
 const TONE_CLASS = { good: "text-good", caution: "text-caution", neutral: "text-text" } as const;
 
-/**
- * Where the weight is and which way it is going, in words, before anything
- * else: the 7-day average, Insights' rate, and the
- * goal's projection. Then what the weight is made of, from the same rate and
- * Gym's lift statuses.
- */
+/** Where the weight is and which way it is going, in words: 7-day average, Insights' rate and goal projection, then composition. */
 export function WeightHeadline({ summary, today, goal, goalsFailed, composition }: Props) {
   const safe = useMotionSafe();
   const rate = rateLine(summary.fit, goal);
@@ -33,8 +28,7 @@ export function WeightHeadline({ summary, today, goal, goalsFailed, composition 
     <div>
       <div className="lbl">7-day average</div>
       <motion.div
-        // Keyed on the value so it re-mounts and re-animates when it changes:
-        // a new weigh-in is visibly acknowledged rather than silently swapped.
+        // Keyed on the value so it re-mounts and re-animates when it changes.
         key={summary.average7 ?? "none"}
         initial={{ opacity: 0, y: safe ? 6 : 0 }}
         animate={{ opacity: 1, y: 0 }}

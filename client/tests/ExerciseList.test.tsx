@@ -33,8 +33,7 @@ describe("ExerciseList suggestions", () => {
     expect(box()).toHaveValue("");
   });
 
-  // A phone capitalises "T bar row" for you, and stats match
-  // names exactly, so a typed near-twin must become the history's spelling.
+  // A phone capitalises "T bar row" and stats match names exactly.
   it("adds a typed name in the history's spelling when only the case differs", async () => {
     const onAdd = renderList();
     await userEvent.type(box(), "t bar row{Enter}");
@@ -81,9 +80,7 @@ describe("ExerciseList, last time loading", () => {
 });
 
 describe("ExerciseList, dragging to reorder", () => {
-  // jsdom lays nothing out, and dnd-kit moves by measured position: each row
-  // stands 50 px below the one before it, as on a phone, and everything else
-  // is a tall column holding them. (A 0 × 0 parent clamps every drag to its top.)
+  // jsdom lays nothing out and dnd-kit moves by measured position.
   beforeEach(() => {
     vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
       const i = [...document.querySelectorAll("[data-exercise-row]")].indexOf(this);
@@ -103,8 +100,7 @@ describe("ExerciseList, dragging to reorder", () => {
     return onReorder;
   };
 
-  // Space picks up, the arrows move, Space drops: dnd-kit's keyboard drag, so
-  // reordering never needs a touchscreen or a mouse.
+  // dnd-kit's keyboard drag (Space picks up, arrows move, Space drops).
   it("saves the new order once, on drop", async () => {
     const onReorder = renderDrag();
     screen.getByRole("button", { name: "Drag Bench Press" }).focus();

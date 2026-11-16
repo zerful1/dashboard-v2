@@ -5,29 +5,9 @@ import { pool } from "./pool";
 import { parseWorkoutSheet, type RowFixes, type SheetTab, type SheetWorkout } from "./workoutSheetParse";
 import { toCell } from "./xlsxCell";
 
-/**
- * One-off: the workouts the user logged in Google Sheets from June 2026, while
- * the gym tab went unused, into the dashboard.
- *
- *   npm run import-workouts -- "<Workout Split.xlsx>" --email <address> --schema <name> [--apply]
- *
- * Additive only. A session the dashboard already has gets the sets and cardio
- * it is missing; nothing is ever updated or deleted. A set the two disagree on
- * stops the whole import before anything is written. So it can be re-run on a
- * newer export of the sheet, and only what is new goes in.
- */
+/** One-off, additive import of Google Sheets workouts: fills missing sets and cardio, never updates or deletes. */
 
-/**
- * The sheet's names for exercises the dashboard already knows under another
- * name. Each is backed by the same weights logged under both, so the history
- * and its stats read as one exercise:
- *
- * - T Bar Row, New Machine Preacher Curl: 2026-07-24 is logged in both, set for set.
- * - Overhead Extension: 14.7 kg x 15 in both (dashboard 06-08, sheet 06-23).
- * - Incline Dumbbell Press: 20 kg in both, in June.
- * - Machine Adduction: the split template's name. Standing Calf Raises: the history's.
- * - Incline Bench: 40 and 45 kg in both (dashboard 2025-11-28, sheet 2026-08-04).
- */
+/** Sheet names for exercises the dashboard knows under another name, backed by identical weights in both. */
 export const SHEET_RENAMES: Record<string, string> = {
   "Machine T Bar Row": "T Bar Row",
   "Machine Preacher Curl": "New Machine Preacher Curl",
@@ -38,12 +18,7 @@ export const SHEET_RENAMES: Record<string, string> = {
   "Incline Bench Press": "Incline Bench",
 };
 
-/**
- * Single rows corrected by hand (2026-10-03). 24 Aug row 12 reads "Unilateral
- * Machine Row" at 63 kg, beside the real unilateral sets at 36.3 kg: "the 63kg
- * set isn't supposed to be unilateral". Machine Row is the history's name for
- * the two-arm machine.
- */
+/** Rows corrected by hand: the 24 Aug "Unilateral Machine Row" at 63 kg is the two-arm Machine Row. */
 export const SHEET_ROW_FIXES: RowFixes = {
   "2026-08-24": { 12: "Machine Row" },
 };
@@ -57,12 +32,7 @@ export interface ImportArgs {
 
 const SAFE_SCHEMA = /^[a-z_][a-z0-9_]*$/;
 
-/**
- * Refuses by shape before touching anything, like importCofid and seedDev. The
- * schema is named on the command line, never read from DB_SCHEMA where a stale
- * .env could supply it; app_test belongs to the tests, and nothing of ours
- * belongs in public (v1's, until 2026-10-20). Without --apply nothing is written.
- */
+/** Refuses by shape: schema named on the command line (never DB_SCHEMA), not app_test or public. */
 export function parseArgs(argv: string[]): ImportArgs {
   const usage = 'Usage: npm run import-workouts -- "<file.xlsx>" --email <address> --schema <name> [--apply]';
   const file = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
@@ -250,10 +220,7 @@ async function write(client: PoolClient, S: string, userId: string, planned: Pla
   }
 }
 
-/**
- * Plans, then writes only with `apply`. One transaction either way, and a dry
- * run's is READ ONLY, so Postgres itself refuses any write it might attempt.
- */
+/** Plans, then writes only with `apply`; one transaction, READ ONLY on a dry run. */
 export async function runImport(
   schema: string,
   userId: string,

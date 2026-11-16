@@ -10,12 +10,7 @@ function meta(key: string): string | undefined {
   return tag?.[1];
 }
 
-/**
- * The card a shared link shows (sign-in redesign). A crawler never runs the
- * app, so these tags are all it reads, and nothing fails visibly when the
- * picture is renamed or redrawn at another size: the card just goes blank or
- * cropped on LinkedIn.
- */
+/** A crawler never runs the app, so these tags are all it reads. */
 describe("the link preview", () => {
   it("names a picture that is in public/, at the size it declares", () => {
     const image = new URL(meta("og:image")!);

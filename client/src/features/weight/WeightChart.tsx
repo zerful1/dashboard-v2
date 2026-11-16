@@ -24,14 +24,7 @@ import { cn } from "@/lib/cn";
 import { goalPlacement } from "./deriveWeight";
 
 export interface ChartPoint {
-  /**
-   * YYYY-MM-DD. A string end to end.
-   *
-   * Every one of the 58 migrated weigh-ins falls in a BST month, so a value
-   * that round-trips through a JS Date shifts by a day — all of them, not
-   * half. The chart plots it on a day axis counted by daysBetweenISO (string
-   * maths), and never constructs a Date from it, which is why it is here.
-   */
+  /** YYYY-MM-DD, a string end to end: a Date round trip shifts BST-month weigh-ins by a day. */
   date: string;
   kg: number;
 }
@@ -44,11 +37,7 @@ export interface WeightRow {
   avg: number | null;
 }
 
-/**
- * The weigh-ins on or after `start` as rows on a day axis, each with its 7-day
- * average, and a null row between two plotted weigh-ins more than 7 days apart
- * so the line breaks rather than bridging the gap.
- */
+/** The weigh-ins from `start` as day-axis rows with their 7-day average, a null row breaking the line across gaps over 7 days. */
 export function weightRows(points: ChartPoint[], line: AveragePoint[], start: string): WeightRow[] {
   const byDate = new Map(line.map((a) => [a.date, a]));
   const rows: WeightRow[] = [];
@@ -62,11 +51,7 @@ export function weightRows(points: ChartPoint[], line: AveragePoint[], start: st
   return rows;
 }
 
-/**
- * Every 7 days back from today for one month; otherwise the 1st of each month,
- * unless fewer than two 1sts fall in the range — a new account's All range —
- * when the weekly ticks label it instead of one month or none.
- */
+/** Ticks every 7 days for one month, else each 1st, unless fewer than two 1sts fall in range, then weekly. */
 export function weightTicks(start: string, today: string, weekly: boolean): { x: number; label: string }[] {
   if (!weekly) {
     const months: { x: number; label: string }[] = [];
@@ -98,22 +83,7 @@ interface Props {
   weekly: boolean;
 }
 
-/**
- * THE swappable boundary. Nothing outside this file imports a charting library.
- *
- * Library: Recharts 3.10.1, chosen over Bklit UI after a spike. Bklit failed two
- * of the three criteria: its Visx shell builds a `scaleTime` and coerces the x
- * value with `new Date(value)`, which is the Date round trip this whole feature
- * exists to avoid; and it injects its own oklch `--chart-*` palette keyed to a
- * `.dark` class this dark-only app does not set, so the chart would have
- * rendered light on our near-black ground. It also brought 58 files and nine
- * dependencies, several alpha-versioned, for one line chart.
- *
- * Series colours are `var(--color-*)` rather than hexes so the chart inherits
- * the app's palette. `raised` is the gridline colour and appears nowhere as
- * data, per the token rule. The weigh-ins are grey dots on a real-time axis
- * and the 7-day average is the white line.
- */
+/** THE swappable boundary: nothing outside this file imports a charting library (Recharts; Bklit coerced x through `new Date`). */
 export function WeightChart({ points, line, start, today, goalKg, span, weekly }: Props) {
   const rows = useMemo(() => weightRows(points, line, start), [points, line, start]);
   const plotted = rows.filter((r) => r.kg !== null);
@@ -130,8 +100,7 @@ export function WeightChart({ points, line, start, today, goalKg, span, weekly }
 
   return (
     <div>
-      {/* A goal outside the chart's range is named, not reached for: the axis
-          stretching to it squashed the line flat. */}
+      {/* A goal outside the chart's range is named, not reached for: stretching the axis squashed the line. */}
       {(goal === "below" || goal === "above") && (
         <div className="tnum text-right text-xs text-muted">
           Goal {goalKg} kg {goal === "below" ? "↓" : "↑"}
@@ -145,9 +114,7 @@ export function WeightChart({ points, line, start, today, goalKg, span, weekly }
               dataKey="x"
               type="number"
               domain={[0, daysBetweenISO(start, today)]}
-              // Today sits at the axis's end, and 1M labels it: inset the end so
-              // its centred label fits inside the chart (it overran by a pixel
-              // in the browser pass, and the font decides by how much).
+              // Today sits at the axis's end and 1M labels it: inset the end so the centred label fits inside the chart.
               padding={{ left: 0, right: 16 }}
               ticks={ticks.map((t) => t.x)}
               tickFormatter={(x: number) => labels.get(x) ?? ""}
@@ -235,11 +202,7 @@ export function WeightChart({ points, line, start, today, goalKg, span, weekly }
   );
 }
 
-/**
- * The 7-day average with a null between two points more than 7 days apart, so
- * the line breaks there. A point with a break or the end on both sides has no
- * line to be part of, so it is marked `lone` and drawn as a dot.
- */
+/** The 7-day average with a null between points over 7 days apart; a point with a break on both sides is `lone`, drawn as a dot. */
 export function sparklineRows(line: AveragePoint[]): { date: string; kg: number | null; lone: boolean }[] {
   const rows = line.flatMap((p) =>
     p.gapBefore ? [{ date: `${p.date}-gap`, kg: null }, { date: p.date, kg: p.kg }] : [{ date: p.date, kg: p.kg }],
@@ -247,23 +210,7 @@ export function sparklineRows(line: AveragePoint[]): { date: string; kg: number 
   return rows.map((r, i) => ({ ...r, lone: r.kg !== null && rows[i - 1]?.kg == null && rows[i + 1]?.kg == null }));
 }
 
-/**
- * A sparkline, not a chart: no axes, no grid, no tooltip, no legend. It shows
- * shape only — the Weight page is where the detail lives.
- *
- * It DOES animate, where the chart above hardcodes isAnimationActive={false}.
- * Deliberate, not an oversight: the chart is the page you navigated to and is
- * already on screen when you arrive, so a redraw there is noise; the sparkline
- * enters with the Home tile and the draw is what makes it read as a trend
- * rather than a static glyph. Gated on useMotionSafe either way.
- *
- * It lives here because this file is the swappable charting boundary declared
- * at the top. Importing Recharts into the Home tile instead would give the
- * codebase a second import site and quietly retire that rule.
- *
- * It draws the 7-day average, as the Weight chart's white line does, so the
- * white line means one thing on both screens.
- */
+/** A sparkline (shape only) that animates on purpose, in the Home tile, drawing the 7-day average; it lives here to keep one charting import site. */
 export function WeightSparkline({ line }: { line: AveragePoint[] }) {
   const safe = useMotionSafe();
   if (line.length < 2) return null;
@@ -272,16 +219,14 @@ export function WeightSparkline({ line }: { line: AveragePoint[] }) {
     <div className="h-8">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={sparklineRows(line)}>
-          {/* Without a domain Recharts pads to round numbers and a 0.4 kg move
-              renders as a flat line. dataMin/dataMax uses the full height. */}
+          {/* Without a domain Recharts pads to round numbers and a 0.4 kg move renders flat. */}
           <YAxis hide domain={["dataMin", "dataMax"]} />
           <Line
             type="monotone"
             dataKey="kg"
             stroke="var(--color-accent)"
             strokeWidth={2}
-            // Only a lone point gets a dot: after a gap, the newest average
-            // has nothing to join, and a line of one point draws nothing.
+            // Only a lone point gets a dot: after a gap the newest average has nothing to join.
             dot={(props: unknown) => {
               const { cx, cy, index, payload } = props as { cx?: number; cy?: number; index?: number; payload?: { lone?: boolean } };
               const key = `dot-${index}`;
@@ -306,10 +251,7 @@ export function liftReadout(p: LiftChartPoint, today: string): string {
   return `${dayMonth(p.date, today)} · ${setCell(p.set)}${p.isBest ? " · new high" : ""}`;
 }
 
-/**
- * The day whose column x falls in: the bars share the plot's width equally, one
- * column a day. A tap in an axis gutter takes the nearest day.
- */
+/** The day whose column x falls in (bars share the width equally); a tap in an axis gutter takes the nearest day. */
 export function dayAt(x: number, plot: { x: number; width: number }, count: number): number {
   const i = Math.floor(((x - plot.x) / plot.width) * count);
   return Math.min(count - 1, Math.max(0, i));
@@ -323,11 +265,7 @@ export function repCountShown(columnWidth: number, index: number, shown: number)
   return columnWidth >= COUNT_ROOM || index === shown;
 }
 
-/**
- * A bar's rep count, over it. Recharts clones this per bar with the bar's box
- * as `viewBox`. Muted, as words to read (CLAUDE.md); the picked day's in the
- * text colour, beside its white bar.
- */
+/** A bar's rep count, over it; Recharts clones this per bar with its box as `viewBox`, muted as words to read. */
 function RepCount({
   viewBox,
   value,
@@ -372,11 +310,7 @@ const BARS = 0.28;
 // Room for a rep count over the tallest bar, and a dot's radius, before the line.
 const GAP = 0.1;
 
-/**
- * The kg axis, stretched below the data so the line keeps clear of the bars:
- * the data's whole-number ends fill the top of the plot, and the ticks (and so
- * the gridlines) stay among the data, never in the bar strip.
- */
+/** The kg axis, stretched below the data so the line keeps clear of the bars and the gridlines stay among the data. */
 export function liftKgAxis(values: number[]): { domain: [number, number]; ticks: number[] } {
   const [lo, hi] = axisDomain(values);
   const below = ((hi - lo) * (BARS + GAP)) / (1 - BARS - GAP);
@@ -399,20 +333,7 @@ export function liftRepsTicks(reps: number[]): number[] {
   return [...new Set([0, Math.round(max / 2), max])];
 }
 
-/**
- * One lift over the trend span. The line is each day's heaviest weight, new
- * highs white and the rest dim; under it a bar per day for the reps done at
- * that weight, so a rep gain shows where the line stays flat. A bodyweight-only
- * lift has no weight to draw and shows its bars alone.
- *
- * A tap, click or hover picks a day and the line above the chart names its
- * exact set. A fixed line rather than a floating tooltip, which could reach
- * past the screen's edge on a phone (CLAUDE.md). One chart, not a line chart
- * over a bar chart, so the two share one x axis and can't drift apart.
- *
- * It lives here because this file is the one charting boundary;
- * ProgressionChart broke that rule and is gone.
- */
+/** One lift over the trend span: heaviest weight per day as a line, reps as bars on one shared x axis; the picked day is named in a fixed line, not a tooltip (CLAUDE.md). */
 export function LiftChart({
   points,
   unit,
@@ -436,10 +357,7 @@ export function LiftChart({
 
   // A stale pick (the lift's points changed under it) falls back to the latest day.
   const shown = picked !== null && picked < points.length ? picked : points.length - 1;
-  // Worked out from where the pointer is, not from Recharts' tooltip state: on
-  // a phone a tap's click carries no active day, since Recharts tracks only
-  // hover and drag. Bubbling to the wrapper, a tap on a bar, a dot or the space
-  // between all count.
+  // Worked out from the pointer, not Recharts' tooltip state: on a phone a tap's click carries no active day.
   const pickAt = (e: { clientX: number; currentTarget: HTMLElement }) => {
     if (!plot.current) return;
     setPicked(dayAt(e.clientX - e.currentTarget.getBoundingClientRect().left, plot.current, points.length));

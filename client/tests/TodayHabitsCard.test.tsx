@@ -68,8 +68,7 @@ describe("TodayHabitsCard", () => {
     expect(calls).toContain(`PUT /api/habits/h1/days/${today}`);
   });
 
-  // The refetch after the failure never answers, so only the
-  // rollback can put the tick back.
+  // The refetch after the failure never answers, so only the rollback can put the tick back.
   it("puts the tick back when saving fails", async () => {
     mockApi(
       [async () => [habit({})], () => new Promise(() => {})],
@@ -84,8 +83,7 @@ describe("TodayHabitsCard", () => {
     );
   });
 
-  // Each rollback once put back its own whole snapshot, so the second
-  // failure brought back the first tick, which never saved.
+  // Each rollback once restored its own whole snapshot, so the second failure brought back the first tick.
   it("keeps a failed tick off when a second tick fails after it", async () => {
     const fail: Record<string, () => void> = {};
     mockApi(
@@ -118,8 +116,7 @@ describe("TodayHabitsCard", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  // Characterisation: pending and "no habits" both render nothing today. This
-  // keeps them that way if the empty case ever grows a prompt.
+  // Characterisation: pending and "no habits" both render nothing today.
   it("renders nothing while loading", async () => {
     const calls = mockApi([() => new Promise(() => {})]);
     const { container } = renderCard();

@@ -97,12 +97,7 @@ export function customToChoice(food: FoodInput): FoodChoice {
   return fromNutrition(food, food.name, food.brand, { kind: 'store', food })
 }
 
-/**
- * A recent entry with no library item behind it: a migrated v1 row, or a food
- * since deleted. Its snapshot is linear in quantity, so the per-unit values are
- * the snapshot divided by the quantity - in the unit it was logged in, and only
- * that one.
- */
+/** A recent entry with no library item: per-unit values are its snapshot over quantity, in its logged unit. */
 export function entryToChoice(entry: FoodLogEntry): FoodChoice {
   const k = entry.unit === 'g' ? 100 / entry.quantity : 1 / entry.quantity
   const scale = (v: number | null) => (v === null ? null : v * k)

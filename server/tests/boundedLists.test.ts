@@ -3,11 +3,7 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { createApp } from "../src/app";
 
-/**
- * Every list a request can carry has a ceiling. The two reorders had none, so
- * the 1 MB body limit was the only bound: about 25,000 ids, each one validated
- * and, for exercises, each one an UPDATE.
- */
+/** Every list a request can carry has a ceiling; the reorders had none beyond the 1 MB body limit. */
 
 const app = createApp();
 const alice = { email: "alice@example.com", password: "correct-horse-9" };

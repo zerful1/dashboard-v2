@@ -8,8 +8,7 @@ import { AuthProvider } from "../src/auth/AuthProvider";
 import * as apiModule from "../src/lib/api";
 import { ApiError } from "../src/lib/api";
 
-// AuthProvider clears the query cache whenever the identity changes, so it
-// needs a QueryClientProvider above it — as it has in App.tsx.
+// AuthProvider clears the query cache on identity change, so it needs a QueryClientProvider above it.
 function renderPage() {
   return render(
     <QueryClientProvider client={new QueryClient()}>
@@ -90,8 +89,7 @@ describe("LoginPage, the project page", () => {
   });
 });
 
-// The sign-in redesign: strangers (the CV links here) get the demo and the
-// project page; sign-ups are closed, so nothing offers an account.
+// Strangers get the demo and the project page; sign-ups are closed, so nothing offers an account.
 describe("LoginPage, for a visitor", () => {
   const signedOut = () => vi.spyOn(apiModule, "api").mockRejectedValue(new ApiError(401, "Not authenticated"));
 

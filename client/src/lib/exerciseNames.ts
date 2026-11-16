@@ -1,8 +1,4 @@
-/**
- * History's exercise names, so a typed name reuses one exactly: stats, coaching
- * and records match names character for character, and a near-twin ("T bar
- * row" for "T Bar Row") would split one exercise's history in two.
- */
+/** History's exercise names, so a typed name reuses one exactly: a near-twin would split an exercise's history. */
 export function suggestNames(history: string[], typed: string, exclude: string[] = [], limit = 5): string[] {
   const q = typed.trim().toLowerCase();
   if (!q) return [];

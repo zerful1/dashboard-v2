@@ -47,13 +47,10 @@ export function GymPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // A failed split is not loaded either: decided from the default, the rest-day
-  // fallback would latch, and the real split arriving later could not undo it.
+  // A failed split is not loaded either: deciding from the default would latch the rest-day fallback.
   const { dayType, date, selectDay, selectDate, jumpTo } = useGymDay(split, splitPending || splitFailed, lastLogged);
 
-  // Home's Start/Continue names the day it shows, which on a swapped day is not
-  // the scheduled one, and sends it here. Applied once, on arrival; jumpTo
-  // latches, so the schedule and the rest-day fallback cannot pull it back.
+  // Home's Start/Continue may name a swapped day; applied once on arrival, and jumpTo latches against the schedule.
   const location = useLocation();
   const sentDay = (location.state as { gymDay?: number } | null)?.gymDay;
   const arrived = useRef(false);
@@ -71,9 +68,7 @@ export function GymPage() {
     [lastTimes],
   );
   const historyNames = useHistoryExerciseNames();
-  // A failed Add set, for the sheet to give its reps back. Memoised on the
-  // mutation's own variables, so the sheet refills once per failure rather
-  // than on every render, over whatever is typed next.
+  // A failed Add set, memoised on the mutation's variables so the sheet refills once per failure.
   const failedSet = useMemo(() => {
     const v = logSet.isError ? logSet.variables : undefined;
     if (!v) return null;
@@ -92,10 +87,7 @@ export function GymPage() {
     ? sets.filter((s) => s.exercise_name === active.exercise_name).sort((a, b) => a.set_number - b.set_number)
     : [];
 
-  // After every hook, before anything derived from dayType. The same rule Home
-  // follows: an unloaded split is indistinguishable from a default one, so
-  // rendering now would name the default split's day and fire the exercises
-  // query for it, then again for the real one.
+  // After every hook: an unloaded split looks like a default one and would name the wrong day.
   if (splitPending) return <Spinner label="Loading your split" />;
   // Not the default split in its place: that names the wrong day, and logs to it.
   if (splitFailed) {
@@ -121,9 +113,7 @@ export function GymPage() {
         onEditSplit={() => setSplitOpen(true)}
       />
 
-      {/* The header above stays on ALL three tabs. It is the page's context,
-          and hiding it on History would make the Edit-in-Log hand-off look like
-          it did nothing. */}
+      {/* The header stays on ALL three tabs: hiding it on History would make the Edit-in-Log hand-off look dead. */}
       <div className="flex rounded-full border border-edge p-0.5">
         {SUB_TABS.map((t) => (
           <button
@@ -148,10 +138,7 @@ export function GymPage() {
       {tab === "history" && (
         <HistoryTab
           onEditInLog={(s) => {
-            // jumpTo sets both AND latches, so a slow lastLoggedDay query cannot
-            // pull the user back to today's rotation slot after the hand-off.
-            // A plain selectDay + selectDate pair would reintroduce exactly the
-            // v1 bug jumpTo fixed.
+            // jumpTo sets day and date AND latches; a plain selectDay + selectDate pair would let lastLoggedDay pull it back.
             jumpTo(s.day_type, s.date);
             setTab("log");
           }}

@@ -12,17 +12,12 @@ import { WeightSection } from "@/features/home/WeightSection";
 import { WeekLine } from "@/features/home/WeekLine";
 import { AddFoodSheet } from "@/features/nutrition/AddFoodSheet";
 
-/**
- * Today at a glance. The top slot holds the next thing and
- * the screen's one white action — weigh-in, then workout, then food — and the
- * rest of today follows in a fixed order, minus whichever is on top.
- */
+/** Today at a glance: the top slot holds the next thing and the one white action, the rest follow in fixed order. */
 export function HomePage() {
   // Kept current: an app left open overnight rolls to the new day.
   const today = useToday();
   const home = useHomeDay(today);
-  // Started here, with the rest of the day, rather than when the card mounts
-  // after the spinner: it was the last thing to arrive. The card reads the same entry.
+  // Started here with the rest of the day, as the card was the last thing to arrive; it reads the same entry.
   useHabits();
   const [adding, setAdding] = useState(false);
   const openAdd = () => setAdding(true);

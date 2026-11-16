@@ -25,8 +25,7 @@ describe("demo entry", () => {
     expect((await agent.get("/api/weight").expect(200)).body.length).toBeGreaterThan(50);
   });
 
-  // The refresh runs only on entry, so a month-long session would
-  // show a returning visitor the data as it was on their first visit.
+  // The refresh runs only on entry, so a month-long session would show stale data.
   it("lasts hours rather than a month, so a returning visitor enters again to fresh data", async () => {
     const msLeft = (res: request.Response) => {
       const cookie = ([] as string[]).concat(res.headers["set-cookie"] ?? []).find((c) => c.startsWith("dash.sid="));
@@ -54,8 +53,7 @@ describe("demo is read-only", () => {
   // Not only the obvious writes.
   it("refuses every kind of write", async () => {
     const agent = await inDemo();
-    // One at a time: supertest starts and closes a server per request, and six
-    // at once reset a connection now and then on CI's Linux runner (ECONNRESET).
+    // One at a time: several at once reset a connection now and then on CI's Linux runner (ECONNRESET).
     const writes = [
       () => agent.post("/api/weight").send({ date: "2026-10-01", weight_kg: 70 }),
       () => agent.put("/api/goals/weight").send({ target_kg: 70 }),
@@ -87,8 +85,7 @@ describe("demo is read-only", () => {
 });
 
 describe("a browser still holding a demo session", () => {
-  // "Leave demo" signs out locally even when its POST fails, and
-  // a reset link can open in a browser that last visited the demo.
+  // "Leave demo" signs out locally even when its POST fails, and a reset link can open in a browser that last visited the demo.
   it("can still sign in to a real account, or reset a password", async () => {
     await request(app).post("/api/auth/register").send({ email: "alice@example.com", password: "correct-horse-9" }).expect(201);
     const agent = await inDemo();

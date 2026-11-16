@@ -5,23 +5,7 @@ import type { SessionSummary, SplitConfig, WorkoutSession } from "@dashboard/sha
 
 const COLS = `id, user_id, date::text AS date, day_type, day_name, notes, created_at`;
 
-/**
- * Deletes one of the user's sets or cardio entries, and the session with it
- * when that was the last thing in it.
- *
- * A session exists because something was logged in it (getOrCreateSession), so
- * one with nothing left is a workout that never happened: History listed it,
- * and the weekly review counted it as a day trained, with no way to remove it.
- * A session carrying a note is kept: the imported history has them, and a
- * delete of one set must not take words with it.
- *
- * One transaction, with the session locked first. A set being logged to the
- * same session from another device then waits, and fails loudly if the session
- * went, rather than landing in a session about to be deleted under it.
- *
- * `table` is T.workoutSets or T.cardioEntries, never caller input. False when
- * the row is not the user's, as every scoped delete here reports.
- */
+/** Deletes a set or cardio entry, and its session if left empty and note-less; the session is locked first. */
 export async function deleteFromSession(
   userId: string,
   table: typeof T.workoutSets | typeof T.cardioEntries,
@@ -64,21 +48,7 @@ export async function findSession(
   return rows[0] ?? null;
 }
 
-/**
- * Returns the session for (date, dayType), creating it if absent.
- *
- * `day_name` is SNAPSHOTTED from the split at creation time and never
- * recomputed. day_type is reused across split eras — in the migrated history
- * 'Upper A' and 'Legs' are both day_type 1, 'Upper B' and 'Pull' both 2 — so
- * resolving a name later would relabel five real sessions with whatever the
- * split says today. tests/sessions.test.ts asserts a later call with a renamed
- * split still returns the original snapshot.
- *
- * The upsert is atomic against UNIQUE (user_id, date, day_type): two concurrent
- * first-set logs cannot create two sessions. The DO UPDATE is a deliberate
- * no-op that exists only so the row is RETURNED on conflict — DO NOTHING
- * returns no rows, which would make the caller think creation failed.
- */
+/** Returns the session for (date, dayType), creating it; `day_name` is snapshotted at creation because day_type is reused across eras. */
 export async function getOrCreateSession(
   userId: string,
   date: string,
@@ -105,11 +75,7 @@ export interface SessionListOptions {
   since?: string;
 }
 
-/**
- * Newest first, each with its distinct exercises and its set count for the
- * history list. COUNT is a bigint, which pg hands back
- * as a string, hence the casts.
- */
+/** Newest first with distinct exercises and set count; COUNT is a bigint that pg returns as a string, hence the casts. */
 export async function listSessions(
   userId: string,
   opts: SessionListOptions,

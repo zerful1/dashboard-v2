@@ -12,30 +12,19 @@ export const NUTRITION_COLUMNS = [
   "fibre_per_serving", "sugar_per_serving", "sat_fat_per_serving", "salt_per_serving",
 ] as const satisfies readonly (keyof FoodInput)[];
 
-// Every nutrition column but the description is numeric, which arrives as a
-// string without the cast.
+// Numeric columns arrive as strings without the cast.
 export const ITEM_COLS = [
   "id", "user_id", "name", "brand", "is_favourite", "external_source", "external_id", "barcode", "created_at",
   "serving_description",
   ...NUTRITION_COLUMNS.filter((c) => c !== "serving_description").map((c) => `${c}::float8 AS ${c}`),
 ].join(", ");
 
-/**
- * Serving data is replaced whole or kept whole. A text-search hit brings none,
- * so the stored serving stays; a barcode lookup brings a whole
- * serving, which replaces the old one entirely, so its unknown label values
- * never keep the previous serving's.
- */
+/** Serving data is replaced whole or kept whole, so a barcode's unknown label values never keep the old serving's. */
 const SERVING_COLUMNS = new Set<string>(
   NUTRITION_COLUMNS.filter((c) => c === "serving_description" || c === "serving_grams" || c.endsWith("_per_serving")),
 );
 
-/**
- * Store `food` in the user's library and return its id, inside the caller's
- * transaction. Search foods upsert on (user_id, external_source, external_id),
- * refreshing their values, so logging one product twice keeps one row. Manual
- * foods always insert: they have no external id, and NULLs never conflict.
- */
+/** Stores `food` in the user's library inside the caller's transaction; search foods upsert, manual foods always insert. */
 export async function upsertFoodItem(client: PoolClient, userId: string, food: FoodInput): Promise<string> {
   const columns = ["user_id", "external_source", "external_id", "name", "brand", "barcode", ...NUTRITION_COLUMNS];
   const values = [
@@ -62,17 +51,14 @@ export async function upsertFoodItem(client: PoolClient, userId: string, food: F
   return rows[0]!.id;
 }
 
-/**
- * A UPC-A code's two spellings: 12 digits as a scanner reads it, 13 with a
- * leading 0 as Open Food Facts files it. Every other code has one.
- */
+/** A UPC-A code's two spellings: 12 digits as scanned, 13 with a leading 0 as Open Food Facts files it. */
 function barcodeSpellings(code: string): string[] {
   if (code.length === 12) return [code, `0${code}`];
   if (code.length === 13 && code.startsWith("0")) return [code, code.slice(1)];
   return [code];
 }
 
-/** The caller's own food with this barcode, newest first: a scanned or hand-added food, found again as saved. */
+/** The caller's own food with this barcode, newest first. */
 export async function findFoodByBarcode(userId: string, barcode: string): Promise<FoodItem | null> {
   const { rows } = await pool.query<FoodItem>(
     `SELECT ${ITEM_COLS} FROM ${T.foodItems}

@@ -24,8 +24,7 @@ function renderAt(workout: HomeWorkout, prominent: boolean) {
 }
 
 describe("WorkoutSection's link", () => {
-  // On a swapped day Home names the day trained, not the scheduled one. Its
-  // button must open that day, or the sets look gone.
+  // On a swapped day Home names the day trained, so its button must open that day or the sets look gone.
   it.each([true, false])("opens Gym on the day it names (prominent: %s)", async (prominent) => {
     renderAt({ label: "Legs", dayType: 1, isRest: false, progress, isError: false }, prominent);
     await userEvent.click(screen.getByRole("link", { name: /continue/i }));

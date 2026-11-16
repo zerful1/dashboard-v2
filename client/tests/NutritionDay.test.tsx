@@ -34,8 +34,7 @@ describe("DayFigure", () => {
     expect(figure()).toHaveClass("text-caution");
   });
 
-  // Over target, the part past the goal is amber stripes after a notch;
-  // protein is never "over".
+  // Over target, the part past the goal is amber stripes after a notch; protein is never "over".
   it("draws the excess past a macro's target as stripes, and never for protein", () => {
     const summary = deriveDay([entry({ protein_g: 200, carbs_g: 230 })], [cut], "2026-09-23");
     render(<DayFigure summary={summary} onSetTargets={() => {}} />);

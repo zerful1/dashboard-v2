@@ -7,13 +7,7 @@ export interface WeightInput {
   notes?: string | null;
 }
 
-/**
- * The only module that names the /api/weight paths.
- *
- * Keeping the URLs in one place is the same discipline as `api()` being the
- * only fetch call site: a path that appears in three components is a path that
- * changes in two of them.
- */
+/** The only module that names the /api/weight paths. */
 export const weightApi = {
   list: () => api<BodyWeightEntry[]>("/api/weight"),
   save: (input: WeightInput) =>

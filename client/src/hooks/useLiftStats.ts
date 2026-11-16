@@ -32,8 +32,7 @@ export function useLiftDetail(name: string, today: string): { detail: LiftDetail
     staleTime: 60_000,
     meta: { errorToast: false },
   });
-  // In a useMemo over the data, not a callback: a callback would keep the data
-  // from the render it was made in and go stale on the next refetch.
+  // A useMemo over the data, not a callback: a callback would keep the first render's data and go stale.
   const detail = useMemo(() => (query.data ? liftDetail(name, query.data, today) : null), [query.data, name, today]);
   return { detail, isPending: query.isPending, isError: query.isError };
 }

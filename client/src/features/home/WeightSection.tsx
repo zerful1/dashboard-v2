@@ -12,10 +12,7 @@ export interface HomeWeight {
   isError: boolean;
 }
 
-/**
- * The latest weigh-in, and the Weight page's own rate under it, green only
- * toward the goal. Hidden until there is a weigh-in.
- */
+/** The latest weigh-in and the Weight page's rate under it, green only toward the goal. */
 export function WeightSection({ weight }: { weight: HomeWeight }) {
   if (weight.isError) {
     return (

@@ -14,21 +14,10 @@ import { deriveWeightSummary } from "@/features/weight/deriveWeight";
 import { deriveDay } from "@/features/nutrition/deriveDay";
 import { gymApi } from "@/api/gym";
 
-/**
- * One page-1 fetch of sessions answers the week line. A week is at most 7
- * sessions, so 20 is comfortably enough. The key deliberately does NOT match
- * useWorkoutHistory's: that one is an infinite query of pages, a different shape.
- */
+/** One page-1 fetch answers the week line; its key must not match useWorkoutHistory's infinite query. */
 const RECENT_LIMIT = 20;
 
-/**
- * Everything Home shows for `today`, and what claims its top slot. One
- * isPending covers EVERY source it reads: the top slot is a
- * conclusion, and drawn from a half-loaded day it flashes the wrong hero
- * (CLAUDE.md, isPending not isLoading). The split is in the gate because
- * useSplit returns DEFAULT_SPLIT until it loads, so an unloaded split names a
- * real but wrong day.
- */
+/** What Home shows for today; isPending spans every source, as a half-loaded day flashes the wrong hero. */
 export function useHomeDay(today: string) {
   const { user } = useAuth();
   const userId = user?.id ?? "anon";
@@ -45,9 +34,7 @@ export function useHomeDay(today: string) {
   });
 
   const home = useMemo(() => deriveHome(split, sessions.data ?? [], today), [split, sessions.data, today]);
-  // Which workout today is: a session already logged
-  // today wins over the schedule. Until the sessions arrive this is the
-  // scheduled day, so its queries start at once; the gate holds the slot.
+  // A session already logged today wins over the schedule; until sessions arrive it is the scheduled day.
   const workoutToday = useMemo(
     () =>
       todaysWorkout(
@@ -58,10 +45,7 @@ export function useHomeDay(today: string) {
     [home.today.dayType, home.today.label, sessions.data, today],
   );
   const dayType = workoutToday?.dayType ?? null;
-  // Only once the real split says what today is: a rest day with nothing
-  // logged reads none of these.
-  // Nor from a split that failed: the default in its place names a real but
-  // wrong day, so the workout says it couldn't load instead.
+  // Only once the real split says what today is; a failed split's default would name a real but wrong day.
   const training = !!user && !splitPending && !splitFailed && dayType !== null;
   const exercises = useQuery({ ...exercisesQueryOptions(userId, dayType ?? 0), enabled: training });
   const sets = useQuery({ ...workoutDayQueryOptions(userId, dayType ?? 0, today), enabled: training });
@@ -74,9 +58,7 @@ export function useHomeDay(today: string) {
     splitPending || sessions.isPending || weights.isPending || diary.isPending || targets.isPending ||
     goals.isPending || (training && (exercises.isPending || sets.isPending)) || (withCardio && cardio.isPending);
 
-  // A source has failed only when it has nothing to show. A failed refetch keeps
-  // the last good data and still sets isError (CLAUDE.md), and a phone refetches
-  // on every focus: one flaky response must not move the slot or blank a section.
+  // A source has failed only with nothing to show: a failed refetch keeps the last data and still sets isError.
   const weightsFailed = weights.isError && !weights.hasData;
   const workoutError =
     splitFailed ||

@@ -21,12 +21,7 @@ export function trendPoint(x: number, trend: TrendLine): number {
   return trend.slope * x + trend.intercept
 }
 
-/**
- * Whether a weight change moved toward the goal, for colouring it.
- * Green means progress whatever the phase: down on a cut, up on a
- * bulk. With no goal there is nothing to measure against, so it is neutral,
- * and a weight is never shown as bad: it only ever earns green or nothing.
- */
+/** Toward the goal is 'good' whatever the phase; a weight is never bad, only good or neutral. */
 export function trendTone(previousKg: number, latestKg: number, goalKg: number | null): 'good' | 'neutral' {
   if (goalKg === null) return 'neutral'
   return Math.abs(goalKg - latestKg) < Math.abs(goalKg - previousKg) ? 'good' : 'neutral'

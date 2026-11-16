@@ -3,20 +3,7 @@ export function toLocalISO(d: Date = new Date()): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
-/**
- * The current calendar day in an explicit IANA timezone, as YYYY-MM-DD.
- *
- * Server code must never infer the day from the process timezone — on a deployed
- * host that is UTC for every user, regardless of where they actually are. Pass the
- * user's `profiles.timezone`.
- *
- * Client code should not normally need this: the browser already runs in the user's
- * timezone, so `toLocalISO()` is correct there. This exists for server-initiated
- * work (scheduled email, "is the streak still alive right now" checks).
- *
- * 'en-CA' is used because it formats as YYYY-MM-DD natively. Node 20+ ships full
- * ICU, so named timezones resolve without extra data.
- */
+/** Today in an IANA timezone: a deployed server is UTC for everyone, so pass `profiles.timezone`. */
 export function todayISO(timeZone: string): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone,
@@ -26,13 +13,7 @@ export function todayISO(timeZone: string): string {
   }).format(new Date())
 }
 
-/**
- * Shift a YYYY-MM-DD string by whole days. Pure calendar arithmetic — no timezone
- * and no clock involved, so DST transitions are simply not a special case.
- *
- * `Date.UTC` and `toISOString` are safe here specifically because the Date is built
- * in UTC and only ever used as a calendar cursor; there is no local time to misalign.
- */
+/** Shift a YYYY-MM-DD by whole days: UTC calendar arithmetic, so DST is no special case. */
 export function shiftISO(iso: string, days: number): string {
   const [y, m, d] = iso.split('-').map(Number)
   const dt = new Date(Date.UTC(y!, m! - 1, d!))
@@ -40,10 +21,7 @@ export function shiftISO(iso: string, days: number): string {
   return dt.toISOString().slice(0, 10)
 }
 
-/**
- * Whole days from `from` to `to`, negative when `to` is earlier. The same UTC
- * calendar cursor as shiftISO, so a clock change is not a special case.
- */
+/** Whole days from `from` to `to`, negative when `to` is earlier; the UTC cursor of shiftISO. */
 export function daysBetweenISO(from: string, to: string): number {
   const utc = (iso: string) => {
     const [y, m, d] = iso.split('-').map(Number)

@@ -10,11 +10,7 @@ import { persister } from "../src/lib/persister";
 import { createQueryClient } from "../src/lib/queryClient";
 import { readSavedUser, saveUser } from "../src/auth/savedUser";
 
-/**
- * Opening the app with no signal. The saved data was on the device all along,
- * but the app asked the server who was signed in before showing any of it, so
- * a start with no signal ended on "We couldn't check your session".
- */
+/** Opening the app with no signal: the saved data must show instead of ending on "We couldn't check your session". */
 
 const ME = { id: "1", email: "a@b.com", demo: false };
 const offline = () => new TypeError("Failed to fetch");
@@ -223,8 +219,7 @@ describe("the remembered user never outlives the cache", () => {
   });
 
   it("is never who a new sign-in falls back to if the signal drops before /me", async () => {
-    // Someone else signs in on a device that remembers A; the POST lands and
-    // then the signal goes. The app must not open as A.
+    // Someone else signs in on a device that remembers A, then the signal goes: the app must not open as A.
     let signedOut = true;
     mockApi({
       "/api/auth/me": () => {

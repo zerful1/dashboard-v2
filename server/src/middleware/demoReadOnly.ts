@@ -2,10 +2,7 @@ import type { RequestHandler } from "express";
 import { Forbidden } from "../errors";
 
 const READS = new Set(["GET", "HEAD", "OPTIONS"]);
-// Leaving the demo, entering it again, and the endpoints that act for a caller
-// with no identity: login and register regenerate the session, dropping `demo`,
-// and a reset never touches the demo account (auth.ts treats its address as
-// unknown). change-password acts as the signed-in account, so it stays refused.
+// Endpoints a demo session may still use: leaving, entering, and auth acting for a caller with no identity.
 const ALLOWED = new Set([
   "/api/auth/logout",
   "/api/auth/demo",
@@ -15,12 +12,7 @@ const ALLOWED = new Set([
   "/api/auth/reset-password",
 ]);
 
-/**
- * The demo is read-only on the server, not merely in the UI. Mounted once at
- * the front of the API, so a route added later is covered without anyone
- * remembering - the reasoning behind router-level requireAuth. It relies on no
- * GET handler writing (audited by hand for PR #23).
- */
+/** Read-only demo on the server, mounted first so later routes are covered; relies on no GET writing. */
 export const demoReadOnly: RequestHandler = (req, _res, next) => {
   if (!req.session?.demo || READS.has(req.method) || ALLOWED.has(req.path)) {
     next();

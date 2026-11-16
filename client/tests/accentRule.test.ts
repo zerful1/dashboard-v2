@@ -5,10 +5,7 @@ import { clientPath } from "./clientRoot";
 
 const SRC = clientPath("src");
 
-/**
- * Where a SOLID white fill may appear, and why. Anything else filled white
- * reads as a second action.
- */
+/** Where a SOLID white fill may appear, and why; anything else filled white reads as a second action. */
 const ALLOWED: Record<string, string> = {
   "components/ui/Button.tsx": "the primary variant (Button, and buttonClass on a Link): the one action",
   "features/home/WorkoutSection.tsx": "its progress bar (data ink) and the done tick",
@@ -25,11 +22,7 @@ const ALLOWED: Record<string, string> = {
   "features/insights/WeekStrips.tsx": "days trained (small done marks) and the food bars' fill (data ink)",
 };
 
-/**
- * A solid white fill. `text` and `white` are white too since the redesign, so
- * `bg-text` would slip past a guard that only knew `bg-accent`; a tint such as
- * `bg-accent/10` is a selected state and fine.
- */
+/** A solid white fill; `text` and `white` are white too. */
 const SOLID_WHITE = /\bbg-(?:accent|text|white)(?![/\w-])/;
 
 function files(dir: string): string[] {

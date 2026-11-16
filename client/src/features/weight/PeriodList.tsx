@@ -33,11 +33,7 @@ function spokenChange(row: Extract<PeriodRow, { kind: "period" }>): string {
   return `${row.change < 0 ? "down" : "up"} ${Math.abs(row.change).toFixed(1)}`;
 }
 
-/**
- * The history by week or by month: each period's
- * average and its change from the one before, green only toward the goal. A
- * row opens onto its weigh-ins; each of those opens the weigh-in sheet.
- */
+/** The history by week or month: each average and its change, green only toward the goal; a row opens onto its weigh-ins. */
 export function PeriodList({ rows, kind, entries, goalKg, today, open, onToggle, onSelect }: Props) {
   return (
     <div>

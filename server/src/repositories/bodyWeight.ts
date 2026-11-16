@@ -8,26 +8,7 @@ export interface WeightInput {
   notes?: string | null;
 }
 
-/**
- * The exemplar the remaining domain repositories copy. Two conventions matter
- * more than anything else here.
- *
- * Every function takes userId first and scopes its WHERE by it. This is the
- * pattern that replaces row-level security; there is no query path in this file
- * that can be built without a user scope, which is what makes the ownership
- * tests meaningful rather than decorative.
- *
- * `date` is selected as ::text throughout. node-pg parses a Postgres `date`
- * into a JS Date at LOCAL midnight, which during BST is 23:00 UTC the previous
- * day — so `toISOString().slice(0,10)` hands back the day before. It is correct
- * during GMT and wrong during BST, so the corruption is intermittent and a spot
- * check of a few winter rows looks perfect. Ten months of history just moved
- * through pure SQL specifically to avoid this; reading it back through a Date
- * would reintroduce it at the last step.
- *
- * `weight_kg` is ::float8 because numeric arrives as a string otherwise, and
- * BodyWeightEntry declares it a number.
- */
+/** Every function takes userId first; `date` is read ::text because node-pg's local-midnight Date shifts in BST. */
 const COLS = `id, user_id, date::text AS date, weight_kg::float8 AS weight_kg, notes, created_at`;
 
 export async function listWeights(userId: string): Promise<BodyWeightEntry[]> {
@@ -38,14 +19,7 @@ export async function listWeights(userId: string): Promise<BodyWeightEntry[]> {
   return rows;
 }
 
-/**
- * One weigh-in per day: a second entry for the same date updates the first,
- * matching UNIQUE (user_id, date).
- *
- * The conflict target is (user_id, date), so two users weighing in on the same
- * day do not collide — a plain UNIQUE (date) would have made this a single-user
- * table without anyone noticing until the second account arrived.
- */
+/** One weigh-in per day: the conflict target is (user_id, date), so users never collide. */
 export async function upsertWeight(
   userId: string,
   input: WeightInput,
@@ -61,11 +35,7 @@ export async function upsertWeight(
   return rows[0]!;
 }
 
-/**
- * Scoped by user, so a foreign id deletes nothing and reports not-found. The
- * boolean is what lets the route answer 404 rather than 403 — see the note
- * there.
- */
+/** Scoped by user, so a foreign id deletes nothing and reports false (the route answers 404). */
 export async function deleteWeight(userId: string, id: string): Promise<boolean> {
   const res = await pool.query(
     `DELETE FROM ${T.bodyWeight} WHERE user_id = $1 AND id = $2`,

@@ -22,19 +22,14 @@ const WORTH_A_LOOK = [
   "Dates stay as plain strings end to end, so daylight saving can't shift a day",
 ];
 
-/**
- * The project page: public, beside /login and outside
- * ProtectedRoute, for someone arriving from a link rather than to use the app.
- * It reads only the session, so a signed-out visit makes no other request.
- */
+/** The public project page, outside ProtectedRoute; it reads only the session. */
 export function AboutPage() {
   const { user, loading, enterDemo } = useAuth();
   const navigate = useNavigate();
   const [demoBusy, setDemoBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // A navigation keeps the scroll, and the login page's link is the last thing
-  // on it: without this, a small phone opens here past the title.
+  // A navigation keeps the scroll, so without this a small phone opens here past the title.
   useEffect(() => window.scrollTo(0, 0), []);
 
   async function onDemo() {

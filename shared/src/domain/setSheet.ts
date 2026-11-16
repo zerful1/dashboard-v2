@@ -19,11 +19,7 @@ export interface SheetLayout {
   below: WorkoutSet[]
 }
 
-/**
- * The set sheet's rows: today against last time, matched
- * by set number. `next` continues from the highest number, so deleting a middle
- * set never makes the next one collide with, and overwrite, a later one.
- */
+/** Today against last time by set number; `next` follows the highest so a deleted middle set can't collide. */
 export function lastTimeRows(today: WorkoutSet[], last: WorkoutSet[]): SheetLayout {
   const next = today.reduce((m, s) => Math.max(m, s.set_number), 0) + 1
   const t = new Map(today.map((s) => [s.set_number, s]))
@@ -49,12 +45,7 @@ export interface SheetDefaults {
   bodyweight: boolean
 }
 
-/**
- * What the sheet starts from for set `next`. "Previous" is today's
- * highest-numbered set; "matching" is last time's set `next`, or its final set
- * when it had fewer. Reps are only ever hinted, never filled in, so Add set
- * cannot log a set nobody typed.
- */
+/** Starting values for set `next`; reps are only hinted, never filled, so Add set can't log an untyped set. */
 export function sheetDefaults(today: WorkoutSet[], last: WorkoutSet[], next: number): SheetDefaults {
   const previous = today.reduce<WorkoutSet | null>((p, s) => (!p || s.set_number > p.set_number ? s : p), null)
   const ordered = [...last].sort((a, b) => a.set_number - b.set_number)

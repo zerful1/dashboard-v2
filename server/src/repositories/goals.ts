@@ -30,11 +30,7 @@ export async function setWeightGoal(userId: string, targetKg: number): Promise<G
   return rows[0]!;
 }
 
-/**
- * A weight goal set before any weigh-in has no start, and without one its
- * direction (down or up) could only be guessed from the trend each time - so
- * it could never be judged reached. The first weigh-in after it becomes its start.
- */
+/** A goal set before any weigh-in has no start; the first weigh-in after it becomes the start. */
 export async function fillWeightGoalStart(userId: string, weightKg: number): Promise<void> {
   await pool.query(
     `UPDATE ${T.goals} SET start_kg = $2 WHERE user_id = $1 AND kind = 'weight' AND start_kg IS NULL`,

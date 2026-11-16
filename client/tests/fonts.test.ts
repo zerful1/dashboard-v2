@@ -13,12 +13,7 @@ function files(dir: string): string[] {
   });
 }
 
-/**
- * Every way a page can fetch a font from another host: a CSS @import of a
- * remote stylesheet, an @font-face whose src is a remote URL, or a <link> that
- * loads a remote stylesheet or preloads a remote font. Any host, not just
- * Google's — rsms.me serves Inter itself, and Bunny and Typekit exist.
- */
+/** Every way a page can fetch a font from another host: remote @import, @font-face src. */
 function externalFontRefs(text: string): string[] {
   const patterns = [
     /@import\s+(?:url\()?\s*["']?https?:\/\/[^\s"')]+/gi,
@@ -50,7 +45,6 @@ describe("fonts", () => {
   });
 
   // Offline first loads and no third-party requests: a font CDN breaks both.
-  // The build config too: a plugin there could inject a <link> into the page.
   it("never loads a font from another host", () => {
     const sources = [...files(join(CLIENT, "src")), ...files(join(CLIENT, "public")), join(CLIENT, "rsbuild.config.ts")];
     const offenders = sources.filter((f) => externalFontRefs(readFileSync(f, "utf8")).length > 0);

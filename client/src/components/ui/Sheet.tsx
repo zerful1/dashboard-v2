@@ -9,15 +9,7 @@ interface Props {
   children: ReactNode;
 }
 
-/**
- * The bottom sheet every later feature's editor reuses.
- *
- * Reduced motion is honoured in three separate places here, because there are
- * three separate ways this could move: the travel collapses, the backdrop fade
- * goes to zero, and drag is switched off entirely. Leaving drag enabled while
- * removing the animation would be the worst of both — the sheet would still
- * follow a finger but arrive without the motion that explains where it went.
- */
+/** The bottom sheet editors reuse; reduced motion is honoured in travel, backdrop fade and drag alike. */
 /** What Tab can land on inside the sheet. */
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -26,20 +18,7 @@ export function Sheet({ open, onClose, title, children }: Props) {
   const safe = useMotionSafe();
   const panel = useRef<HTMLDivElement>(null);
 
-  // The sheet says aria-modal, so it has to behave like one for a keyboard or
-  // a screen reader: focus comes in when it opens and goes back where it was
-  // when it closes. Before, focus stayed on the button behind the backdrop,
-  // and Tab walked the page underneath.
-  //
-  // Focus lands on the sheet itself, not its first field: focusing an input on
-  // a phone raises the keyboard over a sheet nobody has read yet. A child that
-  // asks for focus itself (autoFocus) keeps it. Keyed on `open` alone, so a new
-  // onClose each render can't re-run this and mistake the sheet for the opener.
-  //
-  // The opener is read during the render where `open` flips on, not in the
-  // effect: React focuses an autoFocus child while committing, before any effect
-  // or layout effect runs, so by then activeElement is that child, which is
-  // unmounted on close and leaves focus nowhere.
+  // aria-modal: focus moves to the sheet on open and back on close; the opener is read in render, as an autoFocus child steals activeElement at commit.
   const opener = useRef<HTMLElement | null>(null);
   const wasOpen = useRef(false);
   if (open && !wasOpen.current) {
@@ -56,16 +35,14 @@ export function Sheet({ open, onClose, title, children }: Props) {
     };
   }, [open]);
 
-  // Escape closes, Tab stays inside, and the page behind must not scroll while
-  // a sheet is open.
+  // Escape closes, Tab stays inside, and the page behind must not scroll.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
       if (e.key !== "Tab" || !panel.current) return;
       const root = panel.current;
-      // jsdom has no layout, so the rendered-box check only counts when the
-      // panel itself has one.
+      // jsdom has no layout, so the rendered-box check only counts when the panel has one.
       const hasLayout = root.getClientRects().length > 0;
       const stops = [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
         (n) =>
@@ -126,15 +103,12 @@ export function Sheet({ open, onClose, title, children }: Props) {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: safe ? "100%" : 0, opacity: safe ? 1 : 0 }}
             transition={springOrNone(TRANSITIONS.smooth, safe)}
-            // Drag to dismiss. Downward only, and elastic 0.2 so an upward pull
-            // resists rather than detaching the sheet from the finger.
+            // Drag to dismiss, downward only; elastic 0.2 so an upward pull resists.
             drag={safe ? "y" : false}
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0, bottom: 0.2 }}
             onDragEnd={(_, info) => {
-              // Velocity as well as distance: a fast flick should dismiss even
-              // if it barely moved, which is how a native sheet behaves.
-              // Distance alone makes a quick gesture feel ignored.
+              // Velocity as well as distance, so a quick flick dismisses like a native sheet.
               if (info.offset.y > 120 || info.velocity.y > 500) onClose();
             }}
           >

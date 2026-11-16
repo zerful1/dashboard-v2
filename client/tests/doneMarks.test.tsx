@@ -21,11 +21,7 @@ const habit: HabitSummary = {
   id: "h1", user_id: "u1", name: "Skincare", emoji: null, sort_order: 1, created_at: "", streak: 0, recent: [],
 };
 
-/**
- * The resting "not done" mark is the most-used control's idle state, and it
- * must be findable on black, outdoors: one ring colour everywhere, `dim`, and
- * a habit's mark shows its content in grey rather than an empty circle.
- */
+/** The resting "not done" mark must be findable on black, outdoors: one ring colour everywhere, `dim`. */
 describe("unticked done marks", () => {
   it("rings an unticked gym set in dim", () => {
     const exercise: Exercise = { id: "e1", user_id: "u1", day_type: 1, exercise_name: "Squat", sort_order: 1 };

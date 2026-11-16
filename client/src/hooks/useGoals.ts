@@ -8,8 +8,7 @@ export function goalsQueryOptions(userId: string | undefined) {
     queryKey: ["goals", userId ?? "anon"],
     queryFn: insightsApi.goals,
     enabled: !!userId,
-    // Insights and Weight render their own failure; on Home a missing goal only
-    // leaves a weight trend uncoloured, which needs no toast.
+    // Insights and Weight render their own failure; on Home a missing goal needs no toast.
     meta: { errorToast: false },
   });
 }

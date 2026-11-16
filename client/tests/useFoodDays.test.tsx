@@ -100,8 +100,7 @@ describe("useFoodDays", () => {
     expect(result.current.days).toBeUndefined();
   });
 
-  // From #35: a fetch that FAILS rather than pauses takes the placeholder
-  // with it. Since #36 that is a device reporting online with no internet.
+  // A fetch that FAILS rather than pauses takes the placeholder with it.
   it("shows yesterday's seven days when today's fetch fails with nothing to show", async () => {
     mockDays(() => {
       throw new TypeError("Failed to fetch");

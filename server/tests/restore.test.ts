@@ -193,8 +193,7 @@ describe("restoreUserData", () => {
     expect(await count(T.workoutSets, a)).toBe(0);
   });
 
-  // Safe only because the insert never updates on a clash: a "refresh edited rows"
-  // change (DO UPDATE) would rewrite Bob's rows from Alice's file. This fails first.
+  // Safe only because the insert never updates on a clash: DO UPDATE would rewrite Bob's rows from Alice's file.
   it("leaves another user's row alone when the file names its id", async () => {
     const a = await signedIn(alice);
     const b = await signedIn(bob);

@@ -9,13 +9,7 @@ const KEYS = [
 
 export type LabelSums = Record<keyof LabelTotals, { total: number | null; partial: boolean }>
 
-/**
- * Label nutrients for an amount of a food, case for case with resolveMacros.
- *
- * Unlike macros, a missing value stays null rather than becoming 0: "unknown"
- * and "none" are different claims, and the diary shows them differently.
- * A zero or negative quantity resolves to all-null, since nothing is logged.
- */
+/** Label nutrients for an amount, case for case with resolveMacros; a missing value stays null, not 0. */
 export function resolveLabelNutrients(
   food: Pick<FoodHit, 'per100g'>,
   picked: FoodHitServing,
@@ -39,11 +33,7 @@ export function resolveLabelNutrients(
   return out
 }
 
-/**
- * A day's totals. `total` sums the entries that know the value and is null
- * when none do; `partial` is true when some do and some do not, so a figure
- * covering half the day is never shown as if it were the whole of it.
- */
+/** A day's totals; `partial` marks a total that only some entries contributed to. */
 export function sumLabelNutrients(entries: LabelTotals[]): LabelSums {
   const sums = {} as LabelSums
   for (const [, key] of KEYS) {

@@ -11,8 +11,7 @@ describe("insights formatting", () => {
     expect(weekLabel("2026-12-28", "2027-01-10")).toBe("28 Dec – 3 Jan");
   });
 
-  // Records reach back to 2025, so a date from another year
-  // must say so, or a 2025 record reads as this year's.
+  // Records reach back to 2025, so a date from another year must say so, or a 2025 record reads as this year's.
   it("adds the year to a date or week outside the current year", () => {
     expect(weekLabel("2025-09-22", TODAY)).toBe("22–28 Sep 2025");
     expect(weekLabel("2026-12-28", TODAY)).toBe("28 Dec – 3 Jan 2027");
@@ -34,8 +33,7 @@ describe("insights formatting", () => {
     expect(percentChange(106, 100)).toBe("+6%");
     expect(percentChange(90, 100)).toBe("−10%");
     expect(percentChange(50, 0)).toBeNull();
-    // No change when either week is 0. A bodyweight-only week
-    // has 0 kg of volume, and "−100%" would read as a collapse.
+    // No change when either week is 0: a bodyweight-only week has 0 kg of volume.
     expect(percentChange(0, 100)).toBeNull();
   });
 

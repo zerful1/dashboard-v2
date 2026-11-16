@@ -85,8 +85,7 @@ describe("users repository", () => {
 
 describe("password service", () => {
   it("produces a different hash for the same input each time", async () => {
-    // Distinct salts — identical passwords must not produce identical hashes, or
-    // a leaked table reveals which users share one.
+    // Distinct salts: identical passwords must not produce identical hashes, or a leaked table shows who shares one.
     const a = await hashPassword("same-password-1");
     const b = await hashPassword("same-password-1");
     expect(a).not.toBe(b);
@@ -100,8 +99,7 @@ describe("password service", () => {
   });
 
   it("DUMMY_HASH is a real verifiable hash that matches nothing plausible", async () => {
-    // If this were malformed, verify would throw, be caught, and return early —
-    // reopening the timing gap it exists to close.
+    // If malformed, verify would throw, be caught and return early, reopening the timing gap it exists to close.
     expect(DUMMY_HASH.startsWith("$argon2id$")).toBe(true);
     expect(await verifyPassword(DUMMY_HASH, "not-a-real-password")).toBe(true);
     expect(await verifyPassword(DUMMY_HASH, "anything-else")).toBe(false);

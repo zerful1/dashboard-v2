@@ -11,8 +11,7 @@ vi.mock("@/auth/AuthProvider", () => ({
 }));
 
 describe("navigation", () => {
-  // CLAUDE.md: the two navs must switch at the same width, or a band of widths
-  // has none. jsdom never evaluates media queries, so the classes are the test.
+  // The two navs must switch at the same width or a band of widths has none.
   it("switches the bottom tabs and the rail at exactly the same breakpoint", () => {
     const { container } = render(
       <MemoryRouter>
@@ -24,8 +23,7 @@ describe("navigation", () => {
     expect(container.querySelector("aside")).toHaveClass("hidden", "lg:flex");
   });
 
-  // The More sheet's overlay is the third class, in AppLayout, which needs the
-  // whole app to render: read every layout file's hidden/flex breakpoints instead.
+  // The More sheet's overlay is the third class, in AppLayout, which needs the whole app to render.
   it("uses one breakpoint for every hidden/flex switch in the layout", () => {
     const used = ["AppLayout.tsx", "BottomTabs.tsx", "NavRail.tsx"].flatMap(
       (f) => readFileSync(clientPath(`src/layout/${f}`), "utf8").match(/\b(?:sm|md|lg|xl|2xl):(?:hidden|flex)\b/g) ?? [],

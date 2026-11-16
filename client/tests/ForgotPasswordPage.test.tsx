@@ -21,18 +21,7 @@ async function submit(email: string) {
 
 afterEach(() => vi.restoreAllMocks());
 
-// POST /api/auth/forgot-password returns 204 unconditionally server-side —
-// whether or not the account exists — so the endpoint can't be used to probe
-// which emails are registered. The UI must preserve that property no matter
-// what happens on the wire, including when the request itself fails: the
-// page has to claim success either way, with nothing on screen that would
-// let the two cases be told apart.
-//
-// This test's whole purpose is to fail loudly if a future "improvement"
-// starts branching on the outcome — e.g. showing an error banner only when
-// the request rejects. That would silently reintroduce an account-enumeration
-// oracle, and nothing about the change would look wrong at a glance. The
-// rejection case below exists specifically to catch that.
+// The endpoint returns 204 whether or not the account exists, so the UI must claim success either way.
 describe("ForgotPasswordPage — enumeration defence", () => {
   it("shows the check-your-email confirmation when the request succeeds", async () => {
     vi.spyOn(apiModule, "api").mockResolvedValueOnce(undefined);
@@ -51,9 +40,7 @@ describe("ForgotPasswordPage — enumeration defence", () => {
     await submit("a@b.com");
 
     expect(await screen.findByRole("heading", { name: /check your email/i })).toBeInTheDocument();
-    // No error banner, and no wording anywhere that implies whether the
-    // request actually succeeded or whether the account exists — the failure
-    // path must be visually indistinguishable from the success path.
+    // No error banner or wording that implies whether the request succeeded or the account exists.
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.queryByText(/error|failed|wrong|try again/i)).not.toBeInTheDocument();
   });

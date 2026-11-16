@@ -8,8 +8,7 @@ import { AuthProvider } from "../src/auth/AuthProvider";
 import * as apiModule from "../src/lib/api";
 import { ApiError } from "../src/lib/api";
 
-// AuthProvider clears the query cache whenever the identity changes, so it
-// needs a QueryClientProvider above it — as it has in App.tsx.
+// AuthProvider clears the query cache on identity change, so it needs a QueryClientProvider above it.
 function renderPage() {
   return render(
     <QueryClientProvider client={new QueryClient()}>
@@ -25,11 +24,7 @@ function renderPage() {
 afterEach(() => vi.restoreAllMocks());
 
 describe("RegisterPage", () => {
-  // Pins both halves of the field-error mapping behaviour.
-  // RegisterPage only shows the generic banner when
-  // `Object.keys(fieldErrors).length === 0`, so a regression that showed
-  // both the field error AND the generic banner would be a visible
-  // double-reporting bug that this test would catch.
+  // Pins both halves of the field-error mapping: the generic banner shows only when there are no field errors.
   it("maps ApiError.details to per-field errors instead of also showing the generic banner", async () => {
     const spy = vi.spyOn(apiModule, "api");
     spy.mockRejectedValueOnce(new ApiError(401, "Not authenticated")); // initial /me
@@ -53,8 +48,7 @@ describe("RegisterPage", () => {
       "Password must be at least 8 characters",
     );
 
-    // The generic banner (the ApiError's top-level message) must NOT also
-    // appear — showing both would be double-reporting the same failure.
+    // The generic banner (the ApiError's top-level message) must NOT also appear.
     expect(screen.queryByText("Validation failed")).not.toBeInTheDocument();
     // Exactly one alert on screen: the field-level one, not a duplicate.
     expect(screen.getAllByRole("alert")).toHaveLength(1);

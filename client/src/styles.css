@@ -1,23 +1,12 @@
 @import 'tailwindcss';
 
-/* ---------------------------------------------------------------------------
-   Design tokens.
-   Tailwind v4 takes its theme from CSS, not a config file — every custom
-   property below generates the matching utilities, so `--color-surface`
-   yields bg-surface / text-surface / border-surface.
-
-   Roles, not shades. Components never name a raw hex or a stone number.
-   --------------------------------------------------------------------------- */
+/* Design tokens: each property yields Tailwind utilities; components name roles, never raw hexes. */
 @theme {
-  /* Surfaces. True black, from the 2026-10-06 redesign (direction A: "pure
-     black, hairlines"). Grouping is a hairline, never a box, so `surface` is
-     for things that float — sheets, inputs, tooltips — and not for cards. */
+  /* Surfaces: pure black; `surface` is for things that float (sheets, inputs), never cards. */
   --color-bg: #000000; /* page */
   --color-surface: #0d0d0d; /* sheets, inputs, tooltips */
   --color-raised: #1c1c1c; /* BORDERS AND GRIDLINES ONLY, never data */
-  /* The outline of a control: an input, an outline button, the sheet's edge, an
-     unticked ring. Brighter than `raised`, because a control has to be found,
-     where a hairline only separates. */
+  /* The outline of a control; brighter than `raised`, because a control has to be found. */
   --color-edge: #333333;
 
   /* Text. Contrast on bg: 21, 6.1 and 2.8 (dim is decoration only). */
@@ -25,14 +14,7 @@
   --color-muted: #8a8a8a;
   --color-dim: #555555; /* decorative, not for body copy */
 
-  /* White is the only accent, and it has four roles. A FILLED white pill
-     (bg-accent text-bg, the primary Button) is the one action to take, at most
-     one per screen. TINTED white (bg-accent/10 text-accent) is the selected item
-     in a set: a state, never an action. A small FILLED white circle (24px or
-     less: a set tick, a habit tick, a week dot) is a done mark, a state its
-     shape keeps from reading as a button. And identity chrome: the wordmark,
-     the page eyebrow, the active tab. Nothing else is a filled white shape;
-     tests/accentRule.test.ts holds the list. */
+  /* White is the only accent, in four roles; tests/accentRule.test.ts holds the list. */
   --color-accent: #ffffff;
 
   /* Signal colours: one job each. Every one clears 4.5:1 on bg and surface. */
@@ -40,13 +22,11 @@
   --color-caution: #e8c27a; /* over a target; warnings; "hold" advice. 12.4:1 */
   --color-negative: #ff6b6b; /* errors and destructive actions. 7.6:1 */
 
-  /* Inter is bundled (index.tsx imports @fontsource-variable/inter), so it is
-     served from /static and works offline. Never a font CDN. */
+  /* Inter is bundled so it works offline; never a font CDN. */
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* The bottom tabs' label size. lib/cn.ts tells tailwind-merge it is a font
-     size; without that it reads as a colour and is dropped beside one. */
+  /* The bottom tabs' label size; lib/cn.ts tells tailwind-merge it is a font size, or it is dropped beside a colour. */
   --text-label: 0.625rem;
   --text-label--line-height: 1;
 
@@ -74,35 +54,24 @@
     outline-offset: 2px;
   }
 
-  /* Recharts makes its chart focusable, so a tap left a box around the Weight
-     chart. Pointer focus only: the keyboard keeps the outline above. */
+  /* Recharts makes its chart focusable; suppress the box for pointer focus only. */
   .recharts-wrapper:focus:not(:focus-visible),
   .recharts-surface:focus:not(:focus-visible) {
     outline: none;
   }
 
-  /* Recharts 3 also makes a Bar's layer focusable at tabindex -1, so a tap on
-     the lift chart's rep bars boxed them. Tab never reaches tabindex -1, so
-     this focus only ever comes from a pointer. */
+  /* Recharts 3 makes a Bar layer focusable at tabindex -1, which only a pointer can reach. */
   .recharts-wrapper [tabindex="-1"]:focus {
     outline: none;
   }
 
-  /* No double-tap zoom: on iOS a quick double tap (+/−, ticking habits) zoomed
-     the page, and a zoomed page pans sideways. Pinch zoom stays — never lock the
-     viewport (WCAG 1.4.4). On every element, because touch-action is combined
-     only up to the nearest scrolling ancestor (<main>, a sheet's body), and at
-     :where() specificity so a utility or an inline drag style still wins. */
+  /* No double-tap zoom (a zoomed page pans), but pinch stays (WCAG 1.4.4); :where() so utilities still win. */
   :where(*) {
     touch-action: manipulation;
   }
 }
 
-/* sonner's phone rule gives the toast strip width: 100% AND left: 16px, so
-   while a toast shows it runs 16px past the right edge — and iOS pans the page
-   sideways for a fixed element that overflows (Chromium does not, which is why
-   it hid). Let the two offsets size the strip, and the toast fill it. :root for
-   specificity: sonner injects its stylesheet after ours. */
+/* sonner's phone rule overflows the right edge by 16px, which iOS pans for; let the offsets size the strip. */
 @media (max-width: 600px) {
   :root [data-sonner-toaster] {
     width: auto;
@@ -112,9 +81,7 @@
   }
 }
 
-/* Labels: 11px, medium, grey, sentence case. Used for every field label and
-   section heading. The source strings are sentence case; nothing uppercases
-   them any more, so write them the way they should read. */
+/* Labels: 11px, medium, grey, sentence case; nothing uppercases, so write them as they should read. */
 @utility lbl {
   font-size: 0.6875rem;
   line-height: 1.2;
@@ -139,24 +106,12 @@
   );
 }
 
-/* Numbers are the point of this app — tabular figures stop columns jittering
-   as values change. */
+/* Tabular figures stop columns jittering as values change. */
 @utility tnum {
   font-variant-numeric: tabular-nums;
 }
 
-/* iOS Safari zooms the viewport whenever a focused form control's font-size is
-   under 16px, and it does not zoom back out — you are left pinching your way
-   back on every field. The controls here are 14px for density, so the size is
-   raised only where the zoom actually happens: coarse pointers.
-
-   The other fix is `maximum-scale=1` or `user-scalable=no` on the viewport meta.
-   It also works, by disabling pinch-zoom for everyone permanently — which fails
-   WCAG 1.4.4 and takes zoom away from exactly the people who rely on it.
-
-   Deliberately UNLAYERED. Tailwind's utilities layer beats its base layer, so
-   the same rule inside `@layer base` would lose to the `text-sm` on the control
-   itself; unlayered declarations outrank every layer. */
+/* iOS zooms focused controls under 16px, so raise it on coarse pointers; unlayered to beat `text-sm`. */
 @media (pointer: coarse) {
   input,
   select,

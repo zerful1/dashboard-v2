@@ -11,12 +11,7 @@ function renderWithoutToken() {
   );
 }
 
-// With no ?token= in the URL there is nothing to submit against, so the page
-// must short-circuit to a "link is incomplete" state instead of rendering a
-// form whose submission could only ever fail. Split into two cases — the
-// message and the absent form are two separate claims, and a page that
-// regressed to showing both (or neither) should fail exactly one of them
-// rather than being obscured by a single combined assertion.
+// With no ?token= there is nothing to submit, so the page shows a "link is incomplete" state.
 describe("ResetPasswordPage — missing-token branch", () => {
   it("shows the link-is-incomplete message when the URL has no ?token=", () => {
     renderWithoutToken();

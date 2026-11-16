@@ -8,12 +8,7 @@ interface Schemas {
   query?: ZodTypeAny;
 }
 
-/**
- * Validate request parts at the route boundary, so handlers can trust their input.
- *
- * On success the raw value is replaced with the parsed one, so downstream code sees
- * coercions, defaults and trimming rather than whatever arrived on the wire.
- */
+/** Validate request parts at the route boundary, replacing the raw value with the parsed one. */
 export function validate(schemas: Schemas): RequestHandler {
   return (req, _res, next) => {
     for (const key of ["body", "params", "query"] as const) {
@@ -30,8 +25,7 @@ export function validate(schemas: Schemas): RequestHandler {
         return;
       }
 
-      // defineProperty rather than assignment: Express 4 defines req.query as a
-      // getter-only property, so `req.query = ...` silently fails in strict mode.
+      // defineProperty: Express 4 defines req.query as a getter-only property, so assignment silently fails.
       Object.defineProperty(req, key, { value: result.data, writable: true, configurable: true });
     }
     next();

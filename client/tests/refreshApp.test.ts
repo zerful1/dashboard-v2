@@ -47,8 +47,7 @@ describe("refreshApp", () => {
     expect(reload).toHaveBeenCalledTimes(1);
   });
 
-  // Dead wifi reports online. Emptying the caches then would
-  // leave nothing to open until there is signal.
+  // Dead wifi reports online; emptying the caches then would leave nothing to open until there is signal.
   it("clears nothing when the server can't be reached", async () => {
     const qc = new QueryClient();
     qc.setQueryData(["profile"], { timezone: "UTC" });

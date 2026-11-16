@@ -1,14 +1,12 @@
 import { mondayOf, shiftISO } from "@dashboard/shared";
 
-// Fixed names, not toLocaleDateString: en-GB's short September is "Sept" on
-// newer ICU and "Sep" on older, and the label must not depend on the device.
+// Fixed names, not toLocaleDateString: the short September differs between ICU versions.
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 // Read straight off the string: no Date, so no timezone can shift the day.
 const day = (iso: string) => String(Number(iso.slice(8, 10)));
 const month = (iso: string) => MONTHS[Number(iso.slice(5, 7)) - 1]!;
 
-// The year only when it is not this one: records reach back into last year,
-// and "30 Sep" alone would pass a 2025 record off as this year's.
+// The year only when it is not this one, or "30 Sep" would pass a 2025 record off as this year's.
 const year = (iso: string, today: string) => (iso.slice(0, 4) === today.slice(0, 4) ? "" : ` ${iso.slice(0, 4)}`);
 
 /** "21–27 Sep", "28 Sep – 4 Oct" across months, "22–28 Sep 2025" in another year. */

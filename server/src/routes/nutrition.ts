@@ -115,10 +115,7 @@ nutritionRouter.get("/diary", validate({ query: z.object({ date: isoDate }) }), 
   }
 });
 
-// Food's 7-day strip. Bounded, so a query string can't
-// ask for years. The refinements still check each date first: zod runs an
-// object-level refine even when a field's own refine (isoDate) has failed, and
-// shiftISO throws on a malformed date, which would turn a 400 into a 500.
+// Food's 7-day strip, bounded; refines check each date first, as shiftISO throws on a malformed one (500 not 400).
 const daysQuery = z
   .object({ from: isoDate, to: isoDate })
   .refine((q) => !isRealDate(q.from) || !isRealDate(q.to) || q.from <= q.to, { message: "from must not be after to" })

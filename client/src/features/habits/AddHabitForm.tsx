@@ -2,10 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
-/**
- * Adding a habit. When it's the first, it says what the feature is for. No
- * hairline of its own: in edit mode it sits under the list's closing one.
- */
+/** Adding a habit; no hairline of its own, since in edit mode it sits under the list's closing one. */
 export function AddHabitForm({ first, onAdd }: { first: boolean; onAdd: (name: string, emoji: string | null) => void }) {
   const [name, setName] = useState("");
   const [emoji, setEmoji] = useState("");

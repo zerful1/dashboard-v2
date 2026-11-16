@@ -123,8 +123,7 @@ describe("buddyLoadFor", () => {
   });
 
   it("measures the difference from what the lighter side actually loads, and says how far each is off", () => {
-    // No 25 or 1.25. Buddy's 50 is exact (15 a side). You typed 76: a side of
-    // 28, less the 15 already on, wants 13; 12.5 is nearest, so you load 75.
+    // No 25 or 1.25. Buddy's 50 is exact; you typed 76, a side of 28 less the 15 on wants 13, nearest 12.5, so 75.
     const r = buddyLoadFor(20, 76, 50, [20, 15, 10, 5, 2.5]);
     expect(r.swap).toEqual({ inside: "buddy", inner: [15], outer: [10, 2.5] });
     expect(r.you).toEqual({
@@ -137,9 +136,7 @@ describe("buddyLoadFor", () => {
   });
 
   it("takes the gap from what the lighter side loads, not what they typed", () => {
-    // No 25 or 1.25. Buddy typed 52 (16 a side) but loads 50 (15 a side, 2 under).
-    // You typed 74, 27 a side. From the loaded 15 the gap is 12, nearest 12.5, so
-    // you load 75. Measured from the typed 16 it would be 11, nearest 10, so 70.
+    // No 25 or 1.25. Gap is measured from the loaded 15 (12, nearest 12.5 -> 75), not the typed 16 (11 -> 70).
     const r = buddyLoadFor(20, 74, 52, [20, 15, 10, 5, 2.5]);
     expect(r.buddy).toEqual({ kind: "ok", perSideKg: 15, plates: [15], loadedKg: 50, offByKg: -2 });
     expect(r.you).toEqual({
@@ -153,8 +150,7 @@ describe("buddyLoadFor", () => {
   });
 
   it("adds no outside plates when the lighter side already rounds up past the heavier target", () => {
-    // Only 5s. Lighter wants 3 a side and loads 5; heavier wants 4, which the
-    // 5 already covers, so nothing goes outside and they load the same.
+    // Only 5s: lighter wants 3 a side and loads 5; heavier wants 4, already covered by the 5, so they load the same.
     const r = buddyLoadFor(0, 8, 6, [5]);
     expect(r.swap).toEqual({ inside: "buddy", inner: [5], outer: [] });
     expect(r.you).toEqual({ kind: "ok", perSideKg: 5, plates: [5], loadedKg: 10, offByKg: 2 });

@@ -1,15 +1,4 @@
-/**
- * Reads the user's Google Sheets workout tracker: one tab per session, named
- * DDMMYYYY, each a copy of the "Tracker Template" tab.
- *
- *   C4  date, as free text ("19th June 2026")   C6  muscle group = the day's name
- *   rows 10-20  B exercise, then up to five sets as weight/reps column pairs
- *   rows 22-23  B cardio exercise, C miles, E minutes, G speed, I incline, K kcal
- *
- * Pure: the importer hands it cells, so every rule here is tested without a
- * workbook or a database. Nothing is guessed - a value it cannot read is left
- * out and said so in `notes`, which the importer prints before writing.
- */
+/** Pure parser for the Sheets workout tracker; unreadable values are left out and noted in `notes`. */
 
 export type Cell = string | number | null;
 
@@ -93,10 +82,7 @@ const isEmpty = (v: Cell) => v === null || (typeof v === "string" && v.trim() ==
 const shown = (v: Cell) => (typeof v === "string" ? v.trim() : String(v));
 const name = (v: Cell) => (isEmpty(v) ? null : shown(v).replace(/\s+/g, " "));
 
-/**
- * Whole reps, or "a | b": left | right on a single-sided lift (decided
- * 2026-10-03). Both sides are kept, and the reps that count are the lower.
- */
+/** Whole reps, or "a | b" (left | right) on a single-sided lift; both are kept and the lower counts. */
 function readReps(v: Cell): { reps: number; left: number | null; right: number | null } | null {
   const n = number(v);
   if (n !== null) return Number.isInteger(n) && n > 0 ? { reps: n, left: null, right: null } : null;

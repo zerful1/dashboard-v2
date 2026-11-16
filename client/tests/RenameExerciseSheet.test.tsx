@@ -39,9 +39,7 @@ function renderSheet() {
 
 afterEach(() => vi.restoreAllMocks());
 
-// findByLabelText takes an EXACT string, not /name/i: the Sheet renders
-// role="dialog" with aria-label="Rename exercise", which a case-insensitive
-// regex for "name" also matches.
+// findByLabelText takes an EXACT string, not /name/i.
 describe("RenameExerciseSheet", () => {
   it("blocks a name already used on the same day", async () => {
     renderSheet();
@@ -76,14 +74,12 @@ describe("RenameExerciseSheet", () => {
     await waitFor(() => expect(screen.getByText(/will merge with/i)).toBeInTheDocument());
     await userEvent.click(screen.getByRole("button", { name: /^rename$/i }));
 
-    // Not "bench press" — or the merge creates a case-variant split rather
-    // than joining the two exercises.
+    // Not "bench press", or the merge creates a case-variant split rather than joining the two exercises.
     expect(onRename).toHaveBeenCalledWith("Bench Press");
   });
 
   it("submits the existing casing when merging via Enter, too", async () => {
-    // The keyboard path is a second call site for the same decision; wiring it
-    // to `trimmed` instead of the merge target is an easy divergence.
+    // The keyboard path is a second call site for the same decision.
     const { onRename } = renderSheet();
     const input = await screen.findByLabelText("Name");
 

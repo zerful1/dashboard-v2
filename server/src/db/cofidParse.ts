@@ -14,10 +14,7 @@ export interface CofidFood {
   salt_per_100g: number | null;
 }
 
-/**
- * A CoFID value. "Tr" (trace) is a real, tiny amount: 0. "N" (not determined)
- * and blanks are unknown: null. Bracketed values are estimates; the brackets go.
- */
+/** A CoFID value: "Tr" is 0, "N" and blanks are null, and brackets (estimates) are stripped. */
 function value(cell: Cell): number | null {
   if (typeof cell === "number") return Number.isFinite(cell) ? cell : null;
   if (typeof cell !== "string") return null;
@@ -47,16 +44,7 @@ export interface CofidDuplicate {
   dropped: string;
 }
 
-/**
- * Parse the Proximates and Inorganics sheets (row 1 = headers; rows without a
- * food code - the code and description rows - are skipped). Foods without
- * energy are skipped, as v1 did, and counted.
- *
- * A code that appears twice keeps its FIRST food, in both sheets, and the other
- * is reported. The 2021 file gives 13-669 to roasted aubergine and to raw
- * watercress; v1's importer let the second overwrite the first's macros, which
- * is why production lists the aubergine at watercress's 10 kcal.
- */
+/** Parses the Proximates and Inorganics sheets; for a duplicate code the first food wins. */
 export function parseCofid(
   proximates: Cell[][],
   inorganics: Cell[][],

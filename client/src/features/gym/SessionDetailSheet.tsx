@@ -21,9 +21,7 @@ export function SessionDetailSheet({
   const cardio = data?.cardio ?? [];
 
   const names = [...new Set(sets.map((s) => s.exercise_name))];
-  // Derived, not hardcoded. v1 rendered exactly four set columns; real sessions
-  // reach 22 sets, so a fixed count silently truncates history — and the rows
-  // it drops are the ones from the hardest sessions.
+  // Derived, not hardcoded: sessions reach 22 sets, so a fixed column count would truncate history.
   const maxSet = sets.reduce((m, s) => Math.max(m, s.set_number), 0);
   const columns = Array.from({ length: maxSet }, (_, i) => i + 1);
 
@@ -90,8 +88,7 @@ export function SessionDetailSheet({
         <Button
           className="mt-4 w-full"
           onClick={() => {
-            // Capture before closing: onClose clears the parent's state, so
-            // reading `session` after it would be reading null.
+            // Capture before closing: onClose clears the parent's state, so `session` would then be null.
             const s = session;
             onClose();
             onEditInLog(s);

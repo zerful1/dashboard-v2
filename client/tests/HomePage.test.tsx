@@ -13,8 +13,7 @@ import type { WorkoutSession } from "@dashboard/shared";
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
 
-// DEFAULT_SPLIT.week is [3,2,1,'rest',5,4,'rest'] Monday-first, and its days are
-// 1=Legs 2=Pull 3=Push 4=Lower 5=Upper. So Wednesday is Legs and Thursday rests.
+// DEFAULT_SPLIT.week is [3,2,1,'rest',5,4,'rest'] Monday-first (1=Legs 2=Pull 3=Push 4=Lower 5=Upper).
 const WED = "2026-08-26";
 const THU = "2026-08-27";
 
@@ -72,15 +71,10 @@ interface Overrides {
   weighInResult?: () => Promise<unknown>;
 }
 
-/**
- * Mocks by METHOD and PATH, never by call order: Home fires a dozen requests
- * with no serialisation between them. Longest prefix first, so
- * `/api/workouts/sessions` and `/api/workouts/session?` never swallow each other.
- */
+/** Mocks by METHOD and PATH, never call order, longest prefix first. */
 function mockApi(o: Overrides = {}) {
   const calls: { key: string; body?: unknown }[] = [];
-  // Stateful, so the refetch after a weigh-in sees it: a mock that kept
-  // answering with yesterday would hand the slot straight back to the weigh-in.
+  // Stateful, so the refetch after a weigh-in sees it, not yesterday.
   const state = { weights: o.weights };
   const routes: [string, (body?: { date: string; weight_kg: number }) => unknown][] = [
     ["GET /api/auth/me", () => ({ id: "1", email: "you@example.com" })],
@@ -124,9 +118,7 @@ afterEach(() => {
 });
 
 describe("HomePage, today at a glance", () => {
-  // While auth resolves every query is disabled, and a disabled
-  // query reports isLoading false: Home once painted a confident day from
-  // DEFAULT_SPLIT and zero sessions, then the spinner, then the truth.
+  // While auth resolves every query is disabled and reports isLoading false.
   it("shows no top slot and no day until everything has arrived", async () => {
     freeze(WED);
     mockApi({ weights: [weighIn(WED)] });
@@ -137,13 +129,11 @@ describe("HomePage, today at a glance", () => {
   });
 
   it("waits for the SPLIT before naming a day", async () => {
-    // useSplit returns DEFAULT_SPLIT until it loads, so an unloaded split names
-    // a real but WRONG day on a customised split.
+    // useSplit returns DEFAULT_SPLIT until it loads.
     freeze(WED);
     const calls = mockApi({ weights: [weighIn(WED)], splitNeverResolves: true });
     renderPage();
-    // Let every other source be asked and answered first. Until Home's own
-    // queries start, the spinner is up for sign-in, and the guard holds either way.
+    // Let every other source be asked and answered first; until Home's own queries start.
     await waitFor(() =>
       expect(
         ["GET /api/workouts/sessions", "GET /api/weight", "GET /api/nutrition/diary", "GET /api/nutrition/targets", "GET /api/goals"]
@@ -178,11 +168,7 @@ describe("HomePage, today at a glance", () => {
     expect(await screen.findByRole("link", { name: /start workout/i })).toBeInTheDocument();
   });
 
-  // The optimistic weigh-in hands the slot to the workout,
-  // unmounting the field; the rollback hands it back, and the field remounts.
-  // The failure is held until the field has gone: one that rejects at once rolls
-  // back before React draws the optimistic weigh-in, so the field never unmounts
-  // and the test passed with no fix at all.
+  // The failure is held until the field has unmounted, or an instant rollback passes with no fix.
   it("gives a failed weigh-in its typed value back", async () => {
     freeze(WED);
     let fail!: () => void;
@@ -199,8 +185,7 @@ describe("HomePage, today at a glance", () => {
     await waitFor(() => expect(screen.getByLabelText("Today's weight (kg)")).toHaveValue("80.4"));
   });
 
-  // The habits card once mounted after the spinner, so its
-  // query started last and the card popped in after everything else.
+  // The habits card once mounted after the spinner.
   it("starts today's habits with the rest of the day, not after it", async () => {
     freeze(WED);
     const calls = mockApi({ weights: [weighIn(WED)], splitNeverResolves: true });
