@@ -27,16 +27,7 @@ export function mifflinStJeor(i: {
   return Math.round(bmr * ACTIVITY_FACTORS[i.activity])
 }
 
-/**
- * Weight change across the window, from the OLS trend rather than first minus
- * last: a single day's water swing of 1 kg would otherwise move the estimate
- * by ~275 kcal over 28 days.
- *
- * x is DAYS since windowStart, not the weigh-in's position. The weight chart
- * deliberately fits over position (deriveWeight.ts) because it draws one point
- * per weigh-in; here the slope must be kg per DAY, and with gaps between
- * weigh-ins the two disagree.
- */
+/** Kg change over the window from a least-squares fit over DAYS (not position), so one day's water swing barely moves it. */
 export function trendWeightChange(
   weights: { date: string; weight_kg: number }[],
   windowStart: string,
