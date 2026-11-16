@@ -36,7 +36,7 @@ export type PeriodRow =
     }
   | { kind: 'empty'; start: string; end: string }
 
-const round1 = (n: number) => Math.round(n * 10) / 10
+export const round1 = (n: number) => Math.round(n * 10) / 10
 
 /** The mean of the weigh-ins dated from `from` to `to`, both included, or null with none. */
 export function windowMean(points: WeighInPoint[], from: string, to: string): number | null {

@@ -1,5 +1,6 @@
 import type { NutritionTarget } from '../../types'
 import { shiftISO } from '../date'
+import { round1, windowMean } from '../weight'
 import { latestActiveTarget } from '../nutrition/queries'
 import type { SplitConfig } from '../splitRotation'
 
@@ -50,6 +51,9 @@ export function weekNumbers(inputs: ReviewInputs, monday: string): WeekNumbers {
   const sets = inputs.sets.filter((s) => inside(s.date))
   const food = inputs.food.filter((f) => inside(f.date))
   const weights = inputs.weights.filter((w) => inside(w.date))
+  // As the Weight page's week rows: summed in date order, then to one decimal, so the two agree.
+  const points = weights.map((w) => ({ date: w.date, kg: w.weight_kg })).sort((a, b) => a.date.localeCompare(b.date))
+  const mean = windowMean(points, monday, sunday)
   const foodDays = new Set(food.map((f) => f.date)).size
   return {
     training: {
@@ -67,7 +71,7 @@ export function weekNumbers(inputs: ReviewInputs, monday: string): WeekNumbers {
       avgProteinG: foodDays ? sum(food.map((f) => f.protein_g)) / foodDays : null,
     },
     weight: {
-      average: weights.length ? sum(weights.map((w) => w.weight_kg)) / weights.length : null,
+      average: mean === null ? null : round1(mean),
       weighIns: weights.length,
     },
   }

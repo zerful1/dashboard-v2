@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { reviewDays, weekNumbers, weeklyReview, type ReviewInputs } from '../src/domain/insights/review'
 import { DEFAULT_SPLIT } from '../src/domain/splitRotation'
 import type { NutritionTarget } from '../src/types'
+import { periodRows } from '../src/domain/weight'
 
 // 2026-09-21 is a Monday; its week runs to Sunday 2026-09-27.
 const empty: ReviewInputs = { sessionDates: [], sets: [], food: [], weights: [] }
@@ -13,6 +14,16 @@ const target = (effective_from: string, calories: number, protein_g: number): Nu
 })
 
 describe('weekNumbers', () => {
+  it("gives the Weight page's week average, so the two screens agree", () => {
+    // Mean 79.85: its float shows 79.8 at toFixed(1), where the Weight page rounds to 79.9.
+    const kgs = [80.5, 79.2, 79.9, 79.8]
+    const weights = kgs.map((weight_kg, i) => ({ date: `2026-09-2${4 - i}`, weight_kg }))
+    const points = weights.map((w) => ({ date: w.date, kg: w.weight_kg }))
+    const week = periodRows(points, 'week', '2026-09-21', '2026-09-30').find((r) => r.start === '2026-09-21')
+    expect(week?.kind === 'period' && week.average).toBe(79.9)
+    expect(weekNumbers({ ...empty, weights }, '2026-09-21').weight.average).toBe(79.9)
+  })
+
   it('counts training days, sets and volume, leaving bodyweight sets out of volume', () => {
     const n = weekNumbers({
       ...empty,
