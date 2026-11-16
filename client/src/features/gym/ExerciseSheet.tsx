@@ -302,8 +302,10 @@ export function ExerciseSheet({
                     {row.today && (
                       <button
                         onClick={() => onDeleteSet(row.today!.id)}
+                        // A set still saving has an id the server never issued.
+                        disabled={row.today.id.startsWith("optimistic-")}
                         aria-label={`Delete set ${row.n}`}
-                        className="p-1 text-negative"
+                        className="p-1 text-negative disabled:opacity-40"
                       >
                         <Trash2 size={13} />
                       </button>

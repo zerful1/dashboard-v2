@@ -186,6 +186,15 @@ describe("ExerciseSheet, last time", () => {
     expect(onDeleteSet).toHaveBeenCalledWith("s1");
   });
 
+  it("can't delete a set still saving, whose id the server never issued", async () => {
+    mockCoaching(null);
+    const { onDeleteSet } = renderSheet({ todaySets: [aSet(1, { id: "optimistic-Squat-1" })] });
+    const del = row(1).getByRole("button", { name: "Delete set 1" });
+    expect(del).toBeDisabled();
+    await userEvent.click(del);
+    expect(onDeleteSet).not.toHaveBeenCalled();
+  });
+
   // The reps come back only to the sheet they were typed in.
   it("refills the reps when Add set fails, for that exercise only", async () => {
     mockCoaching(null);

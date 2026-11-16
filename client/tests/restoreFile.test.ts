@@ -42,11 +42,21 @@ describe("readDownload", () => {
   });
 });
 
+// Node 22's Blob has arrayBuffer(); on Node 25+ it's jsdom's, which only FileReader reads.
+const readBlob = (blob: Blob) =>
+  typeof blob.arrayBuffer === "function"
+    ? blob.arrayBuffer()
+    : new Promise<ArrayBuffer>((done) => {
+        const reader = new FileReader();
+        reader.onload = () => done(reader.result as ArrayBuffer);
+        reader.readAsArrayBuffer(blob);
+      });
+
 describe("packBody", () => {
   it("gzips the text when the browser can", async () => {
     const packed = await packBody(DOWNLOAD);
     expect(packed.gzipped).toBe(true);
-    const bytes = Buffer.from(await new Response(packed.body).arrayBuffer());
+    const bytes = Buffer.from(await readBlob(packed.body as Blob));
     expect(gunzipSync(bytes).toString("utf8")).toBe(DOWNLOAD);
     expect(packed.bytes).toBe(bytes.length);
   });

@@ -83,6 +83,17 @@ describe("the app's limits", () => {
     await ask("other@example.com").expect(204);
   });
 
+  it("stops a run of wrong passwords on account deletion", async () => {
+    const app = createApp({ rateLimits: true });
+    const agent = request.agent(app);
+    await agent.post("/api/auth/register").send({ email: "owner@example.com", password: "correct-horse-9" }).expect(201);
+    const wrong = () => agent.delete("/api/profile").send({ password: "not-the-password" });
+    for (let i = 0; i < 10; i++) await wrong().expect(401);
+    await wrong().expect(429);
+    // Reads and edits of the profile are not counted.
+    await agent.get("/api/profile").expect(200);
+  });
+
   it("is off for the rest of the suite, which shares one address", async () => {
     const app = createApp();
     for (let i = 0; i < 31; i++) await request(app).post("/api/auth/login").send(login).expect(401);

@@ -59,6 +59,18 @@ describe("cardio", () => {
     expect(res.body).toHaveLength(2);
   });
 
+  it("lists entries in the order they were logged, in both readers", async () => {
+    const agent = await signedIn(alice);
+    const names = ["One", "Two", "Three", "Four", "Five", "Six"];
+    for (const exercise of names) await agent.post("/api/cardio").send(entry({ exercise })).expect(201);
+
+    const s = (await agent.get("/api/workouts/session?date=2026-08-16&day_type=1")).body;
+    const list = await agent.get(`/api/cardio?session_id=${s.id}`).expect(200);
+    expect(list.body.map((e: { exercise: string }) => e.exercise)).toEqual(names);
+    const detail = await agent.get(`/api/workouts/session-detail?session_id=${s.id}`).expect(200);
+    expect(detail.body.cardio.map((e: { exercise: string }) => e.exercise)).toEqual(names);
+  });
+
   it("updates and deletes", async () => {
     const agent = await signedIn(alice);
     const created = (await agent.post("/api/cardio").send(entry())).body;

@@ -15,6 +15,8 @@ export type SessionGroup = { weight_kg: number; reps: number; is_bodyweight: boo
  */
 const TARGET_REPS = 8
 const MIN_REPS = 5
+/** A newest session under this share of the last working weight is skipped. */
+const LIGHT_SHARE = 0.8
 
 /** Without a jump to learn from, the plate-loaded default. */
 const DEFAULT_STEP = 2.5
@@ -144,11 +146,20 @@ function jumpedFrom(sessionGroups: SessionGroup[], weight: number): number | 'he
   return null
 }
 
+/** The newest session well under the last working weight: a deload or a mistyped weight, which doesn't move the advice. */
+function isLight([latest, prior]: SessionGroup[]): boolean {
+  const now = latest ? topWeight(latest) : null
+  // Working weight: the heaviest set of 5+, so a one-off heavy single isn't one.
+  const before = prior ? topWeight(prior.filter((s) => s.reps >= MIN_REPS)) : null
+  return now !== null && before !== null && now < before * LIGHT_SHARE
+}
+
 /**
  * The card's advice from the lift's sessions, NEWEST FIRST (the server's
  * order; reversed, it would coach confidently from the oldest session).
  */
-export function computeRecommendation(sessionGroups: SessionGroup[]): CoachingResult | null {
+export function computeRecommendation(allGroups: SessionGroup[]): CoachingResult | null {
+  const sessionGroups = isLight(allGroups) ? allGroups.slice(1) : allGroups
   if (sessionGroups.length === 0) return null
 
   const latest = sessionGroups[0]!

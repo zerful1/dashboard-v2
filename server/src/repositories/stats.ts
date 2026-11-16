@@ -45,7 +45,7 @@ export async function sessionDetail(
               speed::float8 AS speed, incline::float8 AS incline, calories_burned
          FROM ${T.cardioEntries}
         WHERE user_id = $1 AND session_id = $2
-        ORDER BY id`,
+        ORDER BY created_at NULLS FIRST, id`,
       [userId, sessionId],
     ),
   ]);
