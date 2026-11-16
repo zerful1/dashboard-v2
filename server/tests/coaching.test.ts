@@ -60,8 +60,7 @@ describe("coaching", () => {
     expect(res.body.headline).toContain("82.5");
   });
 
-  // The step is learned from the lift's own jumps, which can lie further back than
-  // the last 3 dates the advice once read: here every jump is 4+ dates ago.
+  // The step is learned from jumps that can lie further back than the last 3 dates: here all are 4+ ago.
   it("goes up by a step learned from older sessions", async () => {
     const agent = await signedIn(alice);
     const eights = (w: number) => [{ w, r: 8 }, { w, r: 8 }];
@@ -100,9 +99,7 @@ describe("coaching", () => {
     const userId = (await findUserByEmail(alice.email))!.id;
     const groups = await recentSessionGroups(userId, "Bench Press", 3);
 
-    // Index 0 must be the newest — computeRecommendation reads it as "latest",
-    // so a reversed list yields advice from the oldest session while looking
-    // entirely plausible.
+    // Index 0 must be the newest: it is read as 'latest', and reversed the advice comes from the oldest.
     expect(groups[0]![0]!.weight_kg).toBe(80);
     expect(groups[2]![0]!.weight_kg).toBe(70);
   });

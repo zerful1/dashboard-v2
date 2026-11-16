@@ -5,11 +5,7 @@ import { clientPath } from "./clientRoot";
 
 const SRC = clientPath("src");
 
-/**
- * `dim` (#555, 2.8:1 on black) is decoration only; anything a person reads is
- * `muted` (6.1:1) or brighter (every text colour ≥ 4.5:1).
- * The remaining uses, counted per file so a new one is a decision.
- */
+/** `dim` (2.8:1) is decoration only, anything read is `muted` or brighter. */
 const ALLOWED: Record<string, { count: number; why: string }> = {
   "components/ui/Button.tsx": { count: 1, why: "disabled text: not for reading" },
   "components/ui/Input.tsx": { count: 1, why: "placeholder: the label carries the meaning" },

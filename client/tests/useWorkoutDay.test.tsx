@@ -43,13 +43,7 @@ const fresh = () =>
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
 
-/**
- * Mocks by PATH, not by call order.
- *
- * useWorkoutDay's session query makes two sequential api calls (getSession then
- * listSets); a parallel query would intercept a value meant for one of them, so
- * paths, not order, decide.
- */
+/** Mocks by PATH, not call order: the session query makes two sequential api calls. */
 function mockApi(routes: {
   session?: unknown;
   sets?: unknown;
@@ -80,9 +74,7 @@ afterEach(() => {
 });
 
 describe("useWorkoutDay", () => {
-  // Decided 2026-10-03: a set logged with no signal fails and is
-  // logged again once back online, rather than queueing and looking saved.
-  // The real client, because the rule is its default, not this hook's option.
+  // A set logged offline fails and is logged again online, not queued: the real client's default.
   it("fails a set logged offline instead of queueing it", async () => {
     mockApi({ session, sets: [aSet(1, 100)], logSet: () => Promise.reject(new TypeError("Failed to fetch")) });
     const client = createQueryClient();
@@ -225,14 +217,7 @@ describe("useWorkoutDay", () => {
   });
 
   it("marks every session reader stale after logging a set", async () => {
-    // The defect: logSet invalidated workoutDay and coaching only. Seven other
-    // queries read the same rows and were never invalidated by any mutation,
-    // so Home said "Not started" after the first set of the day, History was
-    // missing the session, and Stats lacked the set — until a hard reload,
-    // since the cache is persisted.
-    //
-    // SESSION_READERS is imported from the module the hook uses, so this
-    // cannot drift from what is actually invalidated.
+    // The defect: logSet invalidated only workoutDay and coaching; SESSION_READERS lists the other readers.
     mockApi({ session, sets: [] });
     const qc = fresh();
 

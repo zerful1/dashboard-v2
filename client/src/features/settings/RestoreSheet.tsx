@@ -9,19 +9,11 @@ import { ApiError } from "@/lib/api";
 import { writeFailureMessage } from "@/lib/queryClient";
 import { cantSend, missingParts, packBody, readDownload, total, type PackedBody } from "./restoreFile";
 
-/**
- * The toast's own words, since both mutations opt out of it: offline and
- * timed out read as the rest of the app says them, not as the browser's
- * "Failed to fetch". demoReadOnly's words are about saving; this says what
- * can't happen here.
- */
+/** The toast's own words, since both mutations opt out; offline and timeout read as elsewhere in the app. */
 const message = (err: Error) =>
   err instanceof ApiError && err.status === 403 ? "The demo can't restore downloads." : writeFailureMessage(err);
 
-/**
- * The sheet's body. It lives inside the Sheet, which unmounts it on close, so
- * every opening starts from a clean file input with no old preview or error.
- */
+/** The sheet's body; Sheet unmounts it on close, so every opening starts with no old file, preview or error. */
 function RestoreBody({ onDone }: { onDone: () => void }) {
   const qc = useQueryClient();
   const [packed, setPacked] = useState<PackedBody | null>(null);
@@ -46,8 +38,7 @@ function RestoreBody({ onDone }: { onDone: () => void }) {
   });
 
   async function onPick(file: File | undefined) {
-    // Reading and packing take a moment, so a newer pick can overtake this
-    // one; whichever finishes last must not put the older file on screen.
+    // A newer pick can overtake this read; whichever finishes last must not put the older file on screen.
     const pick = ++picks.current;
     preview.reset();
     restore.reset();
@@ -78,8 +69,7 @@ function RestoreBody({ onDone }: { onDone: () => void }) {
           id="restore-file"
           type="file"
           accept="application/json,.json"
-          // A restore still running would finish after a new pick, and close
-          // the sheet on a file it never sent.
+          // A restore still running would finish after a new pick and close the sheet on a file it never sent.
           disabled={restore.isPending}
           onChange={(e) => void onPick(e.target.files?.[0])}
           className="block w-full text-sm text-muted file:mr-3 file:rounded-full file:border file:border-edge

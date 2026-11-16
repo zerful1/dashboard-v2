@@ -84,8 +84,7 @@ describe("WeightHeadline", () => {
     expect(screen.getByText("Goal 79 kg · around 26 Oct")).toBeInTheDocument();
   });
 
-  // Every status after the target comes from the trend, which "No weigh-in in
-  // 7 days" treats as stale: the line keeps the target and drops the rest.
+  // Every status after the target comes from the trend, which "No weigh-in in 7 days" treats as stale.
   it("keeps only the target with no weigh-in in 7 days", () => {
     const stale = Array.from({ length: 20 }, (_, i) => e(shiftISO(TODAY, -8 - i), 80 + (0.5 * i) / 7));
     show(stale, { goal: goal(78) });
@@ -127,8 +126,7 @@ describe("WeightHeadline, the composition line", () => {
     expect(screen.getByText("Losing fat, keeping strength")).toHaveClass("text-caution");
   });
 
-  // The rate line says "No weigh-in in 7 days" then; this line must not still
-  // assert a direction beside it.
+  // The rate line says "No weigh-in in 7 days" then, so this line must not still assert a direction.
   it("hides it, as the rate, with no weigh-in in 7 days", () => {
     const stale = Array.from({ length: 20 }, (_, i) => e(shiftISO(TODAY, -8 - i), 80 + (0.5 * i) / 7));
     show(stale, { goal: goal(78), composition: line("good") });

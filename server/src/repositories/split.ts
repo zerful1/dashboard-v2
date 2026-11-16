@@ -2,14 +2,7 @@ import { pool } from "../db/pool";
 import { T } from "../config";
 import { DEFAULT_SPLIT, type SplitConfig } from "@dashboard/shared";
 
-/**
- * Always resolves to a config.
- *
- * A user who has never customised has no row, and the fallback is DEFAULT_SPLIT
- * rather than null — so callers never branch on "has a split yet", and session
- * creation always has a name to snapshot. The migrated account is exactly this
- * case: `workout_split` has 0 rows, so the default has always applied.
- */
+/** Always resolves to a config, falling back to DEFAULT_SPLIT, so callers never branch on "has a split yet". */
 export async function getSplit(userId: string): Promise<SplitConfig> {
   const { rows } = await pool.query<{ config: SplitConfig }>(
     `SELECT config FROM ${T.workoutSplit} WHERE user_id = $1`,

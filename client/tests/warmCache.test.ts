@@ -4,12 +4,7 @@ import { resolve } from "node:path";
 import { OFFLINE_CACHE, warmOfflineCache } from "../src/lib/warmCache";
 import { clientPath } from "./clientRoot";
 
-/**
- * Every page is its own chunk, and the service worker saves a chunk only when
- * something asks for it. So after a deploy, a page not opened since had no
- * code saved, and with no signal read "This screen failed to load". The
- * warm-up asks for the rest.
- */
+/** Every page is its own chunk and the worker saves a chunk only when asked. */
 
 const ORIGIN = "https://app.test";
 const js = (body = "export{}") => new Response(body, { headers: { "content-type": "text/javascript" } });
@@ -129,10 +124,7 @@ describe("the offline store's wiring", () => {
   });
 
   it("a missing /static/ file is a 404, never the app's HTML", () => {
-    // The catch-all that serves the app for any path must not answer for
-    // /static/ (or /api): a chunk from a previous deploy, or the barcode
-    // decoder with its copy step removed, would come back as index.html with
-    // a 200 and be cached as the asset.
+    // The catch-all must not answer for /static/ (or /api).
     const vercel = JSON.parse(readFileSync(resolve(clientPath(".."), "vercel.json"), "utf8")) as {
       rewrites: { source: string; destination: string }[];
     };

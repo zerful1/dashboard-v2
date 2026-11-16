@@ -4,11 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { useState, type ReactNode } from "react";
 import { Sheet } from "../src/components/ui/Sheet";
 
-/**
- * The sheet declares aria-modal, so a keyboard or a screen reader takes it at
- * its word. Focus used to stay on the button behind the backdrop, Tab walked
- * the page underneath, and closing left focus nowhere.
- */
+/** The sheet declares aria-modal, so focus must move into it, Tab must stay inside. */
 
 function Harness({ children }: { children?: ReactNode }) {
   const [open, setOpen] = useState(false);

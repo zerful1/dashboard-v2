@@ -83,11 +83,7 @@ export async function reorderHabits(userId: string, ids: string[]): Promise<bool
   });
 }
 
-/**
- * Mark or clear one day. False only when the habit isn't the caller's: the
- * count comes from the ownership lookup, not from the write, so a day already
- * in the state asked for is still true (a double tap or a retry is harmless).
- */
+/** False only when the habit isn't the caller's, so re-marking a day in the requested state is still true. */
 export async function setDone(userId: string, habitId: string, date: string, done: boolean): Promise<boolean> {
   const write = done
     ? `INSERT INTO ${T.habitCompletions} (user_id, habit_id, completed_date)

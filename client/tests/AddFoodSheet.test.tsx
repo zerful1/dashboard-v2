@@ -139,8 +139,7 @@ describe("AddFoodSheet", () => {
     await userEvent.click(screen.getByRole("tab", { name: "Search" }));
     await userEvent.type(screen.getByLabelText("Search foods"), "oa");
     arrive();
-    // Judge only once the list has landed and React has rendered it (the old
-    // assertion ran first, so a tab flip could not fail it).
+    // Judge only once the list has landed and React has rendered it.
     await waitFor(() => expect(lastClient.getQueryState(["recents", "u1"])?.status).toBe("success"));
     await act(async () => {
       await new Promise((r) => setTimeout(r, 0));

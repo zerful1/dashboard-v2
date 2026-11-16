@@ -48,15 +48,13 @@ export function useExercises(dayType: number) {
   const reorderKey = ["reorderExercises", userId, dayType];
   const reorder = useMutation({
     mutationKey: reorderKey,
-    // One at a time, in the order made: two saves racing can land in reverse
-    // and leave the server on the older order.
+    // One at a time, in order: two racing saves can land in reverse and leave the server on the older order.
     scope: { id: reorderKey.join(":") },
     mutationFn: (orderedIds: string[]) => gymApi.reorderExercises(dayType, orderedIds),
     onMutate: async (orderedIds: string[]) => {
       await qc.cancelQueries({ queryKey: key });
       const previous = qc.getQueryData<Exercise[]>(key) ?? [];
-      // Reflect the requested order immediately — a reorder that visibly lags
-      // reads as a failed tap and gets tapped again.
+      // Reflect the order at once: a visibly lagging reorder reads as a failed tap.
       const byId = new Map(previous.map((e) => [e.id, e]));
       qc.setQueryData(
         key,
@@ -67,8 +65,7 @@ export function useExercises(dayType: number) {
     onError: (_e, _v, ctx) => {
       if (ctx?.previous) qc.setQueryData(key, ctx.previous);
     },
-    // Only the last move refetches. An earlier one's refetch reads the server
-    // before the later moves land, and puts the list back under the thumb.
+    // Only the last move refetches: an earlier refetch reads the server before later moves land.
     onSettled: () => {
       if (qc.isMutating({ mutationKey: reorderKey }) === 1) void qc.invalidateQueries({ queryKey: key });
     },
@@ -77,11 +74,7 @@ export function useExercises(dayType: number) {
   const renameExercise = useMutation({
     mutationFn: ({ oldName, newName }: { oldName: string; newName: string }) =>
       gymApi.renameExercise(oldName, dayType, newName),
-    // A rename touches EVERY day's template plus all history: it rewrites
-    // exercise_name on every historical set, so the whole exercises tree AND
-    // every reader of sessions and sets must refetch — not just this day's
-    // key. Scoping this narrowly is how a renamed exercise ends up showing its
-    // old name on another day until a refresh.
+    // A rename rewrites exercise_name on every historical set, so the exercises tree and set readers refetch.
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: ["exercises"] });
       void qc.invalidateQueries({ queryKey: ["exerciseNames"] });

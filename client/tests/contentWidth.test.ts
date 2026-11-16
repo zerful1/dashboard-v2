@@ -4,12 +4,7 @@ import { clientPath } from "./clientRoot";
 
 const SHELL = readFileSync(clientPath("src/layout/AppLayout.tsx"), "utf8");
 
-/**
- * Every page sits in one centred column at every width. jsdom never evaluates
- * a media query, so a breakpoint that lifts the cap fails no behavioural test:
- * until 2026-10-20 an `xl:max-w-none` here stretched every page but Home
- * across a desktop screen, and only a screenshot showed it.
- */
+/** Every page sits in one centred column at every width; jsdom never evaluates a media query. */
 describe("the content column", () => {
   it("is capped at max-w-2xl", () => {
     expect(SHELL).toMatch(/className="[^"]*\bmx-auto w-full max-w-2xl\b[^"]*"/);

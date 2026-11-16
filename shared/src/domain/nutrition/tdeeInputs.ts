@@ -27,7 +27,7 @@ export function mifflinStJeor(i: {
   return Math.round(bmr * ACTIVITY_FACTORS[i.activity])
 }
 
-/** Kg change over the window from a least-squares fit over DAYS (not position), so one day's water swing barely moves it. */
+/** Kg change from a least-squares fit over DAYS (not position), so a one-day water swing barely moves it. */
 export function trendWeightChange(
   weights: { date: string; weight_kg: number }[],
   windowStart: string,
@@ -40,14 +40,7 @@ export function trendWeightChange(
   return slope * windowDays
 }
 
-/**
- * The your-data TDEE estimate for [windowStart, windowEnd], both inclusive.
- *
- * Intake is total kcal / DAYS WITH FOOD. Not averageDailyIntake: that divides
- * by every day in the window, which is right for adherence and wrong here -
- * it counts an unlogged day as eating nothing and so understates maintenance.
- * Every logged day is assumed complete; the hint tells the user so.
- */
+/** The your-data TDEE estimate over [windowStart, windowEnd]: total kcal / DAYS WITH FOOD. */
 export function tdeeFromLog(i: {
   entries: { date: string; calories: number }[]
   weights: { date: string; weight_kg: number }[]
@@ -81,12 +74,7 @@ export const ADAPTIVE_TDEE_MAX = 5000
 /** How far from the formula estimate it may stray, when there is one. */
 export const ADAPTIVE_TDEE_MAX_DRIFT = 0.3
 
-/**
- * Whether an adaptive estimate is believable. Partial logging plus noisy
- * weigh-ins can produce an absurd maintenance figure; outside the human range,
- * or far from the formula when there is one, the hint shows the formula (or
- * the progress line) instead.
- */
+/** Whether an adaptive estimate is believable; out of range or far from the formula, show the formula. */
 export function plausibleAdaptive(kcal: number, formulaKcal: number | null): boolean {
   if (kcal < ADAPTIVE_TDEE_MIN || kcal > ADAPTIVE_TDEE_MAX) return false
   return formulaKcal === null || Math.abs(kcal - formulaKcal) <= formulaKcal * ADAPTIVE_TDEE_MAX_DRIFT

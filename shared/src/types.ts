@@ -1,6 +1,4 @@
-// ---------------------------------------------------------------------------
 // Identity
-// ---------------------------------------------------------------------------
 
 export interface User {
   id: string;
@@ -15,17 +13,14 @@ export interface Profile {
   user_id: string;
   timezone: string;
   updated_at: string;
-  // Optional body details. Used only by the nutrition TDEE hint, and null
-  // until the user chooses to give them.
+  // Optional body details, used only by the nutrition TDEE hint.
   height_cm: number | null;
   birth_year: number | null;
   sex: Sex | null;
   activity_level: ActivityLevel | null;
 }
 
-// ---------------------------------------------------------------------------
 // Body weight
-// ---------------------------------------------------------------------------
 
 export interface BodyWeightEntry {
   id: string;
@@ -36,9 +31,7 @@ export interface BodyWeightEntry {
   created_at: string;
 }
 
-// ---------------------------------------------------------------------------
 // Training
-// ---------------------------------------------------------------------------
 
 export interface Exercise {
   id: string;
@@ -100,10 +93,7 @@ export interface LastTime {
   sets: WorkoutSet[];
 }
 
-/**
- * One cardio entry within a session. Named for what it is — v1 called the table
- * `cardio_sessions`, which was a misnomer since it stores entries keyed by session.
- */
+/** One cardio entry within a session. */
 export interface CardioEntry {
   id: string;
   user_id: string;
@@ -116,9 +106,7 @@ export interface CardioEntry {
   calories_burned: number | null;
 }
 
-// ---------------------------------------------------------------------------
 // Habits
-// ---------------------------------------------------------------------------
 
 export interface Habit {
   id: string;
@@ -137,9 +125,7 @@ export interface HabitSummary extends Habit {
   recent: string[];
 }
 
-// ---------------------------------------------------------------------------
 // Nutrition
-// ---------------------------------------------------------------------------
 
 export type GoalMode = "cut" | "maintain" | "bulk";
 
@@ -155,18 +141,10 @@ export interface NutritionTarget {
   created_at: string;
 }
 
-/**
- * All sources follow UK convention (carbs exclude fibre). USDA was dropped in v1
- * for that reason and is not carried into v2 — the importer normalises any legacy
- * 'usda' rows to 'off'.
- */
+/** All sources follow UK convention: carbs exclude fibre. */
 export type FoodExternalSource = "off" | "cofid" | "manual";
 
-/**
- * Fibre, sugar, saturated fat and salt, in grams, on the search wire format.
- * Optional so existing literals stay valid; absent and null both mean UNKNOWN,
- * never zero.
- */
+/** Label grams on the search wire format; absent and null both mean UNKNOWN, never zero. */
 export interface LabelValues {
   fibre?: number | null;
   sugar?: number | null;
@@ -214,10 +192,7 @@ export interface FoodItem {
 
 export type FoodLogUnit = "serving" | "g";
 
-/**
- * Name and macros are snapshotted at write time — the diary never joins back
- * through food_items, so renaming or deleting a food never rewrites history.
- */
+/** Name and macros are snapshotted at write time, so editing a food never rewrites history. */
 export interface FoodLogEntry extends LabelTotals {
   id: string;
   user_id: string;
@@ -233,17 +208,7 @@ export interface FoodLogEntry extends LabelTotals {
   carbs_g: number;
 }
 
-/**
- * A single serving option on a food-search hit.
- *
- * Lived in the client's useFoodSearch hook in v1, which meant the pure domain
- * module `nutrition/serving.ts` imported types from a React hook. Moved here so the
- * domain layer is importable by the server.
- *
- * The short macro keys (p/f/c) are the wire format the food-search Edge Function
- * already returns; kept verbatim so neither the function nor `resolveMacros` has to
- * change during the port.
- */
+/** A serving option on a food-search hit; the short macro keys (p/f/c) are the search wire format. */
 export interface FoodHitServing extends LabelValues {
   label: string;
   grams: number;
@@ -270,10 +235,7 @@ export interface FoodSearchResult {
   warnings?: string[];
 }
 
-/**
- * GET /api/food/barcode/:code. A food already in the library comes back as
- * the item itself, so logging it links to the row rather than storing a copy.
- */
+/** GET /api/food/barcode/:code: a library food comes back as the item, so logging links to its row. */
 export type BarcodeResult = { source: "library"; item: FoodItem } | { source: "off"; hit: FoodHit };
 
 /** The nutrition a food carries, per serving and per 100 g. */
@@ -339,15 +301,9 @@ export interface DayTotal {
   protein_g: number;
 }
 
-// ---------------------------------------------------------------------------
 // Export
-// ---------------------------------------------------------------------------
 
-/**
- * GET /api/export: everything a user owns, as Postgres serialised it. Rows are
- * deliberately untyped. The file mirrors the database, whatever its columns
- * are on the day, and `version` is what a later import reads to know the shape.
- */
+/** GET /api/export: rows are deliberately untyped, mirroring the database; `version` names the shape. */
 export interface ExportFile {
   format: "dashboard-export";
   version: 1;

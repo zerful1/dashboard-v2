@@ -21,11 +21,7 @@ export const PROJECTION_RULES = {
 } as const
 
 
-/**
- * Whether a rate counts as flat for its kind: under the threshold, either way.
- * One test, so the rate line's "Flat", the composition line's "Weight steady"
- * and the projection's "no date at this rate" always agree.
- */
+/** Under the kind's threshold either way: one test, so the rate, composition and projection lines agree. */
 export function isFlatRate(kind: Goal['kind'], ratePerWeek: number): boolean {
   return Math.abs(ratePerWeek) < PROJECTION_RULES[kind].flatPerWeek
 }
@@ -43,12 +39,7 @@ function inWindow(kind: Goal['kind'], points: ProjectionPoint[], today: string):
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
-/**
- * The rate a projection is built on, on its own: the Weight
- * page and Home show it with or without a goal, and it must be the number
- * Insights projects from, so there is one definition of it. `current` is the
- * line's value at today.
- */
+/** The projection's rate on its own, so Weight, Home and Insights share one definition. */
 export function trendFit(kind: Goal['kind'], points: ProjectionPoint[], today: string): TrendFit {
   const rule = PROJECTION_RULES[kind]
   const window = inWindow(kind, points, today)
@@ -65,23 +56,13 @@ export function trendFit(kind: Goal['kind'], points: ProjectionPoint[], today: s
   }
 }
 
-/**
- * Whether a weight goal counts as reached with the trend at `current`: at or
- * past the target, heading from where the goal started - or, with no starting
- * weigh-in yet, from where the trend is now. One rule, so the goal line saying
- * "reached" and the rate no longer reading as progress always agree.
- */
+/** At or past the target, heading from the goal's start (or the trend, with none): one rule for "reached". */
 export function weightGoalReached(goal: Pick<Goal, 'target_kg' | 'start_kg'>, current: number): boolean {
   const direction = Math.sign(goal.target_kg - (goal.start_kg ?? current))
   return direction === 0 || (direction < 0 ? current <= goal.target_kg : current >= goal.target_kg)
 }
 
-/**
- * Whether a fitted rate reads as progress: green toward the goal (trendTone,
- * from where the line stood a week ago to where it stands today), and neutral
- * once the goal is reached, when carrying on is not progress. One rule for the
- * Weight page's rate line and its composition line, so they never disagree.
- */
+/** Green toward the goal, neutral once reached; one rule for the rate and composition lines. */
 export function rateTone(
   fit: { current: number; ratePerWeek: number },
   goal: Pick<Goal, 'target_kg' | 'start_kg'> | null,
@@ -90,17 +71,13 @@ export function rateTone(
   return trendTone(fit.current - fit.ratePerWeek, fit.current, goal?.target_kg ?? null)
 }
 
-/**
- * When a goal is reached at the current rate - or, honestly, that it cannot
- * be said. A confidently wrong date is worse than no date.
- */
+/** When a goal is reached at the current rate, or that it can't be said: a wrong date is worse than none. */
 export function projectGoal(
   goal: Pick<Goal, 'id' | 'kind' | 'target_kg' | 'start_kg'>,
   points: ProjectionPoint[],
   today: string,
 ): Projection {
-  // Reaching a lift goal is a fact - a set at the target - not a trend, so it
-  // needs no minimum number of sessions. `current` is that best set.
+  // Reaching a lift goal is a fact (a set at the target), so it needs no minimum sessions.
   const window = inWindow(goal.kind, points, today)
   if (goal.kind === 'lift' && window.some((p) => p.value >= goal.target_kg)) {
     return { goalId: goal.id, status: 'reached', current: Math.max(...window.map((p) => p.value)) }
@@ -113,17 +90,14 @@ export function projectGoal(
   const { ratePerWeek, current, slope } = fit
   const target = goal.target_kg
 
-  // A lift goal is always up (and was judged reached above). A weight goal
-  // points from where it started to the target; with no starting weigh-in yet,
-  // from where the trend is now (the first weigh-in after it fills the start).
+  // A weight goal points from its start to the target; with no start yet, from where the trend is now.
   const direction = goal.kind === 'lift' ? 1 : Math.sign(target - (goal.start_kg ?? current))
   const reached = goal.kind === 'weight' && weightGoalReached(goal, current)
   if (reached) return { goalId: goal.id, status: 'reached', current }
   if (isFlatRate(goal.kind, ratePerWeek)) return { goalId: goal.id, status: 'flat', ratePerWeek, current }
   if (Math.sign(ratePerWeek) !== direction) return { goalId: goal.id, status: 'away', ratePerWeek, current }
 
-  // A lift's trend can sit above a target no session has actually lifted yet:
-  // that reads as "this week", not as a date in the past.
+  // A lift's trend can sit above a target nobody has lifted yet: that reads as "this week", not the past.
   const days = Math.max(0, Math.ceil((target - current) / slope))
   if (days > 365) return { goalId: goal.id, status: 'over-a-year', ratePerWeek, current }
   return { goalId: goal.id, status: 'projected', date: mondayOf(shiftISO(today, days)), ratePerWeek, current }

@@ -7,10 +7,7 @@ import { cn } from "@/lib/cn";
 
 function topSet(sets: WorkoutSet[]): WorkoutSet | null {
   if (sets.length === 0) return null;
-  // Bodyweight sets are excluded from weight comparison — their weight is
-  // forced to 0, so comparing by it would always pick a weighted set even when
-  // the bodyweight one was the harder effort. Among bodyweight-only sets the
-  // most reps is the top set instead.
+  // Bodyweight sets are excluded from weight comparison (weight is forced to 0); most reps wins among them.
   const weighted = sets.filter((s) => !s.is_bodyweight);
   return weighted.length
     ? weighted.reduce((best, s) => (s.weight_kg > best.weight_kg ? s : best), weighted[0]!)
@@ -76,11 +73,7 @@ export function ExerciseRow({
   );
 }
 
-/**
- * A row in edit mode, dragged by its grip inside ExerciseList's DndContext.
- * The grip alone starts a drag, and takes `touch-action: none`, so on a phone
- * a touch anywhere else still scrolls the page.
- */
+/** A row in edit mode; only the grip starts a drag (touch-action: none), so touches elsewhere still scroll. */
 function EditRow({ exercise, onDelete, onRename }: Pick<Props, "exercise" | "onDelete" | "onRename">) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: exercise.id });

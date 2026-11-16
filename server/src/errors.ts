@@ -1,7 +1,4 @@
-/**
- * Errors the API raises deliberately. Anything else reaching the error handler is
- * a bug, and is reported as a generic 500 with no internal detail.
- */
+/** Errors the API raises deliberately; anything else reaching the handler is a bug, reported as a bare 500. */
 export class AppError extends Error {
   constructor(
     readonly status: number,
@@ -26,20 +23,14 @@ export class Unauthorized extends AppError {
   }
 }
 
-/**
- * Also returned for rows that exist but belong to someone else. A 403 would confirm
- * the row's existence, which leaks information across accounts.
- */
+/** Also for rows owned by someone else: a 403 would confirm the row exists. */
 export class NotFound extends AppError {
   constructor(message = "Not found") {
     super(404, message, "not_found");
   }
 }
 
-/**
- * A policy refusal that reveals nothing about any account, such as closed
- * sign-ups. Never for someone else's row: that is NotFound, for the reason above.
- */
+/** A policy refusal that reveals nothing about any account (closed sign-ups); never for someone else's row. */
 export class Forbidden extends AppError {
   constructor(message = "Forbidden") {
     super(403, message, "forbidden");

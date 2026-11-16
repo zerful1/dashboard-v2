@@ -14,10 +14,7 @@ function line(value: string, now: number, before: number): RecordLine {
   return { value, change: `+${diff}`, percent: before > 0 ? (now - before) / before : Infinity };
 }
 
-/**
- * One record as one line: the heaviest weight when the
- * record was one, otherwise the estimated 1RM, otherwise the reps.
- */
+/** One record as one line: the heaviest weight when it was one, else the estimated 1RM, else the reps. */
 export function recordLine(e: RecordEvent): RecordLine {
   if (e.heaviest) return line(`${e.heaviest.weightKg} kg`, e.heaviest.weightKg, e.heaviest.previousKg);
   if (e.e1rm) return line(`est. ${e.e1rm.valueKg} kg`, e.e1rm.valueKg, e.e1rm.previousKg);

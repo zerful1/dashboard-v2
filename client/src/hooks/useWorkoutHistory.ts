@@ -4,12 +4,7 @@ import { gymApi } from "@/api/gym";
 
 const PAGE_SIZE = 20;
 
-/**
- * Sessions filtered by their SNAPSHOTTED day_name.
- *
- * A name shared across split eras — an old and a current "Lower" — deliberately
- * filters together, because to the user they are the same kind of day.
- */
+/** Sessions filtered by their snapshotted day_name, so a name shared across split eras filters together. */
 export function useWorkoutHistory(dayName: string | null) {
   const { user } = useAuth();
 
@@ -32,11 +27,7 @@ export function useWorkoutHistory(dayName: string | null) {
     sessions: query.data?.pages.flat() ?? [],
     hasMore: query.hasNextPage,
     loadMore: query.fetchNextPage,
-    // isPending, not isLoading: a disabled query (auth still resolving) reports
-    // isLoading false, so the caller would render "No sessions logged yet"
-    // over a list that simply had not arrived. Nothing else read isLoading,
-    // and leaving the wrong signal beside the right one is how the next
-    // caller picks it.
+    // isPending, not isLoading: a disabled query reports isLoading false and would show "No sessions logged yet".
     isPending: query.isPending,
     isFetchingMore: query.isFetchingNextPage,
   };

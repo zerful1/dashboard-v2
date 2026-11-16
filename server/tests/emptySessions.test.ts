@@ -4,11 +4,7 @@ import { createApp } from "../src/app";
 import { pool } from "../src/db/pool";
 import { T } from "../src/config";
 
-/**
- * A session exists because something was logged in it. Deleting the last thing
- * in it used to leave the session behind: History listed it as "Cardio", the
- * weekly review counted it as a day trained, and nothing could remove it.
- */
+/** A session exists because something was logged in it; deleting the last thing used to leave it behind. */
 
 const app = createApp();
 const alice = { email: "alice@example.com", password: "correct-horse-9" };

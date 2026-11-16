@@ -10,9 +10,7 @@ export default defineConfig({
     execArgv: ["--no-experimental-webstorage"],
   },
   resolve: {
-    // import.meta.dirname, NOT __dirname — client/package.json sets
-    // "type": "module", so this file is ESM and __dirname does not exist.
-    // The config would crash on load before a single test ran.
+    // import.meta.dirname, not __dirname: this config is ESM ("type": "module"), where __dirname doesn't exist.
     alias: { "@": resolve(import.meta.dirname, "./src") },
   },
 });

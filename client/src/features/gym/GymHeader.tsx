@@ -3,10 +3,7 @@ import { cn } from "@/lib/cn";
 import { FOCUS } from "@/lib/focus";
 import { DateEyebrow } from "@/components/ui/DateEyebrow";
 
-/**
- * Gym's header: the date as the eyebrow and the
- * day as the title, like Home's, each of them the control that changes it.
- */
+/** Gym's header: the date as the eyebrow and the day as the title, each the control that changes it. */
 export function GymHeader({
   date,
   onDate,

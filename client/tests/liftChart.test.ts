@@ -10,8 +10,7 @@ const point = (date: string, set: Partial<LiftChartPoint["set"]>, isBest = false
   set: { date, weight_kg: 0, reps: 0, reps_left: null, reps_right: null, is_bodyweight: false, ...set },
 });
 
-// A tap picks the day whose column it lands in. On a phone Recharts' own
-// click carries no active day, so the chart works it out from where you tapped.
+// A tap picks the day whose column it lands in; on a phone Recharts' own click carries no active day.
 describe("LiftChart's tap target", () => {
   const plot = { x: 32, width: 320 }; // 4 days: columns of 80 px from x = 32
 
@@ -28,9 +27,7 @@ describe("LiftChart's tap target", () => {
   });
 });
 
-// Counts over the bars, so a rep gained reads as a number, not a few pixels.
-// Two digits need about 16 px: narrower, they'd run into each other, and only
-// the picked day keeps its count.
+// Counts over the bars need about 16 px for two digits; narrower, they run together.
 describe("LiftChart's rep counts", () => {
   it("shows every day's count when the columns have room", () => {
     expect(repCountShown(16, 0, 5)).toBe(true);
@@ -61,8 +58,7 @@ describe("LiftChart's readout", () => {
   });
 });
 
-// A fixed "dataMin - 2" domain gave decimal ticks such as 128.7,
-// whose leading digit the margin clipped, so heavy lifts mislabelled their axis.
+// A fixed "dataMin - 2" domain gave decimal ticks such as 128.7 whose leading digit the margin clipped.
 describe("LiftChart's axis", () => {
   it("rounds the domain to whole numbers around the data", () => {
     expect(axisDomain([88.67, 128.7])).toEqual([88, 129]);

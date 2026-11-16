@@ -207,9 +207,7 @@ describe("password reset tokens — the repository's guarantees", () => {
   }
 
   it("stores exactly the SHA-256 of the raw token, not merely something different", async () => {
-    // The existing test asserts the stored value is not the raw token and is 64
-    // characters — which any other 64-char string would satisfy. This pins the
-    // actual derivation, so a change of algorithm cannot pass unnoticed.
+    // Pins the actual derivation, since any 64-char string would satisfy the stored-value test.
     const user = await aUser();
     const raw = await createResetToken(user.id);
 
@@ -222,26 +220,16 @@ describe("password reset tokens — the repository's guarantees", () => {
 
   it("returns null for an unknown token at the repository, not just the route", async () => {
     await aUser();
-    // Well-formed but never issued. The route's 400 could come from validation;
-    // this proves the repository itself refuses it.
+    // Well-formed but never issued: the route's 400 could be validation, so this tests the repository.
     expect(await consumeResetToken("a".repeat(64))).toBeNull();
   });
 
   it("lets exactly one of two concurrent consumers win", async () => {
-    // The property UPDATE ... RETURNING exists for. A read-then-write would let
-    // both callers see used_at IS NULL and both succeed — two password resets
-    // from one emailed link.
+    // What UPDATE ... RETURNING is for: a read-then-write would let both callers succeed on one link.
     const user = await aUser();
     const raw = await createResetToken(user.id);
 
-    // WARM TWO CONNECTIONS FIRST, or this test proves nothing.
-    //
-    // Without it the pool holds one idle client: the first call takes it and
-    // the second waits on a NEW connection being established, which costs long
-    // enough for the first to finish both statements. The calls never overlap,
-    // and a read-then-write implementation passes this test unchanged —
-    // measured, not assumed. With both clients warm the reads genuinely
-    // interleave, and the broken version returns the user id twice.
+    // WARM TWO CONNECTIONS FIRST: with one idle client the calls never overlap and a read-then-write passes.
     const [c1, c2] = await Promise.all([pool.connect(), pool.connect()]);
     c1.release();
     c2.release();
@@ -253,8 +241,7 @@ describe("password reset tokens — the repository's guarantees", () => {
   });
 
   it("scopes to the token, so one user's token never resets another's password", async () => {
-    // The ownership invariant for this repository: the token is the only thing
-    // that identifies the account, so it must map to its own user and no other.
+    // The ownership invariant: the token alone identifies the account, so it must map to its own user.
     const alice = await aUser();
     await request(app).post("/api/auth/register").send(other);
     const bob = (await findUserByEmail(other.email))!;

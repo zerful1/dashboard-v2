@@ -18,10 +18,7 @@ interface Props {
   last: LastTime | null;
   /** Last time is still loading: claim nothing about it until it has. */
   lastPending?: boolean;
-  /**
-   * Today's sets are still loading. The next set's number comes from them, and
-   * the server upserts on it, so nothing is logged until they are in.
-   */
+  /** Today's sets are still loading: the server upserts on the next set's number, so log nothing yet. */
   todayPending?: boolean;
   /** Today's sets failed to load: still unknown, and the sheet says why it waits. */
   todayFailed?: boolean;
@@ -39,10 +36,7 @@ interface Props {
 
 const NO_SETS: WorkoutSet[] = [];
 
-/**
- * Logging one exercise: today against last time, set by set, with the set
- * being logged as a highlighted block between them.
- */
+/** Logging one exercise: today against last time, with the set being logged as a block between. */
 export function ExerciseSheet({
   exercise, todaySets, last, lastPending = false, todayPending = false, todayFailed = false, failedSet = null,
   onClose, onLogSet, onDeleteSet,
@@ -69,17 +63,14 @@ export function ExerciseSheet({
 
   const { data: coaching, isLoading } = useCoaching(exercise?.exercise_name ?? null);
 
-  // The rule (decided 2026-10-03): on for a "Unilateral …" name, or when last
-  // time was logged per side; the switch overrides it either way. Today's sets
-  // count too, so reopening the sheet mid-workout keeps the choice made.
+  // On for a 'Unilateral' name or when last time was per side; the switch overrides, today's sets count.
   const sidedByDefault =
     !!exercise &&
     (/unilateral/i.test(exercise.exercise_name) ||
       lastSets.some((s) => s.reps_left !== null) ||
       todaySets.some((s) => s.reps_left !== null));
 
-  // Reset on open, not on close: clearing during the exit animation makes the
-  // fields visibly blank as the sheet slides away.
+  // Reset on open, not close: clearing during the exit animation blanks the fields as the sheet slides away.
   useEffect(() => {
     if (exercise) {
       setReps("");
@@ -91,9 +82,7 @@ export function ExerciseSheet({
     }
   }, [exercise]);
 
-  // A failed Add set gives back the reps it cleared, and only to the sheet they
-  // were typed in. After the reset above, so it wins on the same render. Once
-  // per failure: the page memoises it on the mutation's variables.
+  // A failed Add set gives back its reps, only to the sheet they were typed in; once per failure.
   useEffect(() => {
     if (!failedSet || failedSet.exercise_name !== exercise?.exercise_name) return;
     if (typeof failedSet.reps === "number") {
@@ -105,15 +94,12 @@ export function ExerciseSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [failedSet]);
 
-  // The weight starts from today's previous set, which can arrive after the
-  // sheet opens: so on open, and again once today's sets are in, unless typed.
-  // Not on every change: deleting a set to redo it would move the weight.
+  // Weight starts from today's previous set, which can arrive late: on open and once they load, unless typed.
   useEffect(() => {
     if (exercise && !weightTouched.current) setWeight(defaults.weight);
   }, [exercise, todayPending]);
 
-  // Separate from the reset: last time can arrive after the sheet opens, and
-  // the switches follow it until touched.
+  // Separate from the reset: last time can arrive after open, and the switches follow it until touched.
   useEffect(() => {
     if (exercise && !sidesTouched.current) setSides(sidedByDefault);
   }, [exercise, sidedByDefault]);
@@ -122,8 +108,7 @@ export function ExerciseSheet({
     if (exercise && !bodyweightTouched.current) setIsBodyweight(defaults.bodyweight);
   }, [exercise, defaults.bodyweight]);
 
-  // The set being logged stays in view on a long session: on open, and after
-  // each Add set moves it down. Optional call: jsdom has no scrollIntoView.
+  // Keeps the set being logged in view, on open and after each Add set. Optional call: jsdom lacks it.
   useEffect(() => {
     if (exercise) nextBlock.current?.scrollIntoView?.({ block: "nearest" });
   }, [exercise, rows.next]);
@@ -132,8 +117,7 @@ export function ExerciseSheet({
     const n = Number.parseInt(v, 10);
     return Number.isFinite(n) && n > 0 ? n : null;
   };
-  // An empty field takes its hint: the same as last time is the common case,
-  // and a set logged by mistake is one tap to delete.
+  // An empty field takes its hint: same as last time is common, and a mistaken set is one tap to delete.
   const r = whole(reps || (defaults.repsHint ?? ""));
   const l = whole(left || (defaults.leftHint ?? ""));
   const rt = whole(right || (defaults.rightHint ?? ""));
@@ -146,17 +130,13 @@ export function ExerciseSheet({
   const submit = () => {
     if (!canLog || !exercise) return;
     onLogSet(isBodyweight ? 0 : w, sides ? { left: l!, right: rt! } : r!, isBodyweight, rows.next);
-    // The weight stays for the next set. The reps clear, so the next set's
-    // hint shows; with a hint, the next tap logs the next set (decided
-    // 2026-10-26: clicking through beats a guard, and a set deletes in a tap).
+    // The weight stays for the next set; the reps clear so the hint shows.
     setReps("");
     setLeft("");
     setRight("");
   };
 
-  // Enter moves across and the last field's Enter logs: Android's keyboard
-  // sends Enter from its action key, labelled by enterKeyHint. An iPhone's
-  // number pad has no such key; Safari's arrows above it move across instead.
+  // Enter moves across and the last field's Enter logs: Android's action key sends it, an iPhone's has none.
   const enterTo = (next: RefObject<HTMLInputElement | null>) => (e: KeyboardEvent) => {
     if (e.key !== "Enter") return;
     e.preventDefault();
@@ -166,14 +146,11 @@ export function ExerciseSheet({
     if (e.key === "Enter") submit();
   };
 
-  // Until last time has loaded the sheet claims nothing about it (CLAUDE.md,
-  // isPending not isLoading): "not loaded yet" is not "never done". Today's
-  // sets the same: they may hold this exercise already.
+  // Until last time (and today's sets) load the sheet claims nothing: 'not loaded yet' is not 'never done'.
   const first = !lastPending && !todayPending && !last && todaySets.length === 0;
   const showHeader = !!last || rows.above.length > 0;
 
-  // One column plan for both tables, so the rows below the block line up with
-  // the rows above it.
+  // One column plan for both tables, so the rows below the block line up with the rows above it.
   const columns = (
     <colgroup>
       <col className="w-[18%]" />
@@ -217,8 +194,7 @@ export function ExerciseSheet({
               value={isBodyweight ? "" : weight}
               disabled={isBodyweight}
               onChange={(e) => {
-                // Typing a weight is a choice: a bodyweight last time that
-                // arrives late must not blank and disable it.
+                // Typing a weight is a choice: a late bodyweight last time must not blank and disable it.
                 bodyweightTouched.current = true;
                 weightTouched.current = true;
                 setWeight(e.target.value);
@@ -262,8 +238,7 @@ export function ExerciseSheet({
       <div className="max-h-[70vh] space-y-4 overflow-y-auto overscroll-contain">
         <CoachingCard data={coaching} isLoading={isLoading} />
 
-        {/* The block keeps one place in the tree whatever loads around it, so
-            last time arriving never rebuilds the inputs under a thumb. */}
+        {/* The block keeps one place in the tree, so last time arriving never rebuilds the inputs. */}
         <div className="space-y-2">
           {todayFailed && <p className="text-xs text-muted">Couldn't load today's sets.</p>}
           {first && <p className="text-xs text-muted">First time on this one. Nothing to compare yet.</p>}

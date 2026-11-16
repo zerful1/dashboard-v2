@@ -3,11 +3,7 @@ import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import type { HabitSummary } from "@dashboard/shared";
 import { Input } from "@/components/ui/Input";
 
-/**
- * A habit in edit mode: rename it, move it, or delete it. The fields get the
- * row's full width and the controls sit on a line of their own, so the name
- * stays readable on a phone.
- */
+/** A habit in edit mode; fields get the full width and the controls their own line, for phones. */
 export function EditHabitRow({ habit, first, last, locked, canMove, onSave, onMove, onDelete }: {
   habit: HabitSummary;
   first: boolean;
@@ -23,8 +19,7 @@ export function EditHabitRow({ habit, first, last, locked, canMove, onSave, onMo
   const [name, setName] = useState(habit.name);
   const [emoji, setEmoji] = useState(habit.emoji ?? "");
 
-  // Saved on leaving a field, so tapping Done - which takes the focus first -
-  // keeps an edit rather than dropping it. A blank name puts the old one back.
+  // Saved on leaving a field, so tapping Done (which takes focus first) keeps an edit; blank restores the old name.
   function save() {
     const trimmed = name.trim();
     if (!trimmed) {

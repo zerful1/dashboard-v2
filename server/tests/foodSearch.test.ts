@@ -9,8 +9,7 @@ import { searchCofid } from "../src/repositories/cofid";
 const app = createApp();
 const alice = { email: "alice@example.com", password: "correct-horse-9" };
 
-// cofid_foods is global reference data that truncateAll() leaves alone, so
-// these rows are the test's own and it removes them.
+// cofid_foods is global reference data that truncateAll() leaves alone, so these rows are removed here.
 const COFID = [
   ["T-1", "Oats, rolled", 375, 11, 8, 60, 9, 1, 1.5, 0.02],
   ["T-2", "Biscuits, digestive, half coated in chocolate", 490, 7, 23, 65, 3, 30, 12, 1],
@@ -64,8 +63,7 @@ describe("food search", () => {
     await agent.get("/api/food/search?q=o").expect(400);
   });
 
-  // Measured on the real table: a plain substring match on "oat" returns the
-  // "coated" biscuit. Words must match at the start of a word.
+  // A plain substring match on "oat" returns "coated" biscuit; words must match at the start of a word.
   it("matches CoFID words at the start of a word", async () => {
     const agent = await signedIn();
     stubOff(() => ({ hits: [] }));
@@ -89,13 +87,10 @@ describe("food search", () => {
   it("survives regex and LIKE metacharacters", async () => {
     const agent = await signedIn();
     stubOff(() => ({ hits: [] }));
-    // An unbalanced bracket or a bare quantifier is an invalid regex unless
-    // escaped - those are what catch a missing escape. The balanced ones beside
-    // them must keep working too.
+    // Unbalanced brackets and bare quantifiers are invalid regexes unless escaped; balanced ones must keep working.
     for (const q of ["(light)", "M&S", "50%", "c++", "a\\b", "[x]", "a(", "[[", "**"]) {
       const res = await agent.get(`/api/food/search?q=${encodeURIComponent(q)}`).expect(200);
-      // The route turns a CoFID failure into a warning, not an error, so a 200
-      // alone proves nothing: the UK table must actually have answered.
+      // The route turns a CoFID failure into a warning, so a 200 alone proves nothing: the UK table must have answered.
       expect(res.body.warnings).toBeUndefined();
     }
   });
@@ -143,9 +138,7 @@ describe("food search", () => {
 });
 
 describe("Open Food Facts", () => {
-  // Found in the browser, not by a test: Search-a-licious returns `brands` as an
-  // ARRAY. Passed through, it reached the diary POST as ["Oatly"] and failed
-  // validation, so no branded product from search could ever be logged.
+  // Search-a-licious returns `brands` as an ARRAY, which failed the diary POST validation if passed through.
   it("turns a brands array into one brand string", () => {
     const n = { "energy-kcal_100g": 61 };
     expect(mapSearchHit({ code: "1", product_name: "Oat drink", brands: ["Oatly", "Oatly AB"], nutriments: n })!.brand)
@@ -190,10 +183,7 @@ describe("Open Food Facts mapping limits", () => {
 });
 
 describe("Open Food Facts impossible values", () => {
-  // Real products list values that cannot be true - 59,000 kcal
-  // per 100 g, or 112 g of carbohydrate in 100 g - and the diary POST refuses
-  // some of them outright. Impossible core values leave the hit out; impossible
-  // label values become unknown.
+  // Impossible core values drop the hit, impossible label values become unknown; the diary POST refuses them.
   it("leaves out a hit with impossible energy or macros", () => {
     expect(mapSearchHit({ code: "187006", product_name: "Creamy Pork Bolognese", nutriments: { "energy-kcal_100g": 59000 } })).toBeNull();
     expect(mapSearchHit({ code: "4", product_name: "Bar", nutriments: { "energy-kcal_100g": 400, carbohydrates_100g: 112 } })).toBeNull();
@@ -206,8 +196,7 @@ describe("Open Food Facts impossible values", () => {
 });
 
 describe("Open Food Facts query text", () => {
-  // "(light" or "brand:x" was Lucene syntax, and the error
-  // read as "Branded foods are unavailable".
+  // "(light" or "brand:x" was Lucene syntax, and the error read as "Branded foods are unavailable".
   it("sends the user's words as text, not query syntax", async () => {
     const calls = stubOff(() => ({ hits: [] }));
     await searchOpenFoodFacts("(light brand:x");

@@ -15,12 +15,7 @@ function normaliseEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-/**
- * Create the user and their profile atomically.
- *
- * A user without a profile row would break every profile read, so the two must
- * never be separable — hence one transaction rather than two calls.
- */
+/** Creates the user and their profile atomically, since a user without a profile breaks profile reads. */
 export async function createUserWithProfile(
   email: string,
   passwordHash: string,
@@ -53,13 +48,7 @@ export async function findUserByEmail(email: string): Promise<UserRow | null> {
   return rows[0] ?? null;
 }
 
-/**
- * Routine lookup — deliberately does NOT select password_hash.
- *
- * Keeping the hash out of ordinary reads means a route that carelessly returns a
- * whole user row cannot leak it. Borrowed from the author's earlier Express project,
- * which draws the same distinction.
- */
+/** Routine lookup that deliberately does NOT select password_hash, so a route returning a whole row can't leak it. */
 export async function findUserById(id: string): Promise<SafeUser | null> {
   const { rows } = await pool.query<SafeUser>(
     `SELECT id, email, created_at FROM ${T.users} WHERE id = $1`,
@@ -77,13 +66,7 @@ export async function findUserByIdWithPassword(id: string): Promise<UserRow | nu
   return rows[0] ?? null;
 }
 
-/**
- * Change the password AND invalidate every session belonging to that user.
- *
- * A password change is usually a response to compromise, so leaving the attacker's
- * session alive would defeat the point. The caller regenerates its own session
- * afterwards — order matters, or it deletes the one it just created.
- */
+/** Changes the password and invalidates all the user's sessions; the caller must regenerate its own. */
 export async function updatePasswordHash(userId: string, passwordHash: string): Promise<void> {
   await withTransaction(async (client) => {
     await client.query(`UPDATE ${T.users} SET password_hash = $2 WHERE id = $1`, [

@@ -1,9 +1,6 @@
 import type { CoachingResult } from "@dashboard/shared";
 
-// The domain returns green/amber; the palette speaks good/caution. Mapping
-// here keeps the domain free of presentation — computeRecommendation has no
-// idea what colours this app uses, and should not. No advice is red: with the
-// deload gone, nothing the card says is an error (CLAUDE.md, signal colours).
+// The domain returns green/amber; the palette speaks good/caution, and no advice is red.
 const TONE = {
   green: { text: "text-good", edge: "border-l-good" },
   amber: { text: "text-caution", edge: "border-l-caution" },
@@ -22,8 +19,7 @@ export function CoachingCard({
   isLoading: boolean;
 }) {
   if (isLoading) return <div className="h-10 animate-pulse rounded-lg bg-raised" />;
-  // Null for an exercise with no history — render nothing rather than invent
-  // encouragement.
+  // Null for an exercise with no history: render nothing rather than invent encouragement.
   if (!data) return null;
 
   const tone = TONE[data.color];

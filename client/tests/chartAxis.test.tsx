@@ -3,8 +3,7 @@ import { render } from "@testing-library/react";
 import { cloneElement, type ReactElement } from "react";
 import { rollingAverage } from "@dashboard/shared";
 
-// jsdom lays nothing out, so ResponsiveContainer measures 0 × 0 and draws no
-// axis. A fixed size stands in for the phone's.
+// jsdom lays nothing out, so ResponsiveContainer measures 0 × 0 and draws no axis.
 vi.mock("recharts", async (original) => ({
   ...(await original<typeof import("recharts")>()),
   ResponsiveContainer: ({ children }: { children: ReactElement<{ width: number; height: number }> }) =>
@@ -37,8 +36,7 @@ function weight(kgs: number[]) {
 
 const ends = (labels: number[]) => [labels[0], labels[labels.length - 1]];
 
-// The axis ends at the whole numbers just outside the data. It used to pad a
-// kilogram or two beyond that, and a 2 kg change filled a third of the height.
+// The axis ends at the whole numbers just outside the data.
 describe("chart Y axes end at the data", () => {
   it("weight: 81.6 to 84.2 kg runs 81 to 85", () => {
     expect(ends(weight([84.2, 83.9, 83.5, 83.1, 82.8, 82.4, 82.0, 81.6]))).toEqual([81, 85]);

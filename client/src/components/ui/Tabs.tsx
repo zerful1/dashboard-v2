@@ -8,11 +8,7 @@ interface Props<T extends string> {
   className?: string;
 }
 
-/**
- * Underline tabs: grey labels, the selected one white
- * with a white rule beneath, a hairline under the row. Choices that are not
- * views — Cut / Maintain / Bulk — are Buttons with `selected` and `subtle`.
- */
+/** Underline tabs; choices that are not views are Buttons with `selected` and `subtle`. */
 export function Tabs<T extends string>({ tabs, value, onChange, className }: Props<T>) {
   return (
     <div role="tablist" className={cn("flex gap-5 border-b border-raised", className)}>

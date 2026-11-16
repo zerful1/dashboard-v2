@@ -23,8 +23,7 @@ describe('trendWeightChange', () => {
     expect(trendWeightChange(six, START, 28)).toBeNull()
   })
 
-  // The weight chart fits over POSITION (deriveWeight.ts). This must fit over
-  // DAYS, or a gap between weigh-ins distorts the slope.
+  // The weight chart fits over POSITION; this must fit over DAYS, or a gap between weigh-ins skews the slope.
   it('fits kg per day, not per weigh-in, across a gap', () => {
     // Six daily weigh-ins losing 0.1 kg/day, then one three weeks later on the same line.
     const ws = [0, 1, 2, 3, 4, 5, 26].map((n) => ({ date: day(n), weight_kg: 80 - 0.1 * n }))
@@ -35,8 +34,7 @@ describe('trendWeightChange', () => {
 describe('tdeeFromLog', () => {
   const flat = Array.from({ length: 28 }, (_, n) => ({ date: day(n), weight_kg: 80 }))
 
-  // The trap: averageDailyIntake divides by EVERY day. Swapped
-  // in here it gives 1000 and this test fails.
+  // The trap: averageDailyIntake divides by EVERY day, so swapped in here it gives 1000 and this test fails.
   it('divides intake by days with food, not by the window', () => {
     const entries = Array.from({ length: 14 }, (_, k) => ({ date: day(k * 2), calories: 2000 }))
     expect(tdeeFromLog({ entries, weights: flat, windowStart: START, windowEnd: day(27) }))

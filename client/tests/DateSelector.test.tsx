@@ -13,13 +13,7 @@ afterEach(() => vi.useRealTimers());
 const input = () => document.querySelector('input[type="date"]') as HTMLInputElement;
 
 describe("DateSelector", () => {
-  /**
-   * The three properties that broke iOS, asserted so they cannot quietly come
-   * back. iOS Safari opens its date picker ONLY on a direct tap or focus of the
-   * input — showPicker() throws there — so the input has to be the real, live
-   * control. An earlier version hid it behind a <button> with pointer-events
-   * off and it did nothing on a phone, silently.
-   */
+  /** iOS opens its date picker only on a direct tap or focus of the input, so it must be the real. */
   it("exposes the native input as the real control", () => {
     freeze("2026-08-31");
     render(<DateSelector value="2026-08-31" onChange={() => {}} />);
@@ -31,8 +25,7 @@ describe("DateSelector", () => {
     expect(el).not.toHaveAttribute("aria-hidden");
     expect(el.tabIndex).not.toBe(-1);
     expect(screen.getByLabelText(/change date/i)).toBe(el);
-    // Tappable. jsdom applies no stylesheet, so the class is the only thing
-    // that can be checked — and it is the thing that was wrong.
+    // Tappable: jsdom applies no stylesheet, so the class is the only thing that can be checked.
     expect(el.className).not.toMatch(/pointer-events-none/);
   });
 
@@ -61,8 +54,7 @@ describe("DateSelector", () => {
   });
 
   it("ignores the picker being cleared", () => {
-    // A cleared picker fires a change with "". Passing that through would put
-    // an empty date on the wire.
+    // A cleared picker fires a change with "", which must not put an empty date on the wire.
     freeze("2026-08-31");
     const onChange = vi.fn();
     render(<DateSelector value="2026-08-31" onChange={onChange} />);
@@ -70,8 +62,7 @@ describe("DateSelector", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  // CLAUDE.md, one clock per page: in the minute after midnight the clock says
-  // the 18th while the page's useToday still says the 17th.
+  // One clock per page: just after midnight the clock says the 18th while the page's useToday says the 17th.
   it("takes the page's today when given one, not its own clock", () => {
     freeze("2026-08-18");
     render(<DateSelector value="2026-08-17" onChange={() => {}} today="2026-08-17" />);

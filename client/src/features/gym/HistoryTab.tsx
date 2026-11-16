@@ -29,8 +29,7 @@ export function HistoryTab({ onEditInLog }: { onEditInLog: (s: WorkoutSession) =
   const { grid, isPending: gridPending } = useTrainingGrid(today);
   const aim = split.week.filter((slot) => slot !== "rest").length;
 
-  // Current split labels first, then any retired names still present in the
-  // data, so 'Upper A' surfaces without a hardcoded legacy list.
+  // Current split labels first, then retired names still present in the data, with no hardcoded legacy list.
   const chips = historyFilterNames(split.days.map((d) => d.label), historicalNames);
   const chipClass = (on: boolean) =>
     cn(

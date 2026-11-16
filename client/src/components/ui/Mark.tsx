@@ -1,8 +1,4 @@
-/**
- * The trend-line mark: the app icon's line and dot (public/favicon.svg),
- * without its black tile, in the current text colour. Decorative — the word
- * beside it is the name.
- */
+/** The app icon's line and dot without its tile, in the current text colour; decorative. */
 export function Mark({ size = 16, className }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden className={className}>

@@ -1,11 +1,7 @@
 import type { ReviewDay } from "@dashboard/shared";
 import { weekdayInitial } from "@/lib/dates";
 
-/**
- * The Monday-to-Sunday strips beside the week's rows.
- * Plain elements and SVG on one 70 px grid of seven 10 px columns, so the
- * weekday row under them lines up. Decorative: each row says it in words.
- */
+/** The Monday-to-Sunday strips beside the week's rows, on one 70 px grid so the weekday row lines up. */
 const CELL = 10;
 
 /** A day's bar as percentages of the strip: white to the target, striped past it. Null: nothing logged. */

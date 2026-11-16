@@ -1,12 +1,7 @@
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 
-/**
- * Opens a page's sheet from `?open=<name>`: Settings' shortcuts link here.
- * Read once on mount, then removed with `replace`, so
- * Back and a reload don't open it again. Call it beside the sheet's state,
- * above any early return: a page that spins first still opens once it draws.
- */
+/** Opens a sheet from `?open=<name>`, once on mount then removed with replace; call above any early return. */
 export function useOpenParam(name: "split" | "targets" | "goals", open: () => void): void {
   const [params, setParams] = useSearchParams();
   useEffect(() => {

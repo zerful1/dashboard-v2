@@ -9,18 +9,10 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading, sessionError, refreshAuth } = useAuth();
   const location = useLocation();
 
-  // Distinguishing "still checking" from "signed out" matters: rendering the
-  // redirect during the first /me would bounce every returning user to /login
-  // before their session had a chance to resolve.
+  // "Still checking" must not redirect, or every returning user bounces to /login before /me resolves.
   if (loading) return <Spinner label="Checking your session" />;
 
-  // A non-401 failure means the check itself is broken — a 500, a database
-  // outage, a DNS failure — not that the user is signed out. Treating
-  // "couldn't tell" as "signed out" would silently bounce an authenticated
-  // user to /login on a transient server error: invisible in local dev,
-  // where nothing fails, and constant in production on a cold serverless
-  // invocation. So this branch neither redirects nor renders the protected
-  // content — it offers a way to check again.
+  // A non-401 failure means the check broke, not that the user is signed out: offer a retry, never a redirect.
   if (sessionError) {
     return (
       <div className="flex min-h-dvh items-center justify-center px-5 py-10">

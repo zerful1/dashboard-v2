@@ -77,8 +77,7 @@ describe("Gym's header", () => {
     expect(screen.queryByRole("button", { name: "Back to today" })).toBeNull();
   });
 
-  // On a swapped day Home names the day trained, so
-  // its button must open that day rather than the scheduled one.
+  // On a swapped day Home names the day trained.
   it("opens on the day Home's button sent it to", async () => {
     freeze();
     mockByPath();
@@ -126,8 +125,7 @@ describe("Gym's header", () => {
     expect(sheet.getByRole("button", { name: "Add set" })).toBeDisabled();
   });
 
-  // Add set clears the reps, and a failure used to leave
-  // them cleared, with only the toast saying the set was never saved.
+  // Add set clears the reps, and a failure used to leave them cleared with only the toast saying the set was not saved.
   it("gives a failed Add set its reps back", async () => {
     freeze();
     vi.spyOn(apiModule, "api").mockImplementation(async (path: string, init?: RequestInit) => {
@@ -146,8 +144,7 @@ describe("Gym's header", () => {
     expect(sheet.getByLabelText(/weight/i)).toHaveValue(90);
   });
 
-  // A FAILED load left the sheet sure there were no
-  // sets, so Add set 1 was back, and sent once the signal returned.
+  // A failed load left the sheet sure there were no sets, so Add set 1 returned and sent.
   it("won't log a set when today's sets failed to load, and says why", async () => {
     freeze();
     vi.spyOn(apiModule, "api").mockImplementation(async (path: string) => {
@@ -177,10 +174,7 @@ describe("Gym's header", () => {
   });
 });
 
-// Deferred from #31: useSplit falls back to DEFAULT_SPLIT, so a split that failed
-// with nothing cached named the default split's day, and logged against it.
-// Settings' shortcut. Gym spins until the split loads,
-// so this also pins the hook sitting above the early returns.
+// useSplit falls back to DEFAULT_SPLIT, so a split that failed with nothing cached named the default's day.
 describe("Gym, opened from Settings", () => {
   it("opens the split editor from ?open=split, after the split loads", async () => {
     mockByPath();
@@ -223,8 +217,7 @@ describe("Gym, when the split fails to load", () => {
     expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("Pull");
   });
 
-  // Thursday is DEFAULT_SPLIT's rest day, where falling back to the last logged
-  // day latches: decided from the default, the real split could not undo it.
+  // Thursday is DEFAULT_SPLIT's rest day, where falling back to the last logged day latches.
   it("decides the day from the real split when it arrives after a failure", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(2026, 7, 27, 12)); // Thu
@@ -243,8 +236,7 @@ describe("Gym, when the split fails to load", () => {
 });
 
 describe("Gym's sub-tabs", () => {
-  // The Plates tab is the plate calculator. It replaces the Log tab's content
-  // while the Gym header stays above it.
+  // The Plates tab is the plate calculator; it replaces the Log tab's content while the Gym header stays above it.
   it("opens the plate calculator on Plates, in place of the Log", async () => {
     freeze();
     mockByPath();

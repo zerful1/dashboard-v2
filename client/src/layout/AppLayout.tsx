@@ -13,10 +13,7 @@ export function AppLayout() {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
-  // The sheet's only pointer-based dismissal is the backdrop click. A
-  // keyboard user has no pointer, so without this Escape would leave them
-  // with no way out short of tabbing through every option — this is the
-  // minimal, non-focus-trapping fix for that gap.
+  // The sheet's only pointer dismissal is the backdrop, so Escape gives keyboard users a way out.
   useEffect(() => {
     if (!moreOpen) return;
     function onKeyDown(e: KeyboardEvent) {
@@ -26,19 +23,7 @@ export function AppLayout() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [moreOpen]);
 
-  // Two layouts, not three. BottomTabs and the More sheet below (the same
-  // mobile affordance — the sheet is what the tab bar's "More" button opens)
-  // are visible below 1024px; NavRail is visible at 1024px and up (moved down
-  // from 1280px on 2026-10-20: a laptop window that wasn't full screen got the
-  // phone's tab bar stretched across it). The More sheet's `lg:hidden` here
-  // and BottomTabs' must stay the exact complement of NavRail's `lg:flex`:
-  // the same threshold, not just the same breakpoint name. A mismatched
-  // pair — say one of these reverting to another breakpoint's hidden-utility
-  // while the other two stay put — doesn't fail loudly, it
-  // opens a band of viewport widths with no nav at all (or, the other
-  // direction, both rail and tab bar at once). jsdom never evaluates media
-  // queries, so navBreakpoints.test reads the classes instead: every
-  // hidden/flex breakpoint in the three layout files must be the same one.
+  // The More sheet's and BottomTabs' `lg:hidden` must exactly complement NavRail's `lg:flex` (navBreakpoints.test).
   return (
     <div className="flex h-dvh flex-col bg-bg">
       <div className="flex min-h-0 flex-1">
@@ -97,10 +82,7 @@ export function AppLayout() {
               </button>
             ))}
             <button
-              // Closes the sheet first, unconditionally. Sign-out is
-              // fire-and-forget and cannot reject, but it is also not
-              // instant — leaving the sheet open over the screen behind it
-              // while the request is in flight reads as a dead button.
+              // Close the sheet first: sign-out isn't instant, and an open sheet meanwhile reads as a dead button.
               onClick={() => {
                 setMoreOpen(false);
                 void logout();

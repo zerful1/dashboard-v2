@@ -102,8 +102,7 @@ describe("food diary", () => {
     expect(await listDiary(id, "2026-09-21")).toHaveLength(2);
   });
 
-  // A text-search hit carries no serving sizes, and logging it
-  // overwrote the serving data a product lookup had stored.
+  // A text-search hit carries no serving sizes, and logging it overwrote the serving data a lookup had stored.
   it("keeps a saved food's serving data when the same food is logged without any", async () => {
     const { agent, id } = await signedIn(alice);
     const BAR = {
@@ -149,8 +148,7 @@ describe("food diary", () => {
     await agent.post("/api/nutrition/diary").send(entry({ food: { ...OATS, barcode: "12ab" } })).expect(400);
   });
 
-  // Serving data is replaced whole or kept whole, so a
-  // new serving's unknown label values never keep the old serving's.
+  // Serving data is replaced whole or kept whole, so a new serving's unknown label values never keep the old one's.
   it("replaces a stored serving whole when a new one arrives", async () => {
     const { agent, id } = await signedIn(alice);
     const A = { ...OATS, source: "off", external_id: "5000159407236", name: "Mars",

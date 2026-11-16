@@ -9,22 +9,7 @@ import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { AboutPage } from "@/pages/AboutPage";
 import { RouteErrorPage } from "@/pages/RouteErrorPage";
 
-/**
- * Every page inside the app shell is a separate chunk.
- *
- * The Suspense boundary lives in AppLayout, around its Outlet, so the nav and
- * sign-out stay on screen while a chunk loads — navigation never blanks. Doing
- * this per-route instead would put a boundary above the layout and take the
- * whole shell down for every transition.
- *
- * `.then` unwrapping is needed because these are named exports and React.lazy
- * expects a module whose `default` is the component.
- *
- * The five unauthenticated screens above are deliberately NOT split. They are
- * small pages with no heavy dependencies, and they sit on the cold-start
- * critical path: splitting them would add a load-the-entry-then-discover-the-
- * chunk round trip to the one route every signed-out visitor hits first.
- */
+/** Pages are lazy chunks under AppLayout's Suspense so the nav stays up; the auth screens stay unsplit. */
 const HomePage = lazy(() =>
   import("@/pages/HomePage").then((m) => ({ default: m.HomePage })),
 );
@@ -50,24 +35,17 @@ const NotFoundPage = lazy(() =>
   import("@/pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })),
 );
 
-/**
- * The route table, apart from the router itself: tests build a memory router
- * from it, and importing it must not build the browser one.
- */
+/** The route table, apart from the router, so tests can build a memory router without the browser one. */
 export const routes: RouteObject[] = [
   {
-    // A pathless root whose only job is to own one errorElement for the whole
-    // tree — errors bubble to the nearest ancestor that has one, and without
-    // this that ancestor is React Router's own fallback screen. A route with
-    // children and no element renders an <Outlet/>, so it costs nothing else.
+    // A pathless root that owns the one errorElement, so errors don't fall to React Router's own screen.
     errorElement: <RouteErrorPage />,
     children: [
       { path: "/login", element: <LoginPage /> },
       { path: "/register", element: <RegisterPage /> },
       { path: "/forgot-password", element: <ForgotPasswordPage /> },
       { path: "/reset-password", element: <ResetPasswordPage /> },
-      // Public, beside /login: the 404 below sits inside ProtectedRoute, so a
-      // missing public route sends a signed-out visitor to /login instead.
+      // Public, beside /login: the 404 below is inside ProtectedRoute, so a missing public route would hit /login.
       { path: "/about", element: <AboutPage /> },
       {
         element: (
@@ -83,11 +61,7 @@ export const routes: RouteObject[] = [
           { path: "/insights", element: <InsightsPage /> },
           { path: "/habits", element: <HabitsPage /> },
           { path: "/settings", element: <SettingsPage /> },
-          // Inside the protected children, not beside them, so an address that
-          // matches nothing still renders with the nav and sign-out around it:
-          // a 404 that strands the user is a different thing from one that doesn't.
-          // Static paths outrank a splat in React Router's ranking, so the
-          // routes above are unaffected by their order relative to this one.
+          // Inside the protected children so an unmatched address keeps the nav; static paths outrank a splat.
           { path: "*", element: <NotFoundPage /> },
         ],
       },

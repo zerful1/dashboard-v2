@@ -26,10 +26,7 @@ export function useCardio(sessionId: string | null, date: string, dayType: numbe
 
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["cardio"] });
-    // Adding cardio can CREATE the session, so everything that reads sessions
-    // must refetch — the session id this hook is keyed by did not exist a
-    // moment ago. Not just workoutDay: Home, History and the rest-day fallback
-    // all read the row that just appeared.
+    // Adding cardio can create the session, so everything that reads sessions must refetch, not just workoutDay.
     invalidateSessionReaders(qc);
   };
 

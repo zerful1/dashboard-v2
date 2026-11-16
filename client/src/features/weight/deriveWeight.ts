@@ -16,19 +16,9 @@ export interface WeightSummary {
   line: AveragePoint[];
 }
 
-/**
- * Every figure the Weight page and Home's weight section show, derived in one
- * pure pass.
- *
- * `today` is an argument, never inferred: a calendar day is asserted by the
- * caller. That also means the tests need no fake timers and this function
- * cannot read the process clock, so a run at 23:59 behaves like a run at noon.
- *
- * `entries` arrive newest-first from the API.
- */
+/** Every figure the Weight page and Home's weight section show, in one pure pass; `today` is passed in. */
 export function deriveWeightSummary(entries: BodyWeightEntry[], today: string): WeightSummary {
-  // localeCompare on YYYY-MM-DD sorts chronologically because the format is
-  // lexicographically ordered — no Date needed, which is the point.
+  // localeCompare on YYYY-MM-DD sorts chronologically, so no Date is needed.
   const points: ChartPoint[] = [...entries]
     .sort((a, b) => a.date.localeCompare(b.date))
     .map((e) => ({ date: e.date, kg: e.weight_kg }));
@@ -43,12 +33,7 @@ export function deriveWeightSummary(entries: BodyWeightEntry[], today: string): 
   };
 }
 
-/**
- * Where the weight goal sits against the chart's y-range, `axisDomain` of
- * everything plotted. Only a goal inside the range is drawn:
- * stretching the axis to reach a distant goal squashed the line flat, so one
- * outside it is named beside the chart instead. Null: no goal, or nothing yet.
- */
+/** Where the goal sits in the chart's y-range; only one inside it is drawn (stretching squashed the line). */
 export function goalPlacement(
   points: ChartPoint[],
   line: ChartPoint[],

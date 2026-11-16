@@ -17,29 +17,21 @@ function phoneBlock(css: string): string {
   return "";
 }
 
-/**
- * iOS let the page pan sideways (2026-10-06). jsdom has no layout, so these pin
- * the two fixes in the stylesheet; the browser pass measures them.
- */
+/** iOS let the page pan sideways; jsdom has no layout. */
 describe("the page fits the phone's width", () => {
-  // sonner's phone rule sets the toast strip to width: 100% AND left: 16px, so
-  // it ran 16px past the right edge while a toast showed — and WebKit, unlike
-  // Chromium, pans the page for a fixed element that overflows.
+  // sonner's phone rule set the toast strip to width: 100% AND left: 16px, running 16px past the right edge.
   it("keeps the toast strip between its margins on phones", () => {
     const block = phoneBlock(CSS);
     expect(block).toMatch(/\[data-sonner-toaster\]\s*\{[^}]*width:\s*auto/);
     expect(block).toMatch(/\[data-sonner-toast\]\s*\{[^}]*width:\s*100%/);
   });
 
-  // A double tap zoomed the page on iOS, and a zoomed page pans sideways. On
-  // every element, not just html: touch-action is combined only up to the
-  // nearest scrolling ancestor, and here that is <main> or a sheet's body.
+  // A double tap zoomed the page on iOS and a zoomed page pans; so on every element.
   it("stops a double tap from zooming the page, wherever it lands", () => {
     expect(CSS).toMatch(/:where\(\*\)\s*\{[^}]*touch-action:\s*manipulation/);
   });
 
-  // The positive complement: pinch zoom stays (WCAG 1.4.4), so the fix is
-  // touch-action, never a locked viewport.
+  // The positive complement: pinch zoom stays (WCAG 1.4.4), so the fix is touch-action.
   it("still lets people pinch to zoom", () => {
     expect(HTML).not.toMatch(/maximum-scale|user-scalable\s*=\s*no/);
   });

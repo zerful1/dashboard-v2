@@ -7,10 +7,7 @@ import { ApiError } from "../src/lib/api";
 import { persister } from "../src/lib/persister";
 import { createQueryClient } from "../src/lib/queryClient";
 
-/**
- * A session that ends somewhere else: it expired, or a password reset signed
- * every device out. Nobody pressed sign-out here, so the 401 is the only news.
- */
+/** A session that ends elsewhere (expiry, or a password reset): nobody pressed sign-out here. */
 
 const ME = { id: "1", email: "a@b.com", demo: false };
 const unauthorized = () => new ApiError(401, "Not authenticated", "unauthorized");
@@ -66,8 +63,7 @@ const meCalls = (spy: ReturnType<typeof mockApi>) => spy.mock.calls.filter((c) =
 
 afterEach(() => {
   vi.restoreAllMocks();
-  // A signed-in test leaves its user remembered (savedUser.ts), and the last
-  // test here is about a device that remembers nobody.
+  // A signed-in test leaves its user remembered (savedUser.ts).
   window.localStorage.clear();
 });
 

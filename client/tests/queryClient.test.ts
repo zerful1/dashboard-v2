@@ -18,10 +18,7 @@ async function failWith(options: { onError?: () => void; meta?: Record<string, u
 }
 
 describe("mutation failures", () => {
-  // CLAUDE.md: per-hook handlers roll back only, and the global handler owns
-  // the message. A hook's own onError REPLACES defaultOptions.mutations.onError
-  // (TanStack merges them with a plain spread), so every rollback hook in the
-  // app used to fail without a word. Found in the browser.
+  // Per-hook handlers roll back only and the global handler owns the message.
   it("toasts once even when the mutation rolls back in its own onError", async () => {
     const rollback = vi.fn();
     await failWith({ onError: rollback });
@@ -30,8 +27,7 @@ describe("mutation failures", () => {
     expect(toast.error).toHaveBeenCalledWith("Could not save");
   });
 
-  // The complement: moving the handler must not double up where there is no
-  // hook-level onError at all.
+  // The complement: moving the handler must not double up where there is no hook-level onError at all.
   it("toasts once, not twice, when the mutation has no onError of its own", async () => {
     await failWith({});
     expect(toast.error).toHaveBeenCalledTimes(1);
@@ -47,10 +43,7 @@ describe("mutation failures", () => {
 describe("writes made offline", () => {
   afterEach(() => onlineManager.setOnline(true));
 
-  // CLAUDE.md: writes are not queued offline, in any feature. TanStack's default
-  // PAUSES a write while offline and replays it on reconnect, so it looks saved
-  // and is lost if the app closes first. A default here covers every hook,
-  // including ones not written yet - this mutation sets no networkMode itself.
+  // Writes are not queued offline: TanStack's default PAUSES a write and replays it on reconnect.
   it("fail with a toast instead of waiting for the signal", async () => {
     onlineManager.setOnline(false);
     const observer = new MutationObserver(createQueryClient(), {
@@ -63,8 +56,7 @@ describe("writes made offline", () => {
     expect(toast.error).toHaveBeenCalledTimes(1);
   });
 
-  // "Something went wrong" read as an unexplained fault beside
-  // a banner that already said changes won't save.
+  // "Something went wrong" read as an unexplained fault beside a banner that already said changes won't save.
   it("say the device is offline", async () => {
     onlineManager.setOnline(false);
     const observer = new MutationObserver(createQueryClient(), {
@@ -75,9 +67,7 @@ describe("writes made offline", () => {
     expect(toast.error).toHaveBeenCalledWith("You're offline — not saved");
   });
 
-  // TanStack's onlineManager starts online and changes only on an
-  // online/offline event, so an app opened with no signal (no event ever fires)
-  // still showed "Something went wrong" beside the offline banner.
+  // onlineManager changes only on online/offline events.
   it("say the device is offline when the app was opened with no signal", async () => {
     const onLine = vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
     try {
@@ -92,9 +82,7 @@ describe("writes made offline", () => {
     }
   });
 
-  // A write that gave up after 15 s says so, rather than
-  // the bare "Timed out". Not "not saved": a slow write can still land after
-  // the app gave up, and the refetch on settle shows whether it did.
+  // A write that gave up after 15 s says so; not "not saved".
   it("say a timed-out write may not have saved", async () => {
     const observer = new MutationObserver(createQueryClient(), {
       mutationFn: () => Promise.reject(new ApiError(0, "Timed out", "timeout")),
@@ -114,9 +102,7 @@ describe("writes made offline", () => {
   });
 });
 
-// TanStack's onlineManager starts online and changes only on
-// an online/offline event, so an app opened with no signal fetched anyway, and
-// every query failed and toasted over the data it had saved.
+// onlineManager starts online and changes only on events.
 describe("an app opened with no signal", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -129,8 +115,7 @@ describe("an app opened with no signal", () => {
     expect(onlineManager.isOnline()).toBe(false);
   });
 
-  // The complement: navigator.onLine true only means "there is a network
-  // interface" (useOnline), so it proves nothing and changes nothing.
+  // The complement: navigator.onLine true only means a network interface exists (useOnline).
   it("leaves TanStack's own state alone when the device says it's online", () => {
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
     createQueryClient();

@@ -6,13 +6,7 @@ export type RateLine =
   | { kind: "flat" }
   | { kind: "none"; have: number; need: number };
 
-/**
- * The rate as Weight and Home word it: Insights' own fit,
- * "flat" under its own threshold, and green only toward the goal (trendTone,
- * from where the line stood a week ago to where it stands today). Once the goal
- * is reached, carrying on is not progress: neutral, by the same rule that
- * makes the goal line say "reached".
- */
+/** The rate as Weight and Home word it: Insights' fit, "flat" under its threshold, green only toward goal. */
 export function rateLine(fit: TrendFit, goal: Pick<Goal, "target_kg" | "start_kg"> | null): RateLine {
   if (fit.status === "not-enough-data") return { kind: "none", have: fit.have, need: fit.need };
   if (isFlatRate("weight", fit.ratePerWeek)) return { kind: "flat" };
@@ -49,12 +43,7 @@ function goalStatus(p: Projection, today: string): string | null {
   }
 }
 
-/**
- * "Goal 80 kg · around 16 Nov". projectGoal itself, run over the weigh-ins the
- * page holds: Insights runs the same function on the server over the same rows,
- * so the two pages say the same thing. `stale` (no weigh-in in 7 days) keeps
- * only the target: every status after it comes from the trend.
- */
+/** "Goal 80 kg · around 16 Nov": projectGoal as Insights runs it; `stale` keeps only the target. */
 export function goalLine(
   goal: Pick<Goal, "id" | "kind" | "target_kg" | "start_kg">,
   points: { date: string; kg: number }[],

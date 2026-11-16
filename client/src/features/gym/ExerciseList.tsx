@@ -49,13 +49,10 @@ export function ExerciseList({
 }: Props) {
   const [newName, setNewName] = useState("");
 
-  // Names from history, so a day's list reuses them exactly: a near-miss like
-  // "Machine T Bar Row" for "T Bar Row" would split one exercise's history in two.
+  // Names from history, so a near-miss spelling cannot split one exercise's history in two.
   const suggestions = suggestNames(historyNames, newName, exercises.map((e) => e.exercise_name));
   const add = (name: string) => {
-    // A phone capitalises as it likes ("T bar row"), and stats match names
-    // exactly, so a name that differs from history only in case takes the
-    // history's spelling.
+    // Stats match names exactly, so a name differing from history only in case takes the history's spelling.
     onAdd(canonicalName(historyNames, name));
     setNewName("");
   };
@@ -66,16 +63,14 @@ export function ExerciseList({
   }, {});
   const done = exercises.filter((e) => (byName[e.exercise_name]?.length ?? 0) > 0).length;
 
-  // Pointer covers mouse and touch; the keyboard (Space, arrows, Space) keeps
-  // reordering open to anyone without either.
+  // Pointer covers mouse and touch; the keyboard keeps reordering open to anyone without either.
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
   const nameOf = (id: string | number) => exercises.find((e) => e.id === id)?.exercise_name ?? "Exercise";
 
-  // reorder takes the FINAL ordering, so a drag is one request on drop, never
-  // one per row it passes.
+  // reorder takes the FINAL ordering, so a drag is one request on drop, never one per row passed.
   const drop = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return;
     const ids = exercises.map((e) => e.id);
@@ -108,8 +103,7 @@ export function ExerciseList({
       </div>
 
       {editMode ? (
-        // Vertical and inside the list: a row dragged sideways would reach
-        // past the screen's edge, and iOS pans the page for it (CLAUDE.md).
+        // Vertical and inside the list: sideways drag would reach past the screen's edge (CLAUDE.md).
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}

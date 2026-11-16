@@ -6,8 +6,7 @@ export const exportRouter = Router();
 // Router level, so a route added to this file is protected by default.
 exportRouter.use(requireAuth);
 
-// What Settings shows beside the download. Above "/" only for reading order;
-// Express matches the full path either way.
+// What Settings shows beside the download.
 exportRouter.get("/summary", async (req, res, next) => {
   try {
     res.set("Cache-Control", "no-store").json(await getDataSummary(req.userId));
@@ -18,23 +17,17 @@ exportRouter.get("/summary", async (req, res, next) => {
 
 // Reads only, so the demo's read-only rule (CLAUDE.md: no GET writes) holds.
 exportRouter.get("/", async (req, res, next) => {
-  // Personal data: no browser cache keeps a copy. The service worker already
-  // never caches /api.
+  // Personal data: no browser cache keeps a copy.
   res.set("Cache-Control", "no-store").type("application/json");
   try {
-    // Streamed table by table, never sent in one piece: Vercel caps a
-    // single-piece response at 4.5 MB. Backpressure is ignored on purpose -
-    // the file is a few MB, so buffering it for a slow reader costs no more
-    // than res.json would have.
+    // Streamed per table: Vercel caps a single-piece response at 4.5 MB. Backpressure ignored (small file).
     await writeUserExport(req.userId, (chunk) => {
       if (res.destroyed) throw new Error("The client closed the export");
       res.write(chunk);
     });
     res.end();
   } catch (err) {
-    // Once the first chunk is out the status can't change. Cut the response
-    // short instead, so the client's JSON parse fails and it says so, rather
-    // than saving half a file.
+    // Status can't change once streaming starts: cut short so the client's JSON parse fails.
     if (res.headersSent) res.destroy();
     else next(err);
   }

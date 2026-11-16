@@ -21,14 +21,10 @@ function Probe() {
   );
 }
 
-// AuthProvider clears the query cache on every identity change, so it has to
-// be rendered inside a QueryClientProvider — as it is in App.tsx. Each render
-// gets its own client so nothing leaks between tests either.
+// AuthProvider clears the query cache on identity change, so it needs a QueryClientProvider.
 function renderAuth(children: ReactNode = <Probe />) {
   const qc = new QueryClient({
-    // staleTime matched to App.tsx: it is what makes a surviving cache entry a
-    // permanent leak rather than a flicker, so the identity tests below need
-    // the real value to reproduce the real failure.
+    // staleTime matches App.tsx: it makes a surviving cache entry a permanent leak.
     defaultOptions: { queries: { staleTime: 30_000, retry: false } },
   });
   return {
@@ -106,9 +102,7 @@ describe("AuthProvider", () => {
     // loading must still resolve to false even though the check failed.
     await waitFor(() => expect(screen.getByTestId("state")).not.toHaveTextContent("loading"));
 
-    // user was never set to a signed-in value (un-cleared, still its initial
-    // null) and — the actual point of the fix — sessionError is populated,
-    // which is what distinguishes this from a real 401 signed-out result.
+    // user stays at its initial null and sessionError is populated.
     expect(screen.getByTestId("state")).toHaveTextContent("out");
     expect(screen.getByTestId("session-error")).toHaveTextContent("Internal Server Error");
   });
@@ -170,17 +164,12 @@ describe("AuthProvider", () => {
 
     await act(async () => { screen.getByText("login").click(); });
 
-    // Without this, login() fulfils, the page navigates to "/", ProtectedRoute
-    // finds no user and redirects straight back to /login: a form that clears
-    // and does nothing, with no message anywhere.
+    // Without this, login() fulfils, ProtectedRoute redirects back to /login.
     expect(outcome).toBe("rejected");
   });
 });
 
-// ---------------------------------------------------------------------------
-// The data-leak guard. See the cache note in AuthProvider for why the fix is a
-// clear rather than user-scoped query keys.
-// ---------------------------------------------------------------------------
+// The data-leak guard: see the cache note in AuthProvider for why the fix is a clear, not user-scoped keys.
 
 describe("AuthProvider — the query cache does not survive an identity change", () => {
   /** Stands in for any page that caches per-user data. */
@@ -222,15 +211,13 @@ describe("AuthProvider — the query cache does not survive an identity change",
     mockApi("alice");
     const { qc } = renderAuth(<IdentityProbe />);
 
-    // Alice signs in and her profile lands in the cache under ["profile"] —
-    // a key with no identity in it.
+    // Alice's profile lands in the cache under ["profile"], a key with no identity in it.
     await waitFor(() => expect(screen.getByTestId("profile")).toHaveTextContent("Europe/London"));
 
     await act(async () => { screen.getByText("sign out").click(); });
     await waitFor(() => expect(screen.getByTestId("who")).toHaveTextContent("out"));
 
-    // Empty, not merely unread: with staleTime at 30s a surviving entry is
-    // served to the next mount without so much as a request.
+    // Empty, not merely unread: with staleTime at 30s a surviving entry is served to the next mount with no request.
     expect(qc.getQueryData(["profile"])).toBeUndefined();
 
     // Bob signs in on the same tab.
@@ -247,8 +234,7 @@ describe("AuthProvider — the query cache does not survive an identity change",
     const { qc } = renderAuth(<IdentityProbe />);
     await waitFor(() => expect(screen.getByTestId("who")).toHaveTextContent("out"));
 
-    // What a sign-out whose POST failed, or a tab closed mid-request, leaves
-    // behind. Sign-in has to assume it can happen rather than trust sign-out.
+    // A failed sign-out POST or a tab closed mid-request leaves this behind.
     qc.setQueryData(["profile"], { timezone: "Europe/London" });
 
     await act(async () => { screen.getByText("sign in as bob").click(); });

@@ -19,9 +19,7 @@ export function EditEntrySheet({
   remove: ReturnType<typeof useDiary>["removeEntry"];
 }) {
   const [raw, setRaw] = useState("");
-  // One action per opening. The sheet closes on Save or Delete, but its exit
-  // animation keeps it mounted and clickable for a moment, so a second tap sent
-  // a second request: the same guard as AmountStep's.
+  // One action per opening: the exit animation keeps the sheet clickable, so a second tap would resend (as AmountStep).
   const acted = useRef(false);
   useEffect(() => {
     if (entry) {

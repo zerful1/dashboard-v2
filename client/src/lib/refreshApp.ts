@@ -10,11 +10,7 @@ const tryTo = async (step: () => unknown) => {
   }
 };
 
-/**
- * True only when the API answers as itself. `navigator.onLine` is true on dead
- * wifi, and a captive portal answers 200 with its own page, so the guard is
- * the health check's JSON. /api is never cached by the service worker.
- */
+/** True only when the API answers as itself: onLine is true on dead wifi and a captive portal answers 200. */
 async function serverReachable(): Promise<boolean> {
   try {
     const res = await fetch("/api/health", { cache: "no-store" });
@@ -24,16 +20,7 @@ async function serverReachable(): Promise<boolean> {
   }
 }
 
-/**
- * "Refresh the app" (Settings): for a phone stuck on an old deploy. Empties
- * this device's copy of everything - the query cache and its persisted copy
- * (CLAUDE.md: qc.clear() alone leaves the persisted one), every Cache Storage
- * entry, the service worker - then reloads. The session cookie is untouched,
- * so the person stays signed in; the server's data is never involved.
- *
- * Returns false, having cleared nothing, when the server can't be reached:
- * with the caches emptied and no signal, the app couldn't open again.
- */
+/** "Refresh the app": clears this device's caches and service worker, then reloads; false when offline. */
 export async function refreshApp(qc: QueryClient, reload: () => void = () => window.location.reload()): Promise<boolean> {
   if (!(await serverReachable())) return false;
   try {

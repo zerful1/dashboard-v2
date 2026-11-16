@@ -9,17 +9,10 @@ export interface PackedBody {
 
 export const TOO_LARGE = "This file is too large to restore";
 
-/**
- * Vercel's cap on a request body. One over it is refused before the server
- * sees it, as an error page the app can only call "Something went wrong".
- */
+/** Vercel's cap on a request body; over it, an error page the app can only call "Something went wrong". */
 export const REQUEST_CAP_BYTES = 4_500_000;
 
-/**
- * The file's text when it is a dashboard download, otherwise why the sheet
- * sends nothing. The size comes first, so a video picked by mistake is never
- * read into memory whole.
- */
+/** The file's text if it is a dashboard download, else why not; size first so a video isn't read whole. */
 export async function readDownload(file: File): Promise<{ text: string } | { refused: string }> {
   if (file.size > RESTORE_MAX_BYTES) return { refused: TOO_LARGE };
   const text = await file.text();
@@ -32,11 +25,7 @@ export async function readDownload(file: File): Promise<{ text: string } | { ref
   return { refused: "This isn't a dashboard download" };
 }
 
-/**
- * Gzipped, so a long-kept download stays far under Vercel's 4.5 MB request cap
- * (0.5 MB packs to about 60 KB). Plain where the browser has no
- * CompressionStream; the server takes either.
- */
+/** Gzipped to stay far under Vercel's 4.5 MB cap; plain without CompressionStream; the server takes both. */
 export async function packBody(text: string): Promise<PackedBody> {
   if (typeof CompressionStream === "undefined") return { body: text, gzipped: false, bytes: new Blob([text]).size };
   const stream = new Response(text).body!.pipeThrough(new CompressionStream("gzip"));
@@ -44,11 +33,7 @@ export async function packBody(text: string): Promise<PackedBody> {
   return { body: blob, gzipped: true, bytes: blob.size };
 }
 
-/**
- * Why a packed file would be refused on its way to the server, or null when it
- * can go. Sent plain (Safari before 16.4), a download of a few MB is over the
- * cap that gzip would have put it far under.
- */
+/** Why a packed file would be refused, or null; plain (Safari before 16.4) a few MB can exceed the cap. */
 export function cantSend({ bytes, gzipped }: PackedBody): string | null {
   if (bytes <= REQUEST_CAP_BYTES) return null;
   return gzipped ? TOO_LARGE : "This browser can't send a file this large. Try an up-to-date browser.";

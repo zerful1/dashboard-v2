@@ -33,23 +33,13 @@ export interface HomeOverview {
   lastSession: WorkoutSession | null
 }
 
-/**
- * Everything Home shows about training, from data the Gym page already caches.
- *
- * `sessions` is expected NEWEST FIRST — the order the sessions endpoint returns
- * and the order `useWorkoutHistory` preserves.
- *
- * `today` is the client's asserted calendar day, never derived here: the whole
- * date discipline is that the day arrives as a string.
- */
+/** Home's training overview; `sessions` must be NEWEST FIRST and `today` is passed in, never derived. */
 export function deriveHome(
   split: SplitConfig,
   sessions: WorkoutSession[],
   today: string,
 ): HomeOverview {
-  // A local Date purely to read a weekday off it. Built from the parts, not
-  // parsed from the string: `new Date('2026-08-26')` is parsed as UTC and lands
-  // on the previous day for anyone behind it.
+  // Built from parts, not parsed: `new Date('2026-08-26')` is UTC and lands a day early behind it.
   const [y, m, d] = today.split('-').map(Number)
   const weekdayIdx = mondayIndex(new Date(y!, m! - 1, d!))
   const monday = shiftISO(today, -weekdayIdx)
@@ -57,8 +47,7 @@ export function deriveHome(
   const dayType = getTodayDayType(split, new Date(y!, m! - 1, d!))
   const isRest = dayType === 'rest'
 
-  // Distinct dates: two sessions on one day (a Push and a Pull) is one day
-  // trained, not two.
+  // Distinct dates: two sessions on one day is one day trained.
   const datesTrained = new Set(sessions.map((s) => s.date))
 
   const days: boolean[] = []
@@ -76,9 +65,7 @@ export function deriveHome(
       target: split.week.filter((slot) => slot !== 'rest').length,
       days,
     },
-    // Newest first, so the head is the most recent. Not `today`'s session —
-    // "last session" means the last one that happened, which on a rest day is
-    // deliberately in the past.
+    // The last session that happened, not today's: on a rest day it is deliberately in the past.
     lastSession: sessions[0] ?? null,
   }
 }
@@ -93,18 +80,11 @@ export interface WorkoutProgress {
   /** Cardio entries in today's session. */
   cardio: number
   started: boolean
-  /**
-   * Every listed exercise has a set; with an empty list, any set at all. Or
-   * cardio with no sets: a cardio day, done (decided 2026-10-06).
-   */
+  /** Every listed exercise has a set (any set if the list is empty), or cardio with no sets. */
   finished: boolean
 }
 
-/**
- * How far through today's workout. `loggedNames` holds one entry per set
- * logged today, its exercise_name, so its length is the set count. Names
- * match exactly, as the Gym page's own done count does.
- */
+/** `loggedNames` holds one exercise_name per set logged today, so its length is the set count. */
 export function workoutProgress(exerciseNames: string[], loggedNames: string[], cardio = 0): WorkoutProgress {
   const logged = new Set(loggedNames)
   const total = exerciseNames.length
@@ -125,12 +105,7 @@ export interface TodaysWorkout {
   label: string
 }
 
-/**
- * Which workout Home shows today. `scheduled` is the split's day, or null on a
- * rest day. A session already logged today wins: the scheduled day's first,
- * then the newest of any other, under its own snapshotted name, because
- * day_type is reused across split eras.
- */
+/** A session logged today wins (the scheduled day's first, else newest) under its snapshotted name. */
 export function todaysWorkout(
   scheduled: TodaysWorkout | null,
   sessions: WorkoutSession[],
@@ -145,11 +120,7 @@ export function todaysWorkout(
 
 export type HomeTop = 'weigh-in' | 'workout' | 'food'
 
-/**
- * What claims Home's top slot: the weigh-in until today has one, then the
- * workout until it is finished, then food for the rest of the day. `null` is a
- * source that failed to load — its state is unknown, so it never claims the slot.
- */
+/** Home's top slot: weigh-in, then workout, then food; a `null` (failed) source never claims it. */
 export function nextUp(input: {
   weighedInToday: boolean | null
   isRest: boolean

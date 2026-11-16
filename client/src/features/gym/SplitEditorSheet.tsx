@@ -13,13 +13,7 @@ export function SplitEditorSheet({ open, onClose }: { open: boolean; onClose: ()
   const { split, saveSplit } = useSplit();
   const [draft, setDraft] = useState<SplitConfig>(split);
 
-  /**
-   * Seed the working copy only on the closed→open edge.
-   *
-   * Seeding on every `split` change would let a background refetch overwrite
-   * edits mid-typing — and the query is invalidated by the very save this sheet
-   * performs, so the race is not hypothetical.
-   */
+  /** Seed only on the closed-to-open edge: reseeding on `split` would let the save's own refetch overwrite typing. */
   const wasOpen = useRef(false);
   useEffect(() => {
     if (open && !wasOpen.current) setDraft(split);

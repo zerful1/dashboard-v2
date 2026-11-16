@@ -4,11 +4,7 @@ import { createApp } from "../src/app";
 
 const app = createApp();
 
-/**
- * A body express.json() can't parse never reaches a route, so it arrives at the
- * error handler as a plain http-errors object rather than an AppError. Treated as
- * unexpected, it answered 500 and logged the raw body — a password, on /login.
- */
+/** An unparseable body arrives as a plain http-errors object; treated as unexpected it logged it. */
 describe("a body the JSON parser rejects", () => {
   afterEach(() => vi.restoreAllMocks());
 
@@ -38,8 +34,7 @@ describe("a body the JSON parser rejects", () => {
   });
 
   it("leaves a well-formed request to the route", async () => {
-    // The positive complement: a 400 from the handler for every body would pass
-    // the tests above. A wrong password is the route's own 401.
+    // The positive complement: a 400 for every body would pass the tests above; a wrong password is a 401.
     const res = await request(app)
       .post("/api/auth/login")
       .send({ email: "nobody@example.com", password: "wrong-password-1" });

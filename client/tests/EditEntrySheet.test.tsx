@@ -35,8 +35,7 @@ describe("EditEntrySheet", () => {
     expect(remove.mutate).toHaveBeenCalledWith("e1");
   });
 
-  // #17: a second tap during the exit animation deleted again, and
-  // the server answered "Entry not found".
+  // A second tap during the exit animation deleted again, and the server answered "Entry not found".
   it("deletes once, however many times Delete is tapped", async () => {
     const remove = fake();
     render(<EditEntrySheet entry={oats} onClose={() => {}} rescale={fake() as never} remove={remove as never} />);

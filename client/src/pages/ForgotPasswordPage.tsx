@@ -21,11 +21,7 @@ export function ForgotPasswordPage() {
         body: JSON.stringify({ email }),
       });
     } catch {
-      // Swallowed on purpose. The confirmation below is shown unconditionally,
-      // matching the endpoint's unconditional 204 — whether or not the
-      // account exists. Surfacing this failure (or even letting it become an
-      // unhandled rejection) would undo the server's enumeration defence by
-      // giving an attacker a signal the success path doesn't have.
+      // Swallowed on purpose: the confirmation is unconditional, so surfacing this would let attackers probe accounts.
     } finally {
       setSent(true);
       setBusy(false);

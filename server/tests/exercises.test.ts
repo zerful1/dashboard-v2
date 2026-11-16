@@ -51,8 +51,7 @@ describe("exercise template", () => {
   });
 
   it("ALLOWS the same name on a different day", async () => {
-    // Deliberate: the same name on two days is one exercise everywhere. Stats
-    // merge by name and a rename cascades across days.
+    // Deliberate: the same name on two days is one exercise everywhere (stats merge by name, renames cascade).
     const agent = await signedIn(alice);
     await agent.post("/api/exercises").send({ day_type: 1, exercise_name: "Squat" }).expect(201);
     await agent.post("/api/exercises").send({ day_type: 2, exercise_name: "Squat" }).expect(201);
@@ -105,10 +104,7 @@ describe("exercise ownership scoping", () => {
     await bobAgent.delete(`/api/exercises/${aliceEx.id}`).expect(404);
     expect(await listExercises(aliceId, 1)).toHaveLength(1);
 
-    // A reorder naming Alice's id must silently affect nothing of hers. The
-    // UPDATE is scoped by user_id, so it matches no row rather than erroring —
-    // which is why this asserts her sort_order is untouched rather than
-    // expecting a rejection.
+    // The UPDATE is scoped by user_id so it matches no row rather than erroring: assert her sort_order is untouched.
     await bobAgent
       .post("/api/exercises/reorder")
       .send({ day_type: 1, ordered_ids: [aliceEx.id] })

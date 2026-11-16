@@ -3,19 +3,14 @@ import { pool } from "../db/pool";
 import { T } from "../config";
 import { RESET_TTL_MINUTES } from "@dashboard/shared";
 
-// Derived, not written down again: the email body and the two screens that
-// promise a window all read the same constant, so they cannot disagree with
-// what this actually enforces.
+// Derived so the email body and the screens that promise a window cannot disagree with what is enforced.
 const TTL_MS = RESET_TTL_MINUTES * 60 * 1000;
 
 function hashToken(raw: string): string {
   return createHash("sha256").update(raw).digest("hex");
 }
 
-/**
- * Issue a reset token. Returns the RAW token to email; only its SHA-256 is stored,
- * so a database leak does not hand over working reset links.
- */
+/** Issues a reset token; returns the RAW token to email and stores only its SHA-256. */
 export async function createResetToken(userId: string): Promise<string> {
   const raw = randomBytes(32).toString("hex");
   await pool.query(
@@ -26,13 +21,7 @@ export async function createResetToken(userId: string): Promise<string> {
   return raw;
 }
 
-/**
- * Atomically mark a token used and return its user id, or null if it is unknown,
- * expired or already spent.
- *
- * Consumption happens inside the UPDATE ... RETURNING, so two concurrent requests
- * with the same token cannot both succeed.
- */
+/** Atomically marks a token used and returns its user id; null if unknown, expired or spent. */
 export async function consumeResetToken(raw: string): Promise<string | null> {
   const { rows } = await pool.query<{ user_id: string }>(
     `UPDATE ${T.passwordResetTokens}

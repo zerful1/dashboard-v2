@@ -59,8 +59,7 @@ describe("profile", () => {
   });
 
   it("ignores a user_id supplied in the body and writes to the session's user", async () => {
-    // req.userId comes only from the session. zod strips unknown keys, so a
-    // body-supplied user_id never reaches the handler at all.
+    // req.userId comes only from the session; zod strips unknown keys, so a body user_id is never seen.
     const aliceAgent = request.agent(app);
     await aliceAgent.post("/api/auth/register").send(alice);
     const bobAgent = request.agent(app);
@@ -81,8 +80,7 @@ describe("profile", () => {
   });
 
   it("rejects a body containing only a user_id", async () => {
-    // Once the unknown key is stripped the patch is empty, which the refine
-    // rejects — so user_id is not smuggled through as "a field was supplied".
+    // The unknown key is stripped, leaving an empty patch that the refine rejects: user_id isn't smuggled in.
     const bobAgent = request.agent(app);
     await bobAgent.post("/api/auth/register").send(bob);
     const aliceId = "00000000-0000-0000-0000-000000000000";
@@ -91,8 +89,7 @@ describe("profile", () => {
   });
 });
 
-// The invariant that replaces row-level security. Every repository added in later
-// plans gets a case here.
+// The invariant that replaces row-level security: every repository gets a case here.
 describe("ownership scoping", () => {
   it("never lets one user read or write another user's profile", async () => {
     const aliceAgent = request.agent(app);
@@ -198,16 +195,7 @@ describe("account deletion requires the password", () => {
   });
 
   it("does not apply the length policy - a wrong password is 401, not 400", async () => {
-    // The body schema is min(1), NOT passwordField, because this CHECKS a
-    // password rather than setting one. A one-character password must reach
-    // the verify step and fail there, not be turned away by validation.
-    //
-    // Why it matters, since it is not about legacy passwords: /login uses
-    // passwordField too, so an account whose password is below the minimum
-    // cannot sign in at all and could never reach this route. What this
-    // protects against is the policy being TIGHTENED later - every account
-    // between the old and new minimum would keep working everywhere except
-    // deleting itself, and only here.
+    // min(1), NOT passwordField: this checks a password, so a tightened policy mustn't block deleting.
     const agent = request.agent(app);
     await agent.post("/api/auth/register").send(alice);
 
@@ -259,9 +247,7 @@ describe("deleteAccount cascades across every owned table", () => {
       );
       return rows[0]!.n;
     };
-    // `session` has no user_id column and no foreign key — it is the one the
-    // explicit DELETE inside deleteAccount exists for, and the one a cascade
-    // would silently miss.
+    // `session` has no user_id or FK: deleteAccount's explicit DELETE exists because a cascade misses it.
     const sessionsFor = async (id: string) => {
       const { rows } = await pool.query<{ n: number }>(
         `SELECT count(*)::int n FROM ${T.session} WHERE sess->>'userId' = $1`,
@@ -272,8 +258,7 @@ describe("deleteAccount cascades across every owned table", () => {
 
     const owned = [T.bodyWeight, T.workoutSessions, T.workoutSets, T.workoutSplit, T.profiles];
 
-    // Every table genuinely holds alice rows first — otherwise the assertions
-    // after the delete would pass against a table that was empty all along.
+    // Every table holds alice rows first, or the assertions after the delete pass against an empty table.
     for (const table of owned) expect(await countFor(table, aliceId), table).toBeGreaterThan(0);
     expect(await sessionsFor(aliceId)).toBeGreaterThan(0);
 

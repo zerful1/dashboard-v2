@@ -3,51 +3,12 @@ import { withTransaction, pool } from "./pool";
 import { config, T } from "../config";
 import { shiftISO } from "@dashboard/shared";
 
-/**
- * Sample gym history for a development account.
- *
- * Exists because a fresh dev account renders every gym screen empty: the Stats
- * tab has nothing to pick, the progression chart has no points, and History has
- * no pages. Reviewing those screens needs data with the same SHAPE as the real
- * account, not merely some rows.
- *
- * What the generated history deliberately contains, and why:
- *
- *  - Two split eras. `day_type` is reused across them — historical 'Upper A' and
- *    current 'Push' are both day_type 1, exactly as the migrated v1 history is
- *    (see the workout_sessions DDL). Any screen that resolves day_type instead
- *    of reading the snapshotted day_name will visibly mix the two eras.
- *  - Exercises that exist only in history. The stats picker reads DISTINCT names
- *    from workout_sets rather than the template, so retired lifts stay
- *    reachable; against a template-shaped seed that difference is invisible.
- *  - One bodyweight-only lift, which drives the isBodyweightOnly branch of
- *    the lift stats (valued by reps rather than an estimated 1RM).
- *  - A session reaching six sets on one exercise, and one with a hole punched in
- *    the middle of a row. The history table derives its column count and renders
- *    by set_number; both only show up against data shaped like this.
- *
- * NEVER writes to `public`, and refuses to run against any schema whose name
- * does not end in `_dev`. `DB_SCHEMA=app` in front of a command reaches
- * production (CLAUDE.md), and this script is not read-only.
- *
- * Usage. It seeds an account that already exists and never creates one, so
- * register in the local app first and pass that address:
- *   npm run seed-dev -w @dashboard/server -- --email <address> --reset
- */
+/** Sample gym history for a dev account: two split eras sharing day_types; never writes to `public`. */
 
-/**
- * The guard, and the most important lines in the file.
- *
- * Mirrors tests/setup.ts, which refuses any schema but app_test before it
- * truncates: the aim is not to remind anyone that a writer must not be pointed
- * at production, but to make it impossible. A suffix rule rather than a list,
- * so a second local schema needs no edit here and `app` can never satisfy it.
- */
+/** The guard: refuses any schema not ending in `_dev`, so `app` can never satisfy it. */
 const SEEDABLE_SCHEMA = /_dev$/;
 
-// ---------------------------------------------------------------------------
-// Timeline
-// ---------------------------------------------------------------------------
+// --- Timeline ---
 
 const ERA_1_START = "2026-02-02"; // Monday
 const ERA_2_START = "2026-04-27"; // Monday
@@ -56,9 +17,7 @@ const HISTORY_END = "2026-08-23"; // yesterday, leaving today an empty slate to 
 /** Chance a scheduled session simply did not happen. Real history has holes. */
 const MISSED_SESSION_RATE = 0.18;
 
-// ---------------------------------------------------------------------------
-// Prescriptions
-// ---------------------------------------------------------------------------
+// --- Prescriptions ---
 
 interface Prescription {
   name: string;
@@ -90,13 +49,7 @@ interface DayPlan {
   exercises: Prescription[];
 }
 
-/**
- * Era 1 — a three-day upper/lower rotation, retired at the end of April.
- *
- * 'Upper A' and 'Upper B' take day_type 1 and 2, which the current split later
- * reuses for Push and Pull. That collision is the point: it is what the real
- * migrated history looks like.
- */
+/** Era 1: an upper/lower rotation whose day_types 1 and 2 the current split reuses, as real history does. */
 const ERA_1: Record<number, DayPlan> = {
   0: {
     day_type: 1,
@@ -130,13 +83,7 @@ const ERA_1: Record<number, DayPlan> = {
   },
 };
 
-/**
- * Era 2 — the split currently stored in workout_split, followed slot for slot:
- * week = [3, 2, 1, rest, 5, 4, rest], Monday first.
- *
- * 'Legs' keeps day_type 3 across both eras, so it yields ONE history chip rather
- * than two — the dedupe in historyFilterNames, on real-shaped input.
- */
+/** Era 2: the current split; 'Legs' keeps day_type 3, so it yields one history chip. */
 const ERA_2: Record<number, DayPlan> = {
   0: {
     day_type: 3,
@@ -195,13 +142,7 @@ const ERA_2: Record<number, DayPlan> = {
   },
 };
 
-/**
- * The exercises TEMPLATE, i.e. what the Log tab offers today.
- *
- * Intentionally narrower than the history: every era-1 lift is absent, so the
- * stats picker lists names the template cannot reach. That gap is the Stats
- * behaviour worth being able to see.
- */
+/** The exercises TEMPLATE, narrower than history so Stats lists names the template cannot reach. */
 const TEMPLATE: Record<number, string[]> = {
   1: [
     "Bench Press",
@@ -227,9 +168,7 @@ const SESSION_NOTES = [
 
 const CARDIO_KINDS = ["Treadmill", "Stairmaster", "Rowing Machine"];
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+// --- Helpers ---
 
 /** Deterministic PRNG, so re-seeding reproduces the same history to compare against. */
 function mulberry32(seed: number): () => number {
@@ -241,12 +180,7 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-/**
- * Monday-first weekday of a YYYY-MM-DD string.
- *
- * Built and read in UTC, exactly like shiftISO: the Date here is a calendar
- * cursor and never a local time, so there is no BST edge to fall off.
- */
+/** Monday-first weekday of a YYYY-MM-DD, built and read in UTC like shiftISO, so no BST edge. */
 function weekdayMon(iso: string): number {
   const [y, m, d] = iso.split("-").map(Number);
   return (new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay() + 6) % 7;
@@ -263,14 +197,7 @@ function daysBetween(a: string, b: string): number {
 const roundTo = (value: number, step: number) => Math.round(value / step) * step;
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 
-/**
- * THE PROGRESSION POLICY — the one knob here worth turning.
- *
- * Linear gain, a light week every eighth, and a little day-to-day noise. That
- * keeps the trend line unmistakably positive while leaving the chart something
- * to actually show. Flatten `perWeek`, widen the noise, or drop the deload and
- * the Stats tab tells a different story; this is the only place to change it.
- */
+/** THE PROGRESSION POLICY: linear gain, a light week every eighth, noise; the one place to change Stats. */
 function workingWeight(p: Prescription, week: number, r: number): number {
   const base = p.start + p.perWeek * week;
   const deload = week > 0 && week % 8 === 7 ? 0.9 : 1;
@@ -321,18 +248,7 @@ const WEIGHT_NOTES = [
   "Scale on carpet, probably off.",
 ];
 
-/**
- * Ninety days of weigh-ins ending YESTERDAY, so today is still loggable.
- *
- * THE SHAPE IS THE POINT, and it is the one knob here worth turning. A steady
- * slope would make the OLS trend line sit exactly on the data and the chart
- * would have nothing to say. This is a cut, then a plateau, then a slower cut:
- * the trend runs visibly straight through a middle section that does not.
- *
- * Daily noise is ±0.35 kg, which is roughly real — water alone moves more than
- * a day of deficit does, and a seed without it produces a suspiciously clean
- * line that makes the 7-day delta look far more meaningful than it is.
- */
+/** Ninety days of weigh-ins ending yesterday: a cut, a plateau, a slower cut, so the trend has something to say. */
 function generateWeights(rand: () => number, endDate: string): WeightRow[] {
   const DAYS = 90;
   const SKIP_RATE = 0.26;
@@ -349,8 +265,7 @@ function generateWeights(rand: () => number, endDate: string): WeightRow[] {
     const perDay = i < 34 ? -0.055 : i < 58 ? -0.004 : -0.032;
     trueWeight += perDay;
 
-    // Not every day gets weighed. Real history has gaps, and a complete series
-    // hides the fact that the chart has to cope with them.
+    // Not every day gets weighed: the chart has to cope with gaps.
     if (rand() < SKIP_RATE) continue;
 
     const observed = trueWeight + (rand() - 0.5) * 0.7;
@@ -366,9 +281,7 @@ function generateWeights(rand: () => number, endDate: string): WeightRow[] {
   return rows;
 }
 
-// ---------------------------------------------------------------------------
-// Generation
-// ---------------------------------------------------------------------------
+// --- Generation ---
 
 function generate(rand: () => number) {
   const sessions: SessionRow[] = [];
@@ -400,8 +313,7 @@ function generate(rand: () => number) {
             session_id: session.id,
             exercise_name: p.name,
             set_number: i + 1,
-            // Forced to 0, per the schema note: branch on the flag, never on
-            // the value.
+            // Forced to 0: branch on the flag, never the value.
             weight_kg: 0,
             reps: clamp(top - i, 3, 25),
             is_bodyweight: true,
@@ -445,17 +357,11 @@ function generate(rand: () => number) {
   return { sessions, sets, cardio };
 }
 
-/**
- * Two shapes the generator would not produce on its own, planted on purpose.
- *
- * Both are read-path behaviours that only appear against awkward data, so
- * leaving them to chance would mean usually not being able to see them.
- */
+/** Two awkward shapes planted on purpose, since the read paths that need them would rarely appear by chance. */
 function plantEdgeCases(sessions: SessionRow[], sets: SetRow[]): string[] {
   const planted: string[] = [];
 
-  // 1. Six sets of one exercise. The history table derives its column count from
-  //    the data; v1's hardcoded four columns would hide the last two.
+  // 1. Six sets of one exercise: v1's hardcoded four columns would hide the last two.
   const lastLower = [...sessions].reverse().find((s) => s.day_name === "Lower");
   if (lastLower) {
     const calf = sets.filter(
@@ -470,9 +376,7 @@ function plantEdgeCases(sessions: SessionRow[], sets: SetRow[]): string[] {
     }
   }
 
-  // 2. A hole in the middle of a row: set 2 removed, leaving 1 and 3. Rendering
-  //    by position instead of by set_number would show two sets and silently
-  //    relabel set 3 as set 2.
+  // 2. A hole in the middle of a row (set 2 removed): rendering by position would relabel set 3 as 2.
   const gapSession = [...sessions].reverse().find((s) => s.day_name === "Push");
   if (gapSession) {
     const idx = sets.findIndex(
@@ -490,9 +394,7 @@ function plantEdgeCases(sessions: SessionRow[], sets: SetRow[]): string[] {
   return planted;
 }
 
-// ---------------------------------------------------------------------------
-// Insert
-// ---------------------------------------------------------------------------
+// --- Insert ---
 
 async function insertRows(
   client: { query: (sql: string, params: unknown[]) => Promise<unknown> },
@@ -514,9 +416,7 @@ async function insertRows(
   }
 }
 
-// ---------------------------------------------------------------------------
-// Main
-// ---------------------------------------------------------------------------
+// --- Main ---
 
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
@@ -530,8 +430,7 @@ async function main(): Promise<void> {
         `the app_test fixtures are all off limits.`,
     );
   }
-  // Required, with no default: dev accounts are registered by hand and come and
-  // go, so any address baked in here eventually names nobody.
+  // Required, with no default: dev accounts come and go, so a baked-in address eventually names nobody.
   if (!email || email.startsWith("--")) {
     throw new Error(
       "--email is required: register an account in the local app first, then " +
@@ -560,8 +459,7 @@ async function main(): Promise<void> {
   const rand = mulberry32(20260824);
   const { sessions, sets, cardio } = generate(rand);
   const planted = plantEdgeCases(sessions, sets);
-  // Ends on HISTORY_END, the same yesterday the sessions stop at, so today is
-  // an empty slate on both the Weight page and Home.
+  // Ends on HISTORY_END, the same yesterday the sessions stop at.
   const weights = generateWeights(rand, HISTORY_END);
 
   await withTransaction(async (client) => {

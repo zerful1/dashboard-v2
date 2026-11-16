@@ -34,9 +34,7 @@ describe("GET /api/exercises/names", () => {
   });
 
   it("is not shadowed by a parameterised route", async () => {
-    // "names" is not a uuid. There is no GET "/:id" today, so this passes
-    // trivially — it is a forward guard: adding one later without putting it
-    // after this route would turn this into a 400.
+    // No GET "/:id" exists today, so this passes trivially: a forward guard against one being added before this route.
     const agent = await signedIn(alice);
     await agent.get("/api/exercises/names").expect(200);
   });

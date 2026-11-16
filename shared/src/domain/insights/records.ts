@@ -38,8 +38,7 @@ export function recordEvents(rows: RecordSetRow[]): RecordEvent[] {
       const sets = days.get(date)!
       const weighted = sets.filter((s) => !s.is_bodyweight)
       const event: RecordEvent = { date, exercise_name }
-      // Each measure's first appearance is its baseline and raises nothing:
-      // otherwise an exercise's first session would be a record on every count.
+      // A measure's first appearance is its baseline, not a record.
       if (weighted.length) {
         const top = weighted.reduce((a, b) =>
           b.weight_kg > a.weight_kg || (b.weight_kg === a.weight_kg && b.reps > a.reps) ? b : a)

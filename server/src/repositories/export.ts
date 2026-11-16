@@ -6,11 +6,7 @@ import { NotFound } from "../errors";
 /** A set's or a cardio entry's session date. They have none of their own. */
 const SESSION_DATE = `(SELECT s.date FROM ${T.workoutSessions} s WHERE s.id = t.session_id)`;
 
-/**
- * Every table with a user_id column, except password_reset_tokens, which holds
- * secrets. tests/export.test.ts holds this list to the database: a table added
- * with a user_id fails that test until it is listed here.
- */
+/** Every table with a user_id column except secrets; tests/export.test.ts holds it to the database. */
 const TABLES: { name: string; ref: string; orderBy: string }[] = [
   { name: "profiles", ref: T.profiles, orderBy: "t.user_id" },
   { name: "workout_split", ref: T.workoutSplit, orderBy: "t.user_id" },
@@ -30,22 +26,10 @@ const TABLES: { name: string; ref: string; orderBy: string }[] = [
 /** The tables a download holds, by name. Restore's table split is held to this list. */
 export const EXPORT_TABLE_NAMES = TABLES.map((t) => t.name);
 
-/**
- * Everything the user owns, for their backup, written as JSON text one table
- * at a time so the route can stream it. Vercel caps a response sent in one
- * piece at 4.5 MB, and the owner's file grows by about 2 MB a year.
- *
- * Postgres serialises each row (`to_json(t)::text`), so dates stay YYYY-MM-DD
- * text, numerics stay exact, and node-pg's local-midnight Date parsing never
- * touches the file (CLAUDE.md). `json`, not `jsonb`: it keeps column order,
- * which matters in a file a person reads.
- *
- * Throws NotFound before writing anything when the user row is gone.
- */
+/** Streams the user's data as JSON text one table at a time, because Vercel caps a single-piece response at 4.5 MB. */
 export async function writeUserExport(userId: string, write: (chunk: string) => void): Promise<void> {
   await withTransaction(async (client) => {
-    // One snapshot for every read, so a write landing mid-export cannot leave
-    // a set in the file without its session. It must be the first statement.
+    // One snapshot for every read, so a mid-export write can't leave a set without its session; must be first.
     await client.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY");
     const { rows } = await client.query<{ account: string }>(
       `SELECT json_build_object('id', id, 'email', email, 'created_at', created_at)::text AS account

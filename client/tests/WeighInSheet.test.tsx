@@ -24,10 +24,7 @@ function renderSheet(target: WeighInTarget, entries: BodyWeightEntry[] = [], fai
   return { save, remove, onClose, rerender: (next: BodyWeightEntry[]) => view.rerender(<WeighInSheet {...props} entries={next} />) };
 }
 
-/**
- * Set the date the way the native picker does: one whole value. Not
- * userEvent.clear + type: clear() fires "" and DateSelector ignores it.
- */
+/** Set the date as the native picker does, in one value: clear() fires '' and DateSelector ignores it. */
 function pickDate(value: string) {
   fireEvent.change(document.querySelector('input[type="date"]') as HTMLInputElement, { target: { value } });
 }
@@ -104,8 +101,7 @@ describe("WeighInSheet, opened by Log", () => {
     expect(save).not.toHaveBeenCalled();
   });
 
-  // The minute after midnight, the clock says the 18th while
-  // the page's useToday still says the 17th (CLAUDE.md, one clock per page).
+  // A minute after midnight the clock says the 18th while the page's useToday still says the 17th.
   it("cannot pick a date after the page's today, even once the clock has moved on", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(2026, 7, 18, 0, 0, 30));
@@ -127,8 +123,7 @@ describe("WeighInSheet, opened by Log", () => {
   });
 });
 
-// The deferred call from #44: the sheet closes on Log, so a failed save left
-// nothing of what was typed (Home's weigh-in and Gym's sets give it back).
+// Deferred from #44: the sheet closes on Log, so a failed save must give back what was typed.
 describe("WeighInSheet, after a failed save", () => {
   it("gives back the weight and notes that failed", () => {
     renderSheet(LOG, [entry(TODAY, 82.4)], { date: TODAY, weight_kg: 81.9, notes: "after a run" });

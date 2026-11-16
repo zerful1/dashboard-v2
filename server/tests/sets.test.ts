@@ -215,9 +215,7 @@ describe("set ownership scoping", () => {
 
     await bobAgent.delete(`/api/workouts/sets/${aliceSet.id}`).expect(404);
 
-    // Bob asking for Alice's session id must return nothing, not her sets. The
-    // session id is a real uuid he could plausibly obtain, so scoping the read
-    // by user_id is what makes it useless to him.
+    // Bob asking for Alice's session id must return nothing, not her sets: the read is scoped by user_id.
     const aliceSession = (
       await aliceAgent.get("/api/workouts/session?date=2026-08-16&day_type=1")
     ).body;

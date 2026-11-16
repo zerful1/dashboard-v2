@@ -134,8 +134,7 @@ describe("HabitsPage", () => {
     );
   });
 
-  // A just-added habit has no server id yet, and every action on
-  // it - or a reorder carrying its temporary id - failed with "Validation failed".
+  // A just-added habit has no server id yet, and any action on it failed with 'Validation failed'.
   it("holds a just-added habit's controls until the server has saved it", async () => {
     mockApi(async () => [], () => new Promise(() => {}));
     renderPage();

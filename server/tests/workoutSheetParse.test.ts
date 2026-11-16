@@ -46,8 +46,7 @@ describe("parseWorkoutSheet", () => {
     ]);
   });
 
-  // The date cell is free text and was copied wrongly once: tab 24072026 says
-  // "27th July 2026", and the dashboard's own log confirms the 24th.
+  // The date cell is free text and was copied wrongly once: the dashboard log confirms the 24th, not the 27th.
   it("takes the date from the tab name, and says when the date cell disagrees", () => {
     const { workouts, notes } = parseWorkoutSheet([
       session("24072026", { C4: "27th July 2026", C6: "Upper", B10: "Lat Pulldown", C10: 59, D10: 7 }),
@@ -114,8 +113,7 @@ describe("parseWorkoutSheet", () => {
     ]);
   });
 
-  // The dashboard keys a set by (exercise, set number), so two rows of one
-  // exercise must not both claim set 1.
+  // The dashboard keys a set by (exercise, set number), so two rows of one exercise must not both claim set 1.
   it("numbers on from the first row when an exercise has two rows", () => {
     const { workouts, notes } = parseWorkoutSheet([
       session("24082026", {
@@ -128,8 +126,7 @@ describe("parseWorkoutSheet", () => {
     expect(notes).toEqual(["2026-08-24 Unilateral Machine Row: on two rows; numbered as one exercise, sets 1-3"]);
   });
 
-  // Corrected 2026-10-03: the 63 kg row on 24 Aug isn't supposed to be
-  // unilateral. A fix for one row of one tab, not for the name everywhere.
+  // The 63 kg row on 24 Aug isn't supposed to be unilateral: a fix for one row of one tab, not the name everywhere.
   it("corrects a single row's exercise name, and only that row", () => {
     const { workouts, notes } = parseWorkoutSheet(
       [
@@ -158,8 +155,7 @@ describe("parseWorkoutSheet", () => {
     expect(workouts[0]!.sets[0]!.exercise_name).toBe("T Bar Row");
   });
 
-  // An empty session reads as a skipped workout in the history. Two empty Pull
-  // sessions from June already do.
+  // An empty session reads as a skipped workout in the history.
   it("leaves out a tab with nothing logged, saying so", () => {
     const { workouts, notes } = parseWorkoutSheet([session("18082026", { C6: "Pull", B15: "Seated SLDL" })]);
     expect(workouts).toEqual([]);

@@ -2,11 +2,7 @@
 const CACHE = 'dashboard-v2';
 
 self.addEventListener('install', (e) => {
-  // The shell only. Hashed assets arrive through the fetch handler as they are
-  // requested — precaching them would mean parsing the build manifest here.
-  // Just /index.html. `/` is the same document, and addAll is atomic - if
-  // either entry fails the whole install rejects and the worker never
-  // activates. Only /index.html is ever read back.
+  // Shell only; hashed assets are cached as requested. addAll is atomic: one failure rejects the install.
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['/index.html'])));
   self.skipWaiting();
 });
@@ -24,37 +20,21 @@ self.addEventListener('fetch', (e) => {
   const { request } = e;
   const url = new URL(request.url);
 
-  // Anything but a plain GET is a write. Never touch it.
+  // Anything but a plain GET is a write: never touch it.
   if (request.method !== 'GET') return;
-
-  // Another origin's problem.
   if (url.origin !== self.location.origin) return;
 
-  /**
-   * THE API IS NEVER CACHED.
-   *
-   * v1 could get away with a same-origin rule because its API lived on another
-   * host entirely. Here /api is same-origin, so a "cache same-origin GETs" rule
-   * would write authenticated JSON — someone's body weight, their sessions —
-   * into a store that outlives sign-out and is readable by the next person to
-   * open the browser. Offline reads come from the persisted query cache, which
-   * is per-user and cleared on sign-out. This must stay the first rule.
-   */
+  /** Never cache /api (same-origin: one user's JSON would outlive sign-out); must stay the first rule. */
   if (url.pathname.startsWith('/api')) return;
 
-  // Hashed build output: the filename changes when the content does, so a hit
-  // can never be stale.
+  // Hashed build output: the filename changes with the content, so a hit is never stale.
   if (url.pathname.startsWith('/static/')) {
     e.respondWith(
       caches.match(request).then(
         (hit) =>
           hit ||
           fetch(request).then((res) => {
-            // Never the app's HTML under an asset's name. A host that answers
-            // a missing file with the shell and a 200 would otherwise have it
-            // saved here for good, as the chunk or the decoder it stood in for.
-            // vercel.json no longer does that for /static/; this is the same
-            // rule held on this side.
+            // Never save the shell under an asset's name (a host's 200 for a missing file).
             const html = (res.headers.get('content-type') || '').includes('text/html');
             if (res.ok && !html) {
               const copy = res.clone();
@@ -67,17 +47,12 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Navigations: network first so a deploy is picked up immediately, falling
-  // back to the cached shell when offline. The client router takes over from
-  // there, which is why any path can be answered with the shell.
+  // Navigations: network first so a deploy lands at once, the cached shell when offline.
   if (request.mode === 'navigate') {
     e.respondWith(
       fetch(request)
         .then((res) => {
-          // Only cache a REAL shell. fetch() resolves on a 500, so without this a
-          // mid-deploy error page becomes the offline shell - and the only
-          // thing that can replace it is a successful navigation, which is
-          // precisely what an offline user cannot produce.
+          // Only a REAL shell: fetch() resolves on a 500, and offline cannot replace a bad one.
           if (res.ok && !res.redirected) {
             const copy = res.clone();
             caches.open(CACHE).then((c) => c.put('/index.html', copy));

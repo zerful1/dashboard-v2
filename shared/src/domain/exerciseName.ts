@@ -6,11 +6,7 @@ export interface ExerciseNameRow {
 export interface RenameEvaluation {
   /** Another exercise on the same day already uses the new name — blocks save. */
   sameDayCollision: boolean
-  /**
-   * The new name matches an exercise on another day: renaming merges their
-   * history and stats. Holds the existing exact casing so the save uses it
-   * instead of creating a case-variant split.
-   */
+  /** Another day's exercise has this name, so renaming merges history; holds its exact casing. */
   mergeWith: string | null
 }
 
@@ -21,8 +17,7 @@ export function evaluateRename(
   newName: string,
 ): RenameEvaluation {
   const target = newName.trim().toLowerCase()
-  // Rows holding oldName are the exercise being renamed (the cascade renames
-  // them on every day), so they are never a collision or merge target.
+  // Rows holding oldName are the exercise being renamed (the cascade hits every day).
   const others = rows.filter(
     r => r.exercise_name !== oldName && r.exercise_name.toLowerCase() === target,
   )

@@ -6,10 +6,7 @@ import { orderRecords, recordLine } from "./recordLine";
 
 const SHOWN = 5;
 
-/**
- * A block of records: one line each, biggest jump first,
- * 5 shown and the rest behind "N more". The parent changes `key` to close it.
- */
+/** Records, biggest jump first: 5 shown, the rest behind "N more"; the parent changes `key` to close it. */
 export function RecordList({ title, events, empty }: { title: string; events: RecordEvent[]; empty: string }) {
   const [all, setAll] = useState(false);
   const ordered = orderRecords(events);

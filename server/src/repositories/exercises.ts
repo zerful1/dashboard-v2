@@ -23,13 +23,7 @@ export async function listAllExerciseNames(userId: string): Promise<ExerciseName
   return rows;
 }
 
-/**
- * Appends at the end of the day's list.
- *
- * sort_order is computed from the live table inside the statement rather than
- * from a value the caller passed, so two concurrent adds cannot collide on a
- * stale maximum.
- */
+/** Appends at the end; sort_order is computed in the statement so concurrent adds cannot collide. */
 export async function addExercise(
   userId: string,
   dayType: number,
@@ -45,11 +39,7 @@ export async function addExercise(
   return rows[0]!;
 }
 
-/**
- * Removes a template row only. Historical workout_sets are untouched, because
- * exercise_name is denormalised with no foreign key — deleting an exercise you
- * have stopped doing must never delete the record that you did it.
- */
+/** Removes a template row only: workout_sets has no foreign key and must outlive it. */
 export async function deleteExercise(userId: string, id: string): Promise<boolean> {
   const res = await pool.query(
     `DELETE FROM ${T.exercises} WHERE user_id = $1 AND id = $2`,
@@ -58,16 +48,7 @@ export async function deleteExercise(userId: string, id: string): Promise<boolea
   return (res.rowCount ?? 0) > 0;
 }
 
-/**
- * Rewrites the whole day's ordering from an explicit list of ids.
- *
- * v1 swapped pairs, which needed two round trips per nudge and could
- * interleave. Taking the final order means one transaction and an outcome that
- * does not depend on how many moves produced it.
- *
- * Each UPDATE is scoped by user_id and day_type, so an id belonging to another
- * user — or to another day — matches nothing and silently changes nothing.
- */
+/** Rewrites the day's order from explicit ids; each UPDATE is scoped by user_id and day_type. */
 export async function reorderExercises(
   userId: string,
   dayType: number,
@@ -97,26 +78,7 @@ export interface RenameResult {
   finalName: string;
 }
 
-/**
- * Rename an exercise everywhere it appears.
- *
- * Matches by NAME, not id. The same exercise can exist on several days, and all
- * of them plus every historical set must move together — renaming by id would
- * move one template row and strand the rest, plus ten months of sets, under the
- * old name.
- *
- * Both updates run in ONE transaction. v1 ran them sequentially, so a failure
- * between them left history under a name the template no longer contained:
- * workout_sets.exercise_name is denormalised with no foreign key, so nothing in
- * the database would have flagged the inconsistency.
- *
- * Throws Conflict, having changed nothing, when one of the user's workouts
- * holds the same set number under both names. The new name need not be in the
- * template for that: a pruned exercise lives on in workout_sets, where
- * UNIQUE (session_id, exercise_name, set_number) would refuse the rename, and
- * the route's own check reads the template only. Checked here, inside the
- * transaction, so the answer is a sentence rather than a constraint's 500.
- */
+/** Renames by NAME across template and history in one transaction; Conflict if a workout holds both names. */
 export async function renameExercise(
   userId: string,
   oldName: string,
@@ -146,9 +108,7 @@ export async function renameExercise(
         WHERE user_id = $1 AND exercise_name = $2`,
       [userId, oldName, trimmed],
     );
-    // Lift goals match their exercise by name too, so they move with it.
-    // Merging onto a name that already has a goal keeps that one: the unique
-    // index allows one goal per lift, and the old name's would collide.
+    // Lift goals match by name too; merging keeps the target's goal, since one goal per lift is unique.
     await client.query(
       `DELETE FROM ${T.goals}
         WHERE user_id = $1 AND kind = 'lift' AND exercise_name = $2 AND $2 <> $3

@@ -25,10 +25,7 @@ workoutsRouter.get(
   async (req, res, next) => {
     try {
       const { date, day_type } = req.query as unknown as { date: string; day_type: number };
-      // Deliberately does NOT create. A session is created by logging a set,
-      // so browsing to a day you end up not training leaves no phantom session
-      // behind — which would otherwise show up in history as a workout that
-      // never happened.
+      // Deliberately does NOT create: browsing a day you skip must leave no phantom session in history.
       res.json(await findSession(req.userId, date, day_type));
     } catch (err) {
       next(err);
@@ -81,8 +78,7 @@ const setBody = z
     set_number: z.number().int().min(1).max(20),
     weight_kg: z.number().min(0).max(500),
     reps: repsCount.optional(),
-    // A single-sided set sends both sides and no `reps`: the counted number is
-    // derived below, as the lower side, so it can never disagree with them.
+    // A single-sided set sends both sides and no `reps`; the count is derived below as the lower side.
     reps_left: repsCount.optional(),
     reps_right: repsCount.optional(),
     is_bodyweight: z.boolean().default(false),
@@ -105,8 +101,7 @@ const setBody = z
 workoutsRouter.post("/sets", validate({ body: setBody }), async (req, res, next) => {
   try {
     const b = req.body as z.infer<typeof setBody>;
-    // Logging a set is what creates the session — the client never has to
-    // create one first, and a viewed-but-unused day leaves nothing behind.
+    // Logging a set creates the session; a viewed-but-unused day leaves nothing behind.
     const split = await getSplit(req.userId);
     const session = await getOrCreateSession(req.userId, b.date, b.day_type, split);
 
@@ -185,11 +180,9 @@ workoutsRouter.get(
   async (req, res, next) => {
     try {
       const { exercise_name } = req.query as unknown as { exercise_name: string };
-      // 20 sessions, not just the last few: the lift's step is learned from its
-      // own jumps (liftStep), which can lie further back.
+      // 20 sessions: the lift's step is learned from its own jumps (liftStep), which can lie further back.
       const groups = await recentSessionGroups(req.userId, exercise_name, 20);
-      // null for an exercise with no history — the client renders nothing
-      // rather than inventing encouragement.
+      // null for an exercise with no history: the client renders nothing rather than inventing encouragement.
       res.json(computeRecommendation(groups));
     } catch (err) {
       next(err);
@@ -230,8 +223,7 @@ workoutsRouter.get(
   async (req, res, next) => {
     try {
       const { session_id } = req.query as unknown as { session_id: string };
-      // Scoped by user, so an unknown or foreign id yields empty rather than
-      // another account's session.
+      // Scoped by user, so an unknown or foreign id yields empty rather than another account's session.
       res.json(await sessionDetail(req.userId, session_id));
     } catch (err) {
       next(err);

@@ -19,8 +19,7 @@ describe('shiftISO', () => {
   })
 
   it('is unaffected by a DST transition', () => {
-    // 29 March 2026 is spring-forward in the UK. Calendar arithmetic, not clock
-    // arithmetic, so the 23-hour day is irrelevant.
+    // 29 March 2026 is spring-forward in the UK; calendar arithmetic makes the 23-hour day irrelevant.
     expect(shiftISO('2026-03-28', 1)).toBe('2026-03-29')
     expect(shiftISO('2026-03-29', 1)).toBe('2026-03-30')
   })
@@ -32,9 +31,7 @@ describe('todayISO', () => {
   })
 
   it('actually respects its timezone argument', () => {
-    // Kiritimati is UTC+14, Midway UTC-11 — 25 hours apart, so at any instant
-    // the two calendar days differ. Asserting ordering rather than values keeps
-    // this true whenever the suite runs.
+    // Kiritimati (UTC+14) and Midway (UTC-11) differ by a calendar day at any instant, so assert ordering, not values.
     const ahead = todayISO('Pacific/Kiritimati')
     const behind = todayISO('Pacific/Midway')
     expect(ahead >= behind).toBe(true)

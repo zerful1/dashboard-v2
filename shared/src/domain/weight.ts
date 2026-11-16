@@ -44,16 +44,7 @@ export function windowMean(points: WeighInPoint[], from: string, to: string): nu
   return inside.length ? inside.reduce((sum, p) => sum + p.kg, 0) / inside.length : null
 }
 
-/**
- * At each weigh-in, the mean of the weigh-ins in the 7 days ending on its date.
- * Looking back only, so the newest point never waits for weigh-ins not yet
- * made. Any input order; the result is oldest first.
- *
- * A sliding window: `lo` and `hi` only move forward, so it is linear in the
- * weigh-ins. Each window is summed afresh, in date order, as windowMean sums
- * it: a running total that subtracts the expired weigh-in drifts in the last
- * digit (83.8 came out 83.79999999999993), and the results must not change.
- */
+/** At each weigh-in, the mean of the 7 days ending on it, oldest first; each window summed afresh. */
 export function rollingAverage(points: WeighInPoint[]): AveragePoint[] {
   const asc = [...points].sort((a, b) => a.date.localeCompare(b.date))
   let lo = 0
@@ -79,12 +70,7 @@ export function nextMonthStart(iso: string): string {
 const periodStart = (kind: PeriodKind, iso: string) => (kind === 'week' ? mondayOf(iso) : `${iso.slice(0, 7)}-01`)
 const nextStart = (kind: PeriodKind, start: string) => (kind === 'week' ? shiftISO(start, 7) : nextMonthStart(start))
 
-/**
- * The weeks or months from the one holding `from` - or the first weigh-in, if
- * later: time before any history is not a gap - to the one holding today,
- * newest first. A run of empty periods folds into one row; the current period
- * never folds.
- */
+/** Weeks or months from `from` (or the first weigh-in) to today, newest first; empty runs fold. */
 export function periodRows(points: WeighInPoint[], kind: PeriodKind, from: string, today: string): PeriodRow[] {
   if (points.length === 0) return []
   const first = points.reduce((min, p) => (p.date < min ? p.date : min), points[0]!.date)

@@ -59,8 +59,7 @@ describe('sumLabelNutrients', () => {
       .toEqual({ total: 3, partial: true })
   })
 
-  // The 19 migrated June entries: every label nutrient unknown. That day must
-  // read "—", not "0 g".
+  // The 19 migrated June entries have every label nutrient unknown: that day must read '—', not '0 g'.
   it('is null, not zero, when no entry knows the value', () => {
     expect(sumLabelNutrients([e({}), e({})]).salt_g).toEqual({ total: null, partial: false })
   })

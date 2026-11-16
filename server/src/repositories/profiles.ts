@@ -11,18 +11,11 @@ export interface ProfilePatch {
   activity_level?: ActivityLevel | null;
 }
 
-// birth_year is smallint, which node-pg returns as a number; height_cm is
-// numeric, which would arrive as a string without the cast.
+// height_cm is numeric, which arrives as a string without the cast.
 const PROFILE_COLS = `user_id, timezone, updated_at,
        height_cm::float8 AS height_cm, birth_year, sex, activity_level`;
 
-/**
- * Every function here takes `userId` FIRST and scopes its WHERE by it.
- *
- * This is what replaces Supabase's row-level security. There is no query path in
- * this layer that can be built without a user scope, and routes never write SQL of
- * their own — they call these with `req.userId`, which comes only from the session.
- */
+/** Every function takes `userId` first and scopes its WHERE by it: this replaces row-level security. */
 
 export async function getProfile(userId: string): Promise<Profile | null> {
   const { rows } = await pool.query<Profile>(
@@ -38,8 +31,7 @@ export async function updateProfile(
   userId: string,
   patch: ProfilePatch,
 ): Promise<Profile | null> {
-  // COALESCE keeps an unmentioned field as it was. The body details instead
-  // take a "mentioned" flag, so null can clear one.
+  // COALESCE keeps an unmentioned field; body details take a "mentioned" flag so null can clear one.
   const { rows } = await pool.query<Profile>(
     `UPDATE ${T.profiles}
         SET timezone       = COALESCE($2, timezone),
@@ -59,11 +51,7 @@ export async function updateProfile(
   return rows[0] ?? null;
 }
 
-/**
- * Delete the account. Every user-owned table cascades from users via
- * ON DELETE CASCADE — except `session`, which has no foreign key, so its rows are
- * removed explicitly or they outlive the account they belonged to.
- */
+/** Deletes the account: all cascades from users except `session` (no foreign key), removed explicitly. */
 export async function deleteAccount(userId: string): Promise<void> {
   await withTransaction(async (client) => {
     await client.query(`DELETE FROM ${T.session} WHERE sess->>'userId' = $1`, [userId]);

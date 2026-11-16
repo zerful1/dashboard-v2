@@ -14,19 +14,7 @@ export interface RateLimitOptions {
 /** Past this many live keys, a request sweeps the expired ones before counting. */
 const SWEEP_AT = 5000;
 
-/**
- * A fixed-window limiter held in memory.
- *
- * In memory on purpose. A shared store would be exact, but the only one this
- * app has is Postgres, and a counter there is a write on every request, GETs
- * included: the food search is a GET the read-only demo may call, and no GET
- * may write (CLAUDE.md). So each warm serverless instance counts on its own
- * and the limit is approximate, which is enough for what it is for: one source
- * guessing passwords, sending reset emails or driving the food search.
- *
- * The counters belong to the handler this returns, and createApp builds the
- * handlers, so nothing mutable lives at module scope.
- */
+/** A fixed-window limiter in memory: a Postgres counter would be a write on a GET, so it is approximate. */
 export function rateLimit({ max, windowMs, key = (req) => req.ip ?? null, now = Date.now }: RateLimitOptions): RequestHandler {
   const hits = new Map<string, { count: number; resetAt: number }>();
 
@@ -40,7 +28,6 @@ export function rateLimit({ max, windowMs, key = (req) => req.ip ?? null, now = 
     if (hits.size >= SWEEP_AT) {
       for (const [id, hit] of hits) if (hit.resetAt <= t) hits.delete(id);
       // Still full of live keys: forget them rather than grow without bound.
-      // Briefly lenient, never out of memory.
       if (hits.size >= SWEEP_AT) hits.clear();
     }
     let hit = hits.get(k);
@@ -63,7 +50,7 @@ const MINUTE = 60 * 1000;
 /** Only POSTs count, and never sign-out: leaving must always work. */
 const authPost = (req: Request) => (req.method === "POST" && req.path !== "/logout" ? (req.ip ?? null) : null);
 
-/** The address a reset is asked for, so many sources can't flood one inbox. */
+/** Per address asked about, account or not: no inbox gets flooded, and a 429 reveals nothing. */
 const resetEmail = (req: Request) => {
   const email = (req.body as { email?: unknown } | undefined)?.email;
   return req.method === "POST" && typeof email === "string" ? email.trim().toLowerCase().slice(0, 254) : null;
@@ -72,20 +59,7 @@ const resetEmail = (req: Request) => {
 /** Deleting the account checks a password: an argon2 hash per guess, like a login. */
 const accountDelete = (req: Request) => (req.method === "DELETE" && req.path === "/" ? (req.ip ?? null) : null);
 
-/**
- * The app's limits, built once per app instance. Mounted by createApp in front
- * of the session, so a refused request costs no database read.
- *
- *   /api/auth          30 POSTs per 15 minutes per address: each login is an
- *                      argon2 hash, and the demo entry opens a transaction
- *   forgot-password    5 per hour per address asked about, whether or not it
- *                      has an account, so the answer reveals nothing
- *   /api/food          60 per minute per caller: each search is up to two
- *                      requests to Open Food Facts under this app's name, and
- *                      the demo lets anyone make them. Typing a search fires
- *                      a few a second at most.
- *   DELETE /api/profile 10 per 15 minutes per address: each is a password check
- */
+/** The app's limits, built once per instance: auth 30/15min, reset 5/hour, food 60/min, delete 10/15min. */
 export function buildRateLimits(): {
   auth: RequestHandler;
   forgotPassword: RequestHandler;

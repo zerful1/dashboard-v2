@@ -19,12 +19,7 @@ async function insertMany(client: PoolClient, table: string, columns: string[], 
   }
 }
 
-/**
- * Swap the demo account's data for a fresh copy around `today`, when its newest
- * weigh-in is older than yesterday. One transaction, behind an advisory lock,
- * re-checking staleness once the lock is held. Every statement is scoped to
- * the demo account's id.
- */
+/** Swaps the demo's data for a fresh copy when its newest weigh-in is older than yesterday, under a lock. */
 export async function refreshDemoIfStale(userId: string, today: string): Promise<boolean> {
   return withTransaction(async (client) => {
     await client.query("SELECT pg_advisory_xact_lock($1)", [LOCK_KEY]);
@@ -35,8 +30,7 @@ export async function refreshDemoIfStale(userId: string, today: string): Promise
     const newest = rows[0]?.d ?? null;
     if (newest !== null && newest >= shiftISO(today, -1)) return false;
 
-    // Sets and cardio go with their sessions (ON DELETE CASCADE).
-    // Completions go with their habits (ON DELETE CASCADE).
+    // Sets and cardio go with their sessions, completions with their habits (ON DELETE CASCADE).
     for (const table of [T.workoutSessions, T.exercises, T.bodyWeight, T.foodLogEntries, T.nutritionTargets, T.workoutSplit, T.goals, T.habits]) {
       await client.query(`DELETE FROM ${table} WHERE user_id = $1`, [userId]);
     }

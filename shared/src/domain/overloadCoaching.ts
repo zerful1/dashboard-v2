@@ -6,13 +6,7 @@ export interface CoachingResult {
 
 export type SessionGroup = { weight_kg: number; reps: number; is_bodyweight: boolean }[]
 
-/**
- * The owner's rule, for every lift: reps 5–8. Every set at the top weight on 8
- * goes up a step; 5–7 stays and adds reps; under 5 is heavy, not failure.
- * Going up early, dropping for form and staying at 4 are the lifter's calls,
- * so the card always coaches from whatever was last lifted and never says to
- * undo it. (Decided 2026-11-08, from a replay over the owner's history.)
- */
+/** The owner's rule: reps 5-8; every set at top weight on 8 goes up, 5-7 adds reps, under 5 is heavy. */
 const TARGET_REPS = 8
 const MIN_REPS = 5
 /** A newest session under this share of the last working weight is skipped. */
@@ -23,28 +17,15 @@ const DEFAULT_STEP = 2.5
 /** How many of the lift's latest jumps its step is learned from. */
 const STEP_WINDOW = 5
 
-/**
- * A rise bigger than both of these is a climb to find a working weight, not
- * the lift's step: on the owner's data such climbs taught Kelso Shrugs 35 kg
- * and the Calf Press 25 kg. Under 2.5 kg a rise always counts, so a light
- * dumbbell's 2 kg (+20% at 10 kg) is still learned.
- */
+/** A rise bigger than both of these is a climb to a working weight, not the step. */
 const SMALL_RISE = 2.5
 const CLIMB_SHARE = 0.15
 
-/**
- * The window, in steps above the current weight, in which a heavier logged
- * weight is "the next rung". Under RUNG_MIN it is a one-off micro-load (a
- * 61 kg set on a lift that moves in 2.5s), not the machine's next weight.
- * Over RUNG_REACH it is a climb or a one-off, and the step is the better guide.
- */
+/** Steps above the weight in which a heavier logged weight is 'the next rung'; else the step guides. */
 const RUNG_MIN = 0.5
 const RUNG_REACH = 1.5
 
-/**
- * To the hundredth, not the tenth: a 1.25 kg plate is a real step, and at one
- * decimal it became 1.3, so 13.75 kg was told to go up to 15.1.
- */
+/** To the hundredth, not the tenth: at one decimal a 1.25 kg plate became 1.3. */
 const round2 = (x: number) => Math.round(x * 100) / 100
 const same = (a: number, b: number) => Math.abs(a - b) < 0.01
 
@@ -66,17 +47,7 @@ function heaviestSet(group: SessionGroup) {
   return group.reduce((best, s) => s.reps > best.reps ? s : best, group[0]!)
 }
 
-/**
- * The lift's own step: the rise in top weight it makes most often among its
- * last few rises, the most recent winning a tie. A pulldown stack goes up 7 kg,
- * a cable 2.3, dumbbells 2, where a flat 2.5 kg named a weight that isn't on
- * the stack. Sessions arrive newest first.
- *
- * Only a rise to a new high counts, measured from the high it beat. Coming
- * back up after a drop is not a step: 60, down to 55 for form, back to 60
- * taught a 5 kg step on a lift that moves in 2.5s, and the latest rise wins a
- * tie, so one such return was enough to send 60 to 65.
- */
+/** The lift's step: its commonest recent rise to a new high, latest winning ties. */
 export function liftStep(sessionGroups: SessionGroup[]): number {
   const tops = sessionGroups
     .map(topWeight)
@@ -105,17 +76,7 @@ export function liftStep(sessionGroups: SessionGroup[]): number {
   return step
 }
 
-/**
- * The weight to go up to. The next weight above this one that the lift has
- * actually been loaded to, when there is one about a step away: it is on the
- * stack by definition, where weight + step can miss by a rounding (a stack in
- * pounds logs as 13.6, 15.9, 18.1, so its step reads 2.3 or 2.2 by turns, and
- * 15.9 + 2.3 is 18.2). At an all-time high there is nothing to read, and it
- * is weight + step.
- *
- * "About a step": between RUNG_MIN and RUNG_REACH steps above, inclusive. Reps
- * do not matter: 18.1 kg exists on the stack even if it was lifted for 4.
- */
+/** The next logged weight about a step above (RUNG_MIN..RUNG_REACH): weight + step can miss by a rounding. */
 function nextWeight(sessionGroups: SessionGroup[], weight: number): number {
   const step = liftStep(sessionGroups)
   const rungs = sessionGroups
@@ -126,16 +87,7 @@ function nextWeight(sessionGroups: SessionGroup[], weight: number): number {
   return rungs.length ? round2(Math.min(...rungs)) : round2(weight + step)
 }
 
-/**
- * The weight this one was jumped to from, while it is still heavy: every
- * session at `weight` so far has stayed under 5. Null when it is not an
- * overshoot (nothing lighter came before), and 'held' when 5 was reached at
- * this weight before, so this is a dip rather than a jump too far.
- *
- * It looks back past the first session at the new weight on purpose. 60 for 8,
- * then 65 for 4 twice: the second time the card said "build back to 5", at a
- * weight that never had 5, and the way back to 60 was gone after one session.
- */
+/** The weight this was jumped to from while still heavy; 'held' if 5 was reached here before, else null. */
 function jumpedFrom(sessionGroups: SessionGroup[], weight: number): number | 'held' | null {
   for (const group of sessionGroups.slice(1)) {
     const top = topWeight(group)
@@ -146,7 +98,7 @@ function jumpedFrom(sessionGroups: SessionGroup[], weight: number): number | 'he
   return null
 }
 
-/** The newest session well under the last working weight: a deload or a mistyped weight, which doesn't move the advice. */
+/** The newest session well under the last working weight: a deload or typo, which can't move advice. */
 function isLight([latest, prior]: SessionGroup[]): boolean {
   const now = latest ? topWeight(latest) : null
   // Working weight: the heaviest set of 5+, so a one-off heavy single isn't one.
@@ -154,10 +106,7 @@ function isLight([latest, prior]: SessionGroup[]): boolean {
   return now !== null && before !== null && now < before * LIGHT_SHARE
 }
 
-/**
- * The card's advice from the lift's sessions, NEWEST FIRST (the server's
- * order; reversed, it would coach confidently from the oldest session).
- */
+/** The card's advice from sessions NEWEST FIRST: reversed, it coaches from the oldest. */
 export function computeRecommendation(allGroups: SessionGroup[]): CoachingResult | null {
   const sessionGroups = isLight(allGroups) ? allGroups.slice(1) : allGroups
   if (sessionGroups.length === 0) return null
@@ -175,8 +124,7 @@ export function computeRecommendation(allGroups: SessionGroup[]): CoachingResult
 
   const weight = top.weight_kg
 
-  // Progression is judged across every set at the session's top weight, not
-  // just the best one — back-off sets at lighter weights don't count.
+  // Progression is judged across every set at the session's top weight; back-off sets don't count.
   const topWeightSets = latest.filter(s => !s.is_bodyweight && same(s.weight_kg, weight))
   const atTarget = topWeightSets.filter(s => s.reps >= TARGET_REPS).length
   const bestReps = topWeightSets.reduce((m, s) => Math.max(m, s.reps), 0)
@@ -205,9 +153,7 @@ export function computeRecommendation(allGroups: SessionGroup[]): CoachingResult
     }
   }
 
-  // Under 5. After a jump it's an overshoot, for as long as the new weight
-  // stays under 5: the lifter decides whether it moved well enough to keep, or
-  // goes back to where they jumped from.
+  // Under 5: after a jump it is an overshoot while the new weight stays under 5, and the lifter decides.
   const from = jumpedFrom(sessionGroups, weight)
   if (typeof from === 'number') {
     return {

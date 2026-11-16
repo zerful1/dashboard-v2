@@ -23,9 +23,7 @@ describe('liftStep: the jump you make on this lift', () => {
   })
 
   it('learns from the last 5 jumps only', () => {
-    // Oldest first: 10, 10, 10, 10, then 5, 2.5, 2.5, 5. Over all of them 10 wins;
-    // over the last 5 (10, 5, 2.5, 2.5, 5) it's a tie, and 5 is the more recent.
-    // From 100 kg, so every 10 is a step (10%), not a climb.
+    // Oldest first, from 100 kg so each 10 is a step: over all 10 wins; over the last 5 it ties, 5 is newer.
     const tops = [0, 10, 20, 30, 40, 45, 47.5, 50, 55]
     expect(liftStep(tops.map((t) => [w(t + 100, 8)]).reverse())).toBe(5)
   })
@@ -40,8 +38,7 @@ describe('liftStep: the jump you make on this lift', () => {
     expect(liftStep([[w(13.75, 8)], [w(12.5, 8)]])).toBe(1.25)
   })
 
-  // 57.5 → 60, down to 55 for form, back to 60. The return used to count as a
-  // 5 kg step, and as the latest rise it won the tie against the real 2.5.
+  // 57.5 to 60, down to 55 for form, back to 60: the return once counted as a 5 kg step and won the tie.
   it('does not learn a step from coming back up after a drop', () => {
     expect(liftStep([[w(60, 8)], [w(55, 8)], [w(60, 6)], [w(57.5, 8)]])).toBe(2.5)
   })
@@ -55,8 +52,7 @@ describe('liftStep: the jump you make on this lift', () => {
     expect(liftStep([[w(70, 8), w(60, 10), bw(12)], [w(65, 8), w(55, 10)]])).toBe(5)
   })
 
-  // Climbing to find a working weight is not the lift's step. On the owner's
-  // data these taught Kelso Shrugs 35 kg and the Calf Press 25 kg ("go up to 200 kg").
+  // Climbing to find a working weight is not the lift's step (it taught Kelso Shrugs 35 kg on real data).
   it('ignores a climb: a rise over 2.5 kg and over 15% of the weight it rose from', () => {
     expect(liftStep([[w(60, 8)], [w(25, 8)]])).toBe(2.5) // Kelso Shrugs, +140%
     expect(liftStep([[w(73, 8)], [w(59, 8)]])).toBe(2.5) // Matrix Kelso Shrug, +24%
@@ -147,8 +143,7 @@ describe('computeRecommendation', () => {
       expect(r?.headline).toBe('Go up to 62.5 kg, then work back to 8')
     })
 
-    // A stack in pounds logs as 13.6, 15.9, 18.1: its step reads 2.3 or 2.2 by
-    // turns. Where the lift has been heavier, that weight is the one on the stack.
+    // A pounds stack logs 13.6, 15.9, 18.1, so its step reads 2.3 or 2.2; a lifted weight is on the stack.
     it('names the next weight the lift has been loaded to, not weight + step', () => {
       const sessions = [
         [w(15.9, 8), w(15.9, 8)],
@@ -159,8 +154,7 @@ describe('computeRecommendation', () => {
         [w(9.1, 8)],
         [w(6.8, 8)],
       ]
-      // Rises 2.3, 2.2, 2.3, 2.3, 2.2: the step is 2.3, and 15.9 + 2.3 is 18.2,
-      // which is not a plate. 18.1 is, because it has been lifted.
+      // Rises 2.3, 2.2, 2.3, 2.3, 2.2: step 2.3, but 15.9 + 2.3 is 18.2, not a plate; 18.1 is, as lifted.
       expect(liftStep(sessions)).toBe(2.3)
       expect(computeRecommendation(sessions)?.headline).toBe('Go up to 18.1 kg, then work back to 8')
     })
@@ -227,8 +221,7 @@ describe('computeRecommendation', () => {
       })
     })
 
-    // 60 for 8, then 65 for 4, and 4 again. The second session used to read
-    // "build back to 5" at a weight that never had 5, with the way back gone.
+    // 60 for 8, then 65 for 4, and 4 again: it once read 'build back to 5' at a weight that never had 5.
     it('is still heavy at the next session, while the new weight has never had 5', () => {
       const r = computeRecommendation([[w(65, 4)], [w(65, 4)], [w(60, 8), w(60, 8)]])
       expect(r).toEqual({

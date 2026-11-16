@@ -7,9 +7,7 @@ import { createApp } from "../src/app";
 import { mapSearchHit, type OffProduct } from "../src/services/openFoodFacts";
 
 const app = createApp();
-// A real Search-a-licious response (UK-tagged "snickers", saved 2026-10-04 and
-// trimmed to the fields the mapping reads): the contract is what Open Food
-// Facts actually sends, not what a hand-written fixture imagines.
+// A real Search-a-licious response trimmed to the fields the mapping reads, not a hand-written fixture.
 const fixture = JSON.parse(
   readFileSync(join(__dirname, "fixtures", "off-search-snickers.json"), "utf8"),
 ) as { hits: OffProduct[] };

@@ -1,11 +1,6 @@
 import { DEFAULT_SPLIT, getDayName, shiftISO } from "@dashboard/shared";
 
-/**
- * A believable, entirely fictional person for the read-only demo: 16 weeks of
- * training, weigh-ins and three weeks of food, ending yesterday. Pure and
- * deterministic - the same person every time, with the dates moved to `today` -
- * so refresh.ts can swap it in, and tests can pin it.
- */
+/** A fictional person for the read-only demo: deterministic, shifted to `today`, so tests can pin it. */
 
 export const DEMO_WEEKS = 16;
 
@@ -176,8 +171,7 @@ export function generateDemo(today: string): DemoData {
     }
   }
 
-  // Near-daily weigh-ins drifting from ~84 to ~80 kg. Yesterday always has one:
-  // refresh.ts decides staleness by the newest weigh-in.
+  // Near-daily weigh-ins from ~84 to ~80 kg; yesterday always has one, since refresh.ts checks the newest.
   const weights: DemoData["weights"] = [];
   const totalDays = 7 * DEMO_WEEKS;
   for (let date = start, day = 0; date <= yesterday; date = shiftISO(date, 1), day++) {
@@ -201,8 +195,7 @@ export function generateDemo(today: string): DemoData {
     }
   }
 
-  // Their own stream: drawing from `rand` would shift every value after it and
-  // change the rest of the demo, along with the figures its tests pin.
+  // Own random stream: a draw from `rand` would shift every later value and the figures tests pin.
   const habitRand = seeded(20261013);
   const habits = [
     { name: "Stretch 10 min", emoji: "🧘", sort_order: 1 },

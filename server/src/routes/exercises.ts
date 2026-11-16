@@ -36,11 +36,7 @@ exercisesRouter.post("/", validate({ body: addBody }), async (req, res, next) =>
   try {
     const { day_type, exercise_name } = req.body as z.infer<typeof addBody>;
 
-    // Same-day duplicates are blocked because workout_sets is
-    // UNIQUE (session_id, exercise_name, set_number) — two same-named exercises
-    // in one session would clobber each other's sets. Across days they are
-    // deliberately allowed and are one exercise everywhere: stats merge by name
-    // and a rename cascades across days.
+    // Same-day duplicates are blocked (workout_sets is UNIQUE per session and name); across days they are one.
     const existing = await listExercises(req.userId, day_type);
     if (existing.some((e) => e.exercise_name.toLowerCase() === exercise_name.toLowerCase())) {
       next(new Conflict("That exercise is already on this day"));
@@ -53,15 +49,7 @@ exercisesRouter.post("/", validate({ body: addBody }), async (req, res, next) =>
   }
 });
 
-/**
- * Every template row across all days, for the rename sheet's merge hint.
- *
- * Declared BEFORE any "/:id" route. There is no GET "/:id" today, so nothing
- * shadows this yet — but the moment one is added, Express would match "names"
- * as an id and the uuid validator would reject it with a confusing 400. The
- * ordering is the guard; the accompanying test is a forward guard rather than a
- * check on today's behaviour.
- */
+/** Every template row across all days, for the rename sheet's merge hint; declared before any "/:id" route. */
 exercisesRouter.get("/names", async (req, res, next) => {
   try {
     res.json(await listAllExerciseNames(req.userId));
@@ -89,8 +77,7 @@ exercisesRouter.delete(
 
 const reorderBody = z.object({
   day_type: z.number().int().positive(),
-  // Bounded: each id is one UPDATE in reorderExercises, and a day holds a
-  // dozen exercises, not a megabyte of ids.
+  // Bounded: each id is one UPDATE in reorderExercises.
   ordered_ids: z.array(z.string().uuid()).min(1).max(200),
 });
 
@@ -121,10 +108,7 @@ exercisesRouter.post("/rename", validate({ body: renameBody }), async (req, res,
       return;
     }
 
-    // Renaming onto a name that exists on ANOTHER day merges the two — stats
-    // group by name, so they become one exercise. Adopt that name's exact
-    // casing, or the merge produces a case-variant split instead of joining
-    // them, which is the thing the merge was for.
+    // Renaming onto another day's name merges them; adopt its exact casing or the merge splits by case.
     const finalName = evaluation.mergeWith ?? new_name;
 
     const result = await renameExercise(req.userId, old_name, finalName);

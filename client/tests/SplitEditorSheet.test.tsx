@@ -37,9 +37,7 @@ afterEach(() => vi.restoreAllMocks());
 describe("SplitEditorSheet", () => {
   it("seeds from the current split", async () => {
     renderSheet();
-    // By label, not by display value: DEFAULT_SPLIT maps Wednesday to Legs, so
-    // getByDisplayValue("Legs") also matches the Wednesday <select> and throws
-    // on multiple matches.
+    // By label, not display value: DEFAULT_SPLIT maps Wednesday to Legs.
     await waitFor(() => expect(screen.getByLabelText("Name for day 1")).toHaveValue("Legs"));
   });
 
@@ -86,12 +84,7 @@ describe("SplitEditorSheet", () => {
   });
 
   it("refuses to remove the last remaining day", async () => {
-    // Opened AFTER the split has loaded, which is what happens in the app: the
-    // sheet is mounted closed and the user taps to open it. Rendering it
-    // already-open fires the closed→open edge on the first paint, when
-    // useSplit is still returning DEFAULT_SPLIT — so the draft would seed from
-    // the default and then correctly refuse to reseed. That is the
-    // edge-triggered seed working, not a bug to design around.
+    // Opened AFTER the split has loaded, as in the app; opening it earlier seeds the draft from DEFAULT_SPLIT.
     mockSplit({
       days: [{ day_type: 1, label: "Only" }],
       week: ["rest", "rest", "rest", "rest", "rest", "rest", "rest"],
@@ -113,17 +106,14 @@ describe("SplitEditorSheet", () => {
   });
 
   it("does not reseed the draft while open when the split query settles", async () => {
-    // The reason the seed is edge-triggered: the save this sheet performs
-    // invalidates the split query, so a refetch landing mid-edit would discard
-    // whatever was being typed.
+    // The seed is edge-triggered because saving invalidates the split query.
     renderSheet();
     const input = await screen.findByLabelText("Name for day 1");
 
     await userEvent.clear(input);
     await userEvent.type(input, "Mid-edit");
 
-    // Let any in-flight query settle and re-render the subscriber. Asserted on
-    // the input itself — the Wednesday select still legitimately reads "Legs".
+    // Let any in-flight query settle, then assert on the input itself.
     await waitFor(() => expect(screen.getByLabelText("Name for day 1")).toHaveValue("Mid-edit"));
   });
 });

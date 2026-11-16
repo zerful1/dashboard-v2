@@ -15,10 +15,7 @@ afterEach(() => vi.restoreAllMocks());
 
 const ex = (id: string, i: number): Exercise => ({ id, user_id: "u1", day_type: 1, exercise_name: id, sort_order: i });
 
-/**
- * A server whose reorders wait until the test lets them land, one call to
- * `land` each, in the order they were sent. The list reads what has landed.
- */
+/** A server whose reorders wait until the test lands each one with `land`, in the order sent. */
 function slowServer() {
   let saved = ["a", "b", "c"];
   const waiting: (() => void)[] = [];
@@ -48,8 +45,7 @@ function setup() {
 }
 
 describe("useExercises reorder", () => {
-  // Two quick moves: the first one's save and refetch finishing must not put
-  // the list back to the first move while the second is still being saved.
+  // Two quick moves: the first save and refetch finishing must not put the list back while the second is still saving.
   it("keeps the latest move on screen while an earlier one finishes saving", async () => {
     const server = slowServer();
     const { result, order } = setup();

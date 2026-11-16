@@ -22,9 +22,7 @@ describe("OfflineBanner", () => {
   });
 
   it("renders on mount when already offline", () => {
-    // The initial state matters on its own: navigating to the app while already
-    // offline fires no 'offline' event, so a banner that only listened would
-    // never appear for exactly the person who needs it.
+    // Opening the app already offline fires no 'offline' event.
     setOnLine(false);
     render(<OfflineBanner />);
     expect(screen.getByRole("status")).toHaveTextContent(/offline/i);
@@ -51,15 +49,12 @@ describe("OfflineBanner", () => {
   it("announces politely rather than interrupting", () => {
     setOnLine(false);
     render(<OfflineBanner />);
-    // assertive would cut across whatever is being read. Being offline is worth
-    // knowing, not worth interrupting for.
+    // assertive would cut across whatever is being read; being offline is worth knowing, not interrupting for.
     expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
   });
 
   it("says changes will not save, not merely that you are offline", () => {
-    // The load-bearing half of the message: writes are NOT queued, so someone
-    // who logs a set offline loses it. A banner that only said "Offline" would
-    // imply the app was coping.
+    // The load-bearing half: writes are NOT queued, so a set logged offline is lost.
     setOnLine(false);
     render(<OfflineBanner />);
     expect(screen.getByRole("status")).toHaveTextContent(/won’t save/i);

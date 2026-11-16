@@ -107,8 +107,7 @@ describe("GET /api/export", () => {
     expect(res.body.tables.body_weight[0].date).toBe("2026-10-01");
   });
 
-  // Vercel caps a response sent in one piece at 4.5 MB, and the
-  // owner's file grows by about 2 MB a year. Streamed, it never is one piece.
+  // Vercel caps a response sent in one piece at 4.5 MB; streaming it never is one piece.
   it("streams the file rather than sending it in one piece", async () => {
     const a = await aliceWithData();
     const res = await a.agent.get("/api/export").expect(200);

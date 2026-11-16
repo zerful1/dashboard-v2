@@ -3,8 +3,7 @@ import { renderHook, act } from "@testing-library/react";
 import { useGymDay } from "../src/hooks/useGymDay";
 import { DEFAULT_SPLIT, type SplitConfig } from "@dashboard/shared";
 
-// DEFAULT_SPLIT week is Monday-first: [3, 2, 1, 'rest', 5, 4, 'rest']
-// Mon=Push(3) Tue=Pull(2) Wed=Legs(1) Thu=rest Fri=Upper(5) Sat=Lower(4) Sun=rest
+// DEFAULT_SPLIT week is Monday-first: [3, 2, 1, 'rest', 5, 4, 'rest'] (Push, Pull, Legs, rest, Upper, Lower.
 const A_WEDNESDAY = new Date(2026, 7, 12); // 12 Aug 2026
 const A_THURSDAY = new Date(2026, 7, 13); // rest day
 
@@ -30,8 +29,7 @@ describe("useGymDay", () => {
 
   it("does not sit on a stale default while the fallback is still loading", () => {
     freeze(A_THURSDAY);
-    // undefined = query in flight. Something must render, so the first training
-    // day stands in until the answer arrives.
+    // undefined = query in flight; something must render.
     const { result, rerender } = renderHook(({ last }) => useGymDay(DEFAULT_SPLIT, false, last), {
       initialProps: { last: undefined as number | undefined },
     });
@@ -98,11 +96,7 @@ describe("useGymDay", () => {
   });
 
   it("does not latch the rest-day fallback before the split has loaded", () => {
-    // 2026-09-17 is a Thursday: rest in DEFAULT_SPLIT, but a training day in
-    // the custom split below. The bug was deciding "rest" from the default -
-    // and because the fallback latches, the real split arriving a moment later
-    // could never correct it. Same class as the Home first-paint flash, but
-    // sticky rather than momentary.
+    // 2026-09-17 is a Thursday: rest in DEFAULT_SPLIT but training in the custom split.
     freeze(new Date(2026, 8, 17));
 
     const custom: SplitConfig = {
@@ -122,10 +116,7 @@ describe("useGymDay", () => {
   });
 
   it("the rest-day fallback latches, so a later split change cannot undo it", () => {
-    // The fallback sets the latch itself. Without that, a split refetch would
-    // re-run the effect, find 'rest' again, and the branch would be stable —
-    // but a split whose Thursday became a training day would yank the user off
-    // the day they were already logging against.
+    // The fallback sets the latch itself, or a split refetch re-runs the effect and moves the user.
     freeze(A_THURSDAY);
     const { result, rerender } = renderHook(({ split }) => useGymDay(split, false, 5), {
       initialProps: { split: DEFAULT_SPLIT },
@@ -138,8 +129,7 @@ describe("useGymDay", () => {
   });
 });
 
-// Deferred from #32: a page left on Gym overnight logged the next session onto
-// yesterday. Only a long break moves it on, so a workout past midnight stays one.
+// A page left on Gym overnight logged the next session onto yesterday; only a long break moves it on.
 describe("useGymDay across midnight", () => {
   const A_MONDAY_NIGHT = new Date(2026, 7, 10, 22, 0); // Push (3)
 

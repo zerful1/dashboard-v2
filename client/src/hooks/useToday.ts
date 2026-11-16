@@ -1,12 +1,7 @@
 import { useEffect, useState } from "react";
 import { toLocalISO } from "@dashboard/shared";
 
-/**
- * Today's local date, kept current. A phone keeps the app alive for days, so a
- * date read once at mount goes stale overnight. Re-read when the app comes back
- * to the foreground - the moment it matters - and once a minute while it stays
- * on screen across midnight.
- */
+/** Today's local date, re-read on foreground and once a minute, since a phone keeps the app alive past midnight. */
 export function useToday(): string {
   const [today, setToday] = useState(toLocalISO);
   useEffect(() => {

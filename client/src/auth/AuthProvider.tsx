@@ -5,11 +5,7 @@ import { toast } from "sonner";
 import { api, ApiError } from "@/lib/api";
 import { forgetSavedUser, readSavedUser, saveUser } from "./savedUser";
 
-/**
- * The check never reached the server: fetch itself failed (no signal), or
- * api() gave up waiting (dead wifi, status 0). A 5xx is not this: the server
- * answered, and what it said is not "carry on".
- */
+/** The check never reached the server (no signal, or api() timed out); a 5xx is an answer, not this. */
 const unreachable = (err: unknown) => !(err instanceof ApiError) || err.status === 0;
 
 export interface AuthUser {
@@ -23,16 +19,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   /** True until the first /me resolves — distinct from "signed out". */
   loading: boolean;
-  /**
-   * Set when the most recent `/me` check failed for a reason other than
-   * "not signed in" — a non-401 `ApiError` (5xx, etc.) or a network-level
-   * `TypeError` from `fetch` itself. `user` is left untouched when this is
-   * set, so a consumer can tell "definitely signed out" (`user === null`,
-   * `sessionError === null`) apart from "couldn't tell" (`sessionError` set).
-   * Cleared back to `null` by the next `refreshAuth()` call that completes,
-   * whether it lands on signed in or signed out. Narrow with
-   * `instanceof ApiError` if you need the status code.
-   */
+  /** Set when the latest `/me` failed for a reason other than 401, so "couldn't tell" differs from signed out. */
   sessionError: Error | null;
   /** Rejects if the credentials are refused, or if no session was established. */
   login: (email: string, password: string) => Promise<void>;
@@ -40,67 +27,23 @@ interface AuthContextValue {
   register: (email: string, password: string) => Promise<void>;
   /** Signs in to the read-only demo. Rejects like `login`. */
   enterDemo: () => Promise<void>;
-  /**
-   * Never rejects: a failed sign-out still ends the session on this device and
-   * reports itself with a toast, so callers do not need a rejection handler.
-   */
+  /** Never rejects: a failed sign-out still ends the session here and toasts. */
   logout: () => Promise<void>;
-  /**
-   * Re-runs the `/me` check and returns the user it resolved, or `null` if the
-   * check said signed-out or could not complete (see `sessionError` for which).
-   * Returning the value rather than only writing it to state is what lets
-   * `login`/`register` tell "the cookie stuck" from "it didn't" — the state
-   * they'd otherwise have to read is a render behind.
-   */
+  /** Re-runs `/me` and returns the resolved user (null if signed out or failed), since state lags a render. */
   refreshAuth: () => Promise<AuthUser | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-/**
- * CACHE INVALIDATION ACROSS IDENTITIES — decided once here, inherited by every
- * query added later. Must be read before adding a query key.
- *
- * There are two ways to stop one account's cached data being served to the
- * next: clear the whole cache whenever the identity changes, or carry the user
- * id in every query key (`["profile", user.id]`). This codebase clears, in
- * `endSession` below and on the way into `login`, `register` and `enterDemo`.
- *
- * Why clearing: key scoping is opt-in per key, so the guarantee only holds
- * while every future key remembers the id — and a key that forgets fails
- * silently, showing the previous account's data with nothing to notice.
- * Clearing is one call at the one place identity can change, and it covers
- * keys written by people who never read this. The features hold a dozen keys
- * carrying far more than a timezone, so the guarantee has to hold by
- * construction rather than by everyone remembering.
- *
- * The cost is a cold cache after each sign-in: one refetch per mounted query,
- * on a screen the user has only just arrived at.
- *
- * Every transition clears, not just sign-out — a sign-out whose POST never
- * landed, or a tab left open on a session that ended elsewhere, both leave the
- * previous account's data in the cache, and sign-in is where it would be handed
- * to somebody new.
- *
- * A session that ENDS ELSEWHERE is a transition too: it expired, or a password
- * reset signed every device out. Nobody pressed anything here, so the only
- * signal is a 401. `/me` answering 401 clears both copies of the cache, and a
- * 401 from any query or write while signed in asks `/me` (the effect below),
- * so the screen stops showing an account the server no longer serves and its
- * data stops sitting on a device that was told to forget it.
- *
- * This is also why AuthProvider must be rendered inside QueryClientProvider.
- */
+/** Identity changes clear the whole query cache, memory and persisted, instead of scoping every key. */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [sessionError, setSessionError] = useState<Error | null>(null);
-  // Whether someone is signed in, readable by the cache listener below without
-  // waiting a render: state still names the user for one more pass after a 401.
+  // Readable by the cache listener without waiting a render: state still names the user one pass after a 401.
   const signedIn = useRef(false);
-  // True while the user on screen is the one this device remembers rather than
-  // one the server has just confirmed: the app opened with no signal.
+  // True while the user on screen is the remembered one, not server-confirmed (opened with no signal).
   const unconfirmed = useRef(false);
 
   const refreshAuth = useCallback(async (): Promise<AuthUser | null> => {
@@ -115,11 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return me;
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        // 401 is the normal signed-out case, not an error worth surfacing.
-        // It is also how a session that ended elsewhere is found out. The
-        // server has just said this device holds nobody's session, so neither
-        // copy of the cache may outlive it: harmless when nothing was cached,
-        // as for any signed-out visitor.
+        // 401 is the signed-out case, and how a session ended elsewhere is found out: purge both cache copies.
         signedIn.current = false;
         unconfirmed.current = false;
         qc.clear();
@@ -128,14 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
         setSessionError(null);
       } else if (unreachable(err) && (signedIn.current || readSavedUser())) {
-        // No answer at all, on a device that knows who was signed in: open on
-        // that person's saved data rather than on a card saying the session
-        // couldn't be checked. This is the whole of offline reading from a
-        // cold start: the cache was on the device all along, and the only
-        // thing missing was a name to read it under. Nothing is granted by
-        // it. Reads come from the cache, writes fail and say so, and the first
-        // request to reach the server settles who is really signed in: the
-        // "online" listener below asks /me, and a 401 anywhere signs out.
+        // No answer from the server: open on the remembered user's saved data until a request settles it.
         if (!signedIn.current) {
           signedIn.current = true;
           unconfirmed.current = true;
@@ -143,10 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setSessionError(null);
       } else {
-        // The server answered and it was not "signed out" (a 5xx), or nobody
-        // is remembered here: we can't tell whether the session is gone, so
-        // don't guess by clearing a user we already know about — record the
-        // failure instead and let the caller decide what to do with it.
+        // A 5xx or nobody remembered: can't tell if the session is gone, so keep the user and record the failure.
         setSessionError(err instanceof Error ? err : new Error(String(err)));
       }
       return null;
@@ -159,10 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void refreshAuth();
   }, [refreshAuth]);
 
-  // The signal is back on a device that opened without it: ask now, rather
-  // than leave a remembered user on screen until some query happens to be
-  // refused. Only then: a confirmed session needs no second opinion each time
-  // the wifi flickers.
+  // Signal is back on a device opened without it: ask /me now, only when the user is the remembered one.
   useEffect(() => {
     const onOnline = () => {
       if (unconfirmed.current) void refreshAuth();
@@ -171,11 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("online", onOnline);
   }, [refreshAuth]);
 
-  // A 401 while signed in: the session may have ended elsewhere. Ask /me, which
-  // settles it either way - a wrong current password is a 401 too, and then
-  // /me answers 200 and nothing changes. One check at a time: a page's queries
-  // fail together, and the refetches that clearing sets off fail again before
-  // React has rendered the sign-out.
+  // A 401 while signed in may mean the session ended elsewhere: ask /me, one check at a time.
   useEffect(() => {
     let checking = false;
     const onError = (err: unknown) => {
@@ -197,15 +119,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [qc, refreshAuth]);
 
-  // Everything that has to happen for this device to be signed out, in one
-  // place so no caller can do half of it. See the cache note above.
+  // Everything signing out needs, in one place so no caller does half of it.
   const endSession = useCallback(() => {
     qc.clear();
-    // clear() empties MEMORY only. The persisted copy in localStorage is a
-    // separate artifact and is restored on next boot, so without this one
-    // user's data sits on disk until it expires — on a device the next person
-    // may also use. That is exactly the cross-account leak clear() was added to
-    // fix, reintroduced by persistence.
+    // clear() empties memory only; the persisted copy must go too, or one user's data stays on disk.
     void persister.removeClient();
     forgetSavedUser();
     signedIn.current = false;
@@ -214,9 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSessionError(null);
   }, [qc]);
 
-  // On the way into a new identity: whoever this device remembered is not who
-  // is signing in, so the check that follows must not fall back to them if the
-  // signal drops between the POST and /me.
+  // Forget the remembered user on the way into a new identity, so a dropped signal can't open as them.
   const forgetIdentity = useCallback(() => {
     forgetSavedUser();
     signedIn.current = false;
@@ -227,15 +142,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (email: string, password: string) => {
       await api("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
       qc.clear();
-      // Same reason as endSession: clear() never touches the persisted copy,
-      // and signing in as someone else is an identity transition too.
+      // clear() never touches the persisted copy, and signing in as someone else is an identity change.
       void persister.removeClient();
       forgetIdentity();
-      // The POST succeeding only proves the credentials were right; it does not
-      // prove the browser kept the cookie. Without this check a session that
-      // failed to stick resolves as success, the page navigates to "/",
-      // ProtectedRoute finds no user and bounces straight back to /login — a
-      // form that clears and does nothing, forever, with nothing said anywhere.
+      // A successful POST doesn't prove the cookie stuck; without this check the form loops back to /login.
       const me = await refreshAuth();
       if (!me) throw new Error("Signed in, but the session did not stick on this device.");
     },
@@ -272,13 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await api("/api/auth/logout", { method: "POST" });
     } catch {
-      // Deliberately still ends the session locally. The request may well have
-      // destroyed the server-side session and failed on the way back, and even
-      // if it didn't, leaving the user apparently signed in on a device they
-      // asked to leave is the worse of the two wrong answers — the next
-      // request's 401 settles it either way. Say so rather than failing
-      // silently: both call sites are fire-and-forget, so this toast is the
-      // only thing standing between a failed sign-out and no feedback at all.
+      // Ends the session locally even on failure, since the next 401 settles it; the toast is the only feedback.
       toast.error("Signed out on this device — the server did not confirm.");
     } finally {
       endSession();

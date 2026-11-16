@@ -2,10 +2,7 @@ import type { ErrorRequestHandler } from "express";
 import { AppError } from "../errors";
 import { config } from "../config";
 
-/**
- * Single exit point for every error. Routes call next(err) and never format their
- * own error responses, so the shape stays consistent across the whole API.
- */
+/** Single exit point for every error, so the response shape stays consistent. */
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof AppError) {
     res.status(err.status).json({
@@ -16,22 +13,14 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
 
-  // The client's own fault, raised before any route ran: express.json() rejecting
-  // a malformed or oversized body. Answered as a 4xx, and never logged whole —
-  // body-parser keeps the raw text on `err.body`, and on /login that is a password.
+  // Bad body from express.json(): a 4xx, never logged whole (err.body holds raw text, a password on /login).
   if (isClientError(err)) {
     const [error, message] = CLIENT_ERRORS[err.status] ?? ["bad_request", "Malformed request body"];
     res.status(err.status).json({ error, message });
     return;
   }
 
-  // Postgres refusing a VALUE: a date that doesn't exist, a number out of a
-  // column's range, a row a constraint won't take. The request asked for
-  // something the data can't hold, so it is a 4xx, not this server failing.
-  // A net under the validators, not a replacement for one: reaching here means
-  // a schema let something through, so it is still logged, by code alone -
-  // Postgres quotes the offending value in its message, and that is the
-  // user's data. The client is told nothing the database said.
+  // Postgres refusing a value is a 4xx; logged by code alone, since its message quotes the user's data.
   const refused = dataErrorCode(err);
   if (refused) {
     console.error(`Postgres refused a value (${refused}) that validation let through`);
@@ -40,8 +29,7 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
 
-  // Unexpected: log server-side, tell the client nothing useful. Leaking a stack
-  // trace or a database message is how schema details escape into the wild.
+  // Unexpected: log server-side; a stack trace or database message must not reach the client.
   console.error("Unhandled error:", err);
   res.status(500).json({
     error: "internal_error",
@@ -55,11 +43,7 @@ const CLIENT_ERRORS: Record<number, [string, string]> = {
   415: ["unsupported_media_type", "Unsupported body encoding"],
 };
 
-/**
- * The SQLSTATE of a pg error in class 22 (data exception) or 23 (integrity
- * constraint violation), else null. `severity` tells a pg error from anything
- * else that happens to carry a five-character `code`.
- */
+/** The SQLSTATE of a pg error in class 22 or 23, else null; `severity` tells a pg error from other coded ones. */
 function dataErrorCode(err: unknown): string | null {
   if (typeof err !== "object" || err === null) return null;
   const { code, severity } = err as { code?: unknown; severity?: unknown };

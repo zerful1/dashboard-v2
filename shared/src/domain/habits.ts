@@ -14,13 +14,7 @@ export function weekdayInitial(iso: string): string {
   return INITIALS[new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay()]!
 }
 
-/**
- * A summary as it will be once `date` is marked done or not, for the
- * optimistic write. Only today's tick moves the streak predictably: marking
- * today extends the run that ended yesterday (or starts one), and unmarking it
- * takes that day back off. Any other day is left to the refetch, which counts
- * from the whole history.
- */
+/** Optimistic summary after marking `date`; only today's tick moves the streak, other days await the refetch. */
 export function markDay(h: HabitSummary, date: string, done: boolean, today: string): HabitSummary {
   if (h.recent.includes(date) === done) return h
   const recent = done ? [...h.recent, date].sort() : h.recent.filter(d => d !== date)

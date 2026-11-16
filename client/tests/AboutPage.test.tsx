@@ -159,8 +159,7 @@ describe("AboutPage", () => {
     expect(screen.getByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
   });
 
-  // The login page's link is the last thing on it, and a
-  // navigation keeps the scroll, so a small phone opened this page past its title.
+  // The login page's link is last on it, and a navigation keeps the scroll.
   it("opens at the top of the page", async () => {
     mockApi();
     renderPage();
@@ -190,8 +189,7 @@ describe("AboutPage", () => {
       "Designed and directed by me, built with Claude Code as an AI pair programmer. Every change started as a written spec, was built test-first and reviewed before merging.",
     ];
     for (const text of copy) expect(screen.getByText(text)).toBeInTheDocument();
-    // Seven chips, grouped. Vitest left out (decided 2026-10-20):
-    // the chips are the stack a visitor would recognise, not the tooling.
+    // Seven chips, grouped; Vitest is left out because the chips are the stack a visitor would recognise.
     const chips = ["TypeScript", "React 19", "TanStack Query", "Tailwind 4", "Node · Express", "PostgreSQL · Supabase", "Vercel"];
     expect(chips.map((c) => screen.getAllByText(c).length)).toEqual(chips.map(() => 1));
     expect(screen.queryByText("Vitest")).toBeNull();

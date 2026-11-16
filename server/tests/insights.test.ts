@@ -69,9 +69,7 @@ describe("weekly review endpoint", () => {
   });
 });
 
-// TargetsSheet saves with effective_from = today, so two saves
-// in a day tie, and the tie-break compared created_at as a string while
-// node-pg handed it back as a Date. Production already holds such a pair.
+// Two saves in a day tie on effective_from, and created_at must compare as a Date, not a string.
 describe("weekly review with targets saved twice in a day", () => {
   it("answers with the later target instead of failing", async () => {
     const agent = await signedIn(alice);

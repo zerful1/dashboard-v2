@@ -6,18 +6,7 @@ import { sslFor } from "./ssl";
 
 const MIGRATIONS_DIR = join(__dirname, "migrations");
 
-/**
- * Apply any unapplied .sql files, in filename order, to `schema`.
- *
- * Runs over the SESSION pooler on its own short-lived pool. Two reasons it must not
- * borrow the runtime pool:
- *
- *  1. The runtime pool points at the TRANSACTION pooler, where `SET search_path`
- *     does not survive between statements — the DDL would silently land in the
- *     wrong schema with no error.
- *  2. Owning the pool here means it can be closed before returning, so tests do not
- *     end with an open handle keeping vitest alive.
- */
+/** Applies unapplied .sql files in order on its own session-pooler pool, where `SET search_path` persists. */
 export async function runMigrations(schema: string = config.DB_SCHEMA): Promise<void> {
   if (!/^[a-z_][a-z0-9_]*$/.test(schema)) {
     throw new Error(`Refusing to migrate unsafe schema name: ${schema}`);
@@ -61,8 +50,7 @@ export async function runMigrations(schema: string = config.DB_SCHEMA): Promise<
         const sql = readFileSync(join(MIGRATIONS_DIR, file), "utf8");
         await client.query("BEGIN");
         try {
-          // Re-set inside the transaction too. Session mode already persists it,
-          // but this keeps the DDL correct even if the connection were recycled.
+          // Re-set inside the transaction so the DDL stays correct if the connection were recycled.
           await client.query(`SET LOCAL search_path TO "${schema}", public`);
           await client.query(sql);
           await client.query("INSERT INTO _migrations (name) VALUES ($1)", [file]);

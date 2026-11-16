@@ -18,14 +18,7 @@ export function App() {
       persistOptions={{
         persister,
         maxAge: MAX_AGE,
-        // Bump on ANY change to a cached query shape. Without it a restored
-        // cache from the previous deploy is handed to components expecting the
-        // new shape, which fails far from the cause.
-        // v2: Profile gained the body-detail fields (nutrition).
-        // v3: WorkoutSet gained reps_left / reps_right (single-sided sets).
-        // v4: /api/workouts/stats returns LiftSetRow[] (Gym Stats).
-        // v5: WeeklyReview gained days (Insights).
-        // v6: CoachingResult's tag gained HEAVY and lost DELOAD (coaching rule).
+        // Bump on ANY change to a cached query's shape, or the restored cache reaches components expecting the new one.
         buster: "v6",
         dehydrateOptions: { shouldDehydrateQuery: shouldPersistQuery },
       }}
@@ -35,9 +28,7 @@ export function App() {
         <Toaster
           theme="dark"
           position="top-center"
-          // The kit's toast: a raised black panel and a hairline edge, with the
-          // signal colour only in the icon. sonner reads
-          // these variables; richColors would flood the whole toast instead.
+          // sonner reads these variables; richColors would flood the whole toast with the signal colour.
           style={
             {
               "--normal-bg": "var(--color-surface)",

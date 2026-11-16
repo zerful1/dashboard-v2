@@ -68,9 +68,7 @@ describe("recent foods ownership scoping", () => {
   });
 });
 
-// The food library's own ownership test. The recents test above never reaches
-// listFoodItemsByIds for Bob (he has no entries), so it could not catch a
-// missing user filter there.
+// The recents test never reaches listFoodItemsByIds for Bob, so it can't catch a missing user filter there.
 describe("food library ownership scoping", () => {
   it("never returns another user's food by id", async () => {
     const { id: aliceId } = await signedIn(alice);

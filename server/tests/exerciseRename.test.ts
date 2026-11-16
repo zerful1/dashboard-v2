@@ -61,8 +61,7 @@ describe("exercise rename cascade", () => {
     await agent.post("/api/exercises").send({ day_type: 1, exercise_name: "Bench" }).expect(201);
     await agent.post("/api/exercises").send({ day_type: 2, exercise_name: "Bench" }).expect(201);
 
-    // Matching by name rather than id is what makes this work: renaming the
-    // day-1 row by id would leave the day-2 row under the old name.
+    // Matching by name, not id, is what carries the rename to the day-2 row.
     const res = await agent
       .post("/api/exercises/rename")
       .send({ old_name: "Bench", day_type: 1, new_name: "Bench Press" })
@@ -92,9 +91,7 @@ describe("exercise rename cascade", () => {
       .send({ day_type: 2, exercise_name: "Bench Press" })
       .expect(201);
 
-    // Requesting lowercase must still adopt "Bench Press", or the merge creates
-    // a case-variant split rather than joining them — which is the whole point
-    // of merging.
+    // Requesting lowercase must still adopt "Bench Press", or the merge creates a case-variant split.
     const res = await agent
       .post("/api/exercises/rename")
       .send({ old_name: "Bench", day_type: 1, new_name: "bench press" })
@@ -138,9 +135,7 @@ describe("exercise rename cascade", () => {
   });
 
   it("rewrites history even when the template row is already gone", async () => {
-    // The case that makes name-matching load-bearing rather than convenient:
-    // an exercise dropped from the template still owns months of sets, and a
-    // rename must still reach them.
+    // An exercise dropped from the template still owns months of sets, and a rename must still reach them.
     const agent = await signedIn(alice);
     await logOneSet(agent, "Bench");
 
@@ -154,8 +149,7 @@ describe("exercise rename cascade", () => {
   });
 });
 
-// A lift goal matches its exercise by name, so a rename
-// that left it behind cut it off from its history ("0 of 6 sessions" for good).
+// A lift goal matches its exercise by name, so a rename that left it behind cut it off from its history.
 describe("rename carries lift goals", () => {
   it("moves a lift goal to the new name", async () => {
     const agent = await signedIn(alice);

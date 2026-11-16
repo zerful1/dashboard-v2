@@ -96,8 +96,7 @@ describe("NutritionPage", () => {
     freeze("2026-09-23");
     const calls = mockApi({ targets: () => new Promise(() => {}), diary: () => [e({})] });
     renderPage();
-    // Wait until the DIARY has been answered, so a spinner still showing is down
-    // to the targets alone.
+    // Wait until the DIARY has been answered, so a spinner still showing is down to the targets alone.
     await waitFor(() => expect(calls.some((c) => c.key.startsWith("GET /api/nutrition/diary"))).toBe(true));
     await new Promise((r) => setTimeout(r, 50));
     expect(screen.getByRole("status", { name: "Loading your day" })).toBeInTheDocument();
@@ -242,8 +241,7 @@ describe("NutritionPage, the last 7 days", () => {
     expect(bar(/^Wednesday 23 September/)).toHaveAttribute("aria-pressed", "true");
   });
 
-  // "10000-…" passed the future-date guard ("1" < "2" as strings)
-  // and crashed the strip's render; "0002-…" opened a strip in 1902.
+  // "10000-…" passed the future-date guard ("1" < "2" as strings) and crashed the strip.
   it("ignores a typed date that isn't a real date with a four-digit year", async () => {
     freeze("2026-09-23");
     const calls = mockApi();
@@ -286,9 +284,7 @@ describe("NutritionPage, the last 7 days", () => {
     expect(screen.getByRole("button", { name: "Next week" })).toBeDisabled();
   });
 
-  // Browser pass: the eyebrow read its own clock, so for up to a minute after
-  // midnight Back to today asked for a day the page still called tomorrow, and
-  // the future-date guard ignored it.
+  // The eyebrow read its own clock, so after midnight Back to today asked for a day the page still called tomorrow.
   it("goes back to today even before the page has noticed midnight", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(2026, 8, 23, 23, 59, 30));

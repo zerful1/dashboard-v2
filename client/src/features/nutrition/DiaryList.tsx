@@ -1,10 +1,7 @@
 import { List } from "@/components/ui/List";
 import type { FoodLogEntry } from "@dashboard/shared";
 
-/**
- * logged_at is an INSTANT (timestamptz), so parsing it into a Date is right:
- * the dates-as-strings rule is about calendar `date` columns.
- */
+/** logged_at is an INSTANT (timestamptz), so parsing it into a Date is right; the string rule is for `date` columns. */
 export function timeOf(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }

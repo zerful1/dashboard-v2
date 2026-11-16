@@ -21,11 +21,7 @@ const REF: Record<RestoredTable, string> = {
   habit_completions: T.habitCompletions,
 };
 
-/**
- * How a parent the account already holds under another id is recognised: the
- * same clash its unique constraint would refuse. Habits have none, so only
- * their id matches.
- */
+/** How an already-held parent is recognised: the clash its unique constraint would refuse (habits: id only). */
 const NATURAL_KEY = {
   workout_sessions: "m.date = f.date AND m.day_type = f.day_type",
   food_items: "f.external_id IS NOT NULL AND m.external_source = f.external_source AND m.external_id = f.external_id",
@@ -33,11 +29,7 @@ const NATURAL_KEY = {
 };
 type Parent = keyof typeof NATURAL_KEY;
 
-/**
- * A child's parent column, and what becomes of a child whose parent isn't the
- * user's: a set or a tick is dropped, while a food entry keeps its numbers and
- * loses its food, as deleting a food does.
- */
+/** A child's parent column and what happens if the parent isn't the user's: sets, ticks drop; food lost. */
 const CHILD: Partial<Record<RestoredTable, { column: string; parent: Parent; orphan: "drop" | "null" }>> = {
   food_log_entries: { column: "food_item_id", parent: "food_items", orphan: "null" },
   workout_sets: { column: "session_id", parent: "workout_sessions", orphan: "drop" },
@@ -45,13 +37,7 @@ const CHILD: Partial<Record<RestoredTable, { column: string; parent: Parent; orp
   habit_completions: { column: "habit_id", parent: "habits", orphan: "drop" },
 };
 
-/**
- * Moves the habits the account lacks after the ones it has, keeping the file's
- * order among them. Their old sort_order would otherwise tie with, or slot
- * between, habits added since; renumbering those instead would change the
- * account, which a restore never does. Habits that already come after keep
- * their numbers, so an account with none gets back exactly what it had.
- */
+/** Moves missing habits after existing ones in file order, since renumbering the account's habits would change it. */
 async function afterCurrentHabits(client: PoolClient, userId: string, rows: Row[]): Promise<Row[]> {
   const { rows: mine } = await client.query<{ id: string; sort_order: number }>(
     `SELECT id, sort_order FROM ${T.habits} WHERE user_id = $1`,
@@ -72,13 +58,7 @@ class DryRun extends Error {
   }
 }
 
-/**
- * Maps each parent id the children name to the user's own row: the same id, or
- * else the row the file's parent clashes with on its natural key. An id with no
- * such row (someone else's, or nobody's) is absent from the map. A reference
- * the file holds no parent for goes in as a bare `{ id }`, which can only match
- * by id.
- */
+/** Maps each parent id the children name to the user's own row (same id or natural-key clash), else none. */
 async function parentMap(
   client: PoolClient,
   userId: string,
@@ -100,21 +80,7 @@ async function parentMap(
   return new Map(found.map((r) => [r.file_id, r.mine]));
 }
 
-/**
- * Adds back the rows of a download that the account is missing, and changes
- * nothing it already has. One transaction, in
- * RESTORED_TABLES order; each insert skips any row that clashes on its id or
- * its natural key (a bare ON CONFLICT DO NOTHING: no target, so both kinds).
- *
- * Every row becomes the user's, whatever its user_id said, and a child is
- * re-pointed to the user's copy of its parent before it goes in, so a session
- * the account already holds under another id receives only the sets it lacks.
- * A child whose parent isn't the user's never attaches to anyone else's row.
- *
- * Postgres checks every value against its column and constraints; any failure
- * rolls the whole restore back. `dryRun` runs all of it and rolls back too, so
- * a preview's counts are the restore's.
- */
+/** Adds back rows the account lacks, changing nothing it has, in one transaction; `dryRun` rolls back. */
 export async function restoreUserData(
   userId: string,
   tables: Record<string, Row[]>,

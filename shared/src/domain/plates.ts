@@ -14,27 +14,17 @@ export type Load =
       offByKg: number; // loadedKg - typed total; 0 when exact, negative when under
     };
 
-// Everything is counted in quarter-kilos so every standard plate (down to
-// 1.25) is a whole number and the search never meets float drift. Results go
-// back to kg by dividing by 4, which is exact for a quarter.
+// Counted in quarter-kilos so every standard plate is a whole number and the search meets no float drift.
 const UNIT = 4;
 
-// Rounds away the dust left by halving and subtracting decimals (a side of
-// 28.1 minus 0.1 must not become 28.000000000000004).
+// Rounds away float dust from halving and subtracting decimals.
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-/**
- * The fewest plates that make a side as near `wantedKg` as the sizes allow,
- * heaviest first. Any size may repeat. Greedy is wrong when sizes are missing
- * (only 20s and 15s: 45 is 15 + 15 + 15, and greedy strands itself at 20 + 20),
- * so this is a proper search. A side that can't be made exactly becomes the
- * nearest one that can; on a tie the lighter, so the app never quietly asks
- * for more than was typed when it could ask for less.
- */
+/** Fewest plates nearest `wantedKg`; a search, since greedy strands itself when sizes are missing. */
 function sideFor(wantedKg: number, available: readonly number[]): number[] {
   const sizes = available.map((p) => Math.round(p * UNIT)).sort((a, b) => b - a);
   const wanted = wantedKg * UNIT;
-  // Search past the target by one plate, so a nearer-from-above side is seen.
+  // Search one plate past the target so a nearer-from-above side is seen.
   const limit = Math.ceil(wanted) + sizes[0]!;
   // count[s] = fewest plates that sum to s units, Infinity when impossible.
   const count = new Array<number>(limit + 1).fill(Infinity);
@@ -44,15 +34,12 @@ function sideFor(wantedKg: number, available: readonly number[]): number[] {
       if (p <= s && count[s - p]! + 1 < count[s]!) count[s] = count[s - p]! + 1;
     }
   }
-  // Ascending, so a tie in distance keeps the lighter. The epsilon stops a
-  // halved decimal like 28.125 from looking a hair nearer on one side.
+  // Ascending, so a tie keeps the lighter; the epsilon stops a halved decimal looking nearer on one side.
   let target = 0;
   for (let s = 1; s <= limit; s++) {
     if (count[s]! < Infinity && Math.abs(s - wanted) < Math.abs(target - wanted) - 1e-9) target = s;
   }
-  // Rebuild by taking the heaviest plate that still leaves a fewest-plates
-  // remainder. That makes the heavier set win a tie on count, compared
-  // heaviest first (30 kg is 20 + 10, not 15 + 15).
+  // Take the heaviest plate that still leaves a fewest-plates remainder, so the heavier set wins a count tie.
   const plates: number[] = [];
   let s = target;
   while (s > 0) {
@@ -76,19 +63,11 @@ export function loadFor(startKg: number, totalKg: number, available: readonly nu
 export interface BuddyLoad {
   you: Load;
   buddy: Load;
-  /**
-   * Only when both are "ok". `inside` is whose side is the solid inner plates
-   * (the lighter typed total; on a tie "buddy"). `inner` stays on, `outer`
-   * moves, each heaviest first. `outer` is [] when both sides load the same.
-   */
+  /** Only when both are "ok": `inside` holds the inner plates (lighter total), `outer` moves. */
   swap: { inside: "you" | "buddy"; inner: number[]; outer: number[] } | null;
 }
 
-/**
- * Two people on one machine, arranged so a swap only adds or removes plates
- * on the outside: the lighter lifter's plates stay put and the difference
- * goes on top.
- */
+/** Two people on one machine: the lighter lifter's plates stay put and the difference goes outside. */
 export function buddyLoadFor(
   startKg: number,
   youKg: number,
@@ -102,10 +81,7 @@ export function buddyLoadFor(
   const inside = youKg < buddyKg ? "you" : "buddy";
   const [light, heavyKg] = inside === "you" ? [you, buddyKg] : [buddy, youKg];
   const inner = light.plates;
-  // The difference is taken from the inner plates as loaded, not as typed, so
-  // inner + outer lands as near the heavier target as the plates allow. If the
-  // inner side already overshot it (rounded up) the gap is negative, and the
-  // nearest side to a negative is the empty one: nothing goes outside.
+  // The gap is from the inner plates as loaded, not typed; a negative gap (inner overshot) loads nothing outside.
   const gap = round2((heavyKg - startKg) / 2 - light.perSideKg);
   const outer = sideFor(gap, available);
 

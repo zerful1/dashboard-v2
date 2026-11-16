@@ -52,13 +52,7 @@ export function ResetPasswordPage() {
     <AuthShell
       title="Choose a new password"
       subtitle="This signs you out everywhere else."
-      // The footer follows the error, because a rejection here is nearly
-      // always an expired or already-used token — the window is short, see
-      // RESET_TTL_MINUTES in shared/src/policy.ts —
-      // and "Back to sign in" sends a user who cannot sign in to the one page
-      // that cannot help them. Same destination and wording as the
-      // missing-token branch above, which is the same problem arriving
-      // earlier.
+      // The footer follows the error because a rejection is usually an expired token, which sign-in can't help.
       footer={
         error ? (
           <Link to="/forgot-password" className="text-text underline underline-offset-4">

@@ -21,10 +21,7 @@ async function signedIn() {
 
 afterEach(() => vi.restoreAllMocks());
 
-/**
- * Five routes checked a date's shape and not that the day exists, so
- * "2026-02-31" passed validation and Postgres refused it as a 500.
- */
+/** Five routes checked a date's shape but not that the day exists, so "2026-02-31" reached Postgres as a 500. */
 describe("a date that doesn't exist is a 400 everywhere", () => {
   const BAD = "2026-02-31";
 
@@ -87,8 +84,7 @@ describe("a value Postgres refuses is a 4xx, and says nothing the database said"
     const dup = await request(throwing(pgError("23505"))).get("/").expect(409);
     expect(dup.body.error).toBe("conflict");
 
-    // Logged by code, so a validation gap is still visible, but never with
-    // the message: Postgres quotes the value, and that is the user's data.
+    // Logged by code so a gap is still visible, but never with the message: Postgres quotes the user's data.
     expect(JSON.stringify(logged.mock.calls)).toContain("22008");
     expect(JSON.stringify(logged.mock.calls)).not.toContain("2026-02-31");
   });
@@ -116,12 +112,9 @@ describe("History's pages", () => {
   it("walk sessions that share a date in one fixed order: the later-made first", async () => {
     const agent = await signedIn();
     const userId = (await findUserByEmail(alice.email))!.id;
-    // Six sessions on one date, so date alone can't order them. With date
-    // alone their order was whatever the sort left, and could differ from one
-    // page's query to the next: a session shown twice, another not at all.
+    // Six sessions on one date: date alone left the order unstable between pages, repeating or dropping one.
     for (const dayType of [1, 2, 3, 4, 5, 6]) await getOrCreateSession(userId, "2026-08-16", dayType, DEFAULT_SPLIT);
-    // Made in an order that is neither the insert order nor its reverse, so no
-    // accident of storage produces it.
+    // Made in an order that is neither the insert order nor its reverse, so no accident of storage produces it.
     const newestFirst = [4, 1, 6, 2, 5, 3];
     for (const [i, dayType] of newestFirst.entries()) {
       await pool.query(

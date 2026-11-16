@@ -51,12 +51,7 @@ export function WeightPage() {
   const start = rangeStart(spec, today, summary.points[0]?.date ?? today);
   const rows = useMemo(() => periodRows(summary.points, spec.period, start, today), [summary.points, spec.period, start, today]);
 
-  // isPending, not isLoading (CLAUDE.md), and the goals too: the goal colours
-  // the rate and writes the goal line, so drawing first would flip white to
-  // green. Not while the goals are paused offline with nothing saved, though:
-  // that would spin forever, so it reads as a failed load instead. And only
-  // until the page has drawn once: the signal returning starts the goals'
-  // fetch (pending again), and spinning then would unmount an open sheet.
+  // Wait on isPending incl. goals (they colour the rate), not when paused offline or once drawn.
   const [drawn, setDrawn] = useState(false);
   const ready = !isPending && !(goals.isPending && goals.fetchStatus !== "paused" && !drawn);
   useEffect(() => {
@@ -66,9 +61,7 @@ export function WeightPage() {
     return <Spinner label="Loading your weight history" />;
   }
 
-  // Distinguished from empty: a failed fetch must not read as "no data yet".
-  // Only when there is nothing to show, though: a failed refresh keeps the
-  // last good history, and the toast says it failed.
+  // Distinguished from empty, and only when nothing is shown: a failed refresh keeps the last good history.
   if (isError && !hasData) {
     return (
       <Card>
@@ -82,9 +75,7 @@ export function WeightPage() {
 
   const goal = goals.data?.find((g) => g.kind === "weight") ?? null;
   const goalsFailed = !goals.data && (goals.isError || goals.fetchStatus === "paused");
-  // No lifts while pending, or failed or offline with nothing cached: no line,
-  // and no error, as it's an extra. Offline on a new day, yesterday's statuses
-  // stand in, as on Stats.
+  // No lifts while pending, failed or offline with nothing cached: no line and no error, as it's an extra.
   const composition = liftQuery.lifts
     ? compositionLine(summary.fit, liftQuery.lifts.map((l) => l.status), goal)
     : null;

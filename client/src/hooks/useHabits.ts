@@ -6,17 +6,10 @@ import { habitsApi } from "@/api/habits";
 
 type Snapshot = { previous?: HabitSummary[] };
 
-/**
- * A habit added optimistically and not yet saved. It has no server id, so
- * nothing may act on it until the refetch brings the real one (the same guard
- * as the food diary's DiaryList).
- */
+/** A habit added optimistically, not yet saved: no server id, so nothing acts on it until the refetch. */
 export const isUnsaved = (h: HabitSummary) => h.id.startsWith("optimistic-");
 
-/**
- * Habits for Home and the Habits page. `today` is in the key, so the screens
- * roll over at midnight rather than showing yesterday's ticks as today's.
- */
+/** Habits for Home and the Habits page; `today` is in the key, so the screens roll over at midnight. */
 export function useHabits() {
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -31,19 +24,11 @@ export function useHabits() {
     meta: { errorToast: false },
   });
 
-  /**
-   * CLAUDE.md's optimistic shape: onMutate snapshots and writes, onError only
-   * rolls back (the MutationCache owns the message), onSettled refetches.
-   */
+  /** CLAUDE.md's optimistic shape: onMutate snapshots, onError rolls back only, onSettled refetches. */
   function optimistic<V>(
     run: (v: V) => Promise<unknown>,
     apply: (list: HabitSummary[], v: V) => HabitSummary[],
-    /**
-     * Undo just this write, on the list as it is now. Without it the whole
-     * snapshot goes back, which is only right when nothing else changed in
-     * the meantime - two quick ticks that both fail would otherwise bring the
-     * first one back from the second's snapshot.
-     */
+    /** Undo just this write on the current list: a whole-snapshot rollback would revive an earlier tick. */
     undo?: (list: HabitSummary[], v: V) => HabitSummary[],
   ) {
     return {

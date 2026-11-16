@@ -5,17 +5,7 @@ import { config } from "../config";
 
 const PgStore = connectPgSimple(session);
 
-/**
- * Cookie sessions backed by Postgres.
- *
- * Sessions rather than JWT on purpose: an httpOnly cookie sidesteps the whole
- * "where do I store the token" XSS problem, and logout genuinely invalidates
- * because the server row is deleted. Revoking a JWT before expiry needs a denylist,
- * which reinvents sessions with extra steps.
- *
- * The store is Postgres, never the default MemoryStore — that leaks memory, drops
- * every session on restart, and cannot work at all across serverless instances.
- */
+/** Cookie sessions in Postgres: logout truly invalidates, and MemoryStore fails across serverless instances. */
 export const sessionMiddleware = session({
   name: "dash.sid",
   secret: config.SESSION_SECRET,

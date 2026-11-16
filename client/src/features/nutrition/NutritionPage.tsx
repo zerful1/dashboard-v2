@@ -29,9 +29,7 @@ interface Picked {
 
 export function NutritionPage() {
   const today = useToday();
-  // Only what the user picked is state. Until then the strip ends today and
-  // today is open, both following the clock, so an app left open overnight
-  // wakes on the new day, not yesterday.
+  // Only what the user picked is state; until then the strip and open day follow the clock.
   const [picked, setPicked] = useState<Picked | null>(null);
   const end = picked?.end ?? today;
   const open = picked?.open ?? today;
@@ -39,9 +37,7 @@ export function NutritionPage() {
   // Today open, with the strip ending today, IS following the clock.
   const choose = (next: Picked) => setPicked(next.end === today && next.open === today ? null : next);
   const pickDate = (d: string) => {
-    // The picker is capped at today, but a typed date is not. And a typed year
-    // can be anything: "10000-…" sorts before today as a string, and crashes
-    // the strip; "0002-…" lands in 1902.
+    // A typed date isn't capped at today and its year can be anything ("10000-…" crashes the strip).
     if (!isRealDate(d) || d > today) return;
     choose({ end: d >= from && d <= end ? end : d, open: d });
   };
@@ -88,8 +84,7 @@ export function NutritionPage() {
       />
 
       {failed ? (
-        // Distinct from an empty day: a failed fetch must not read as "nothing eaten".
-        // Only when there is nothing to show: a failed refresh keeps the last good data.
+        // Distinct from an empty day, and only when nothing is shown: a failed refresh keeps the last good data.
         <Card>
           <div className="lbl text-negative">Could not load</div>
           <p className="mt-2 text-sm text-muted">Your diary could not be fetched. Check your connection and retry.</p>
@@ -105,8 +100,7 @@ export function NutritionPage() {
           </Button>
         </Card>
       ) : diary.isPending || targets.isPending ? (
-        // BOTH, not either: "2,402 left" from an unloaded diary would be a
-        // real-looking, wrong number (CLAUDE.md, TanStack section).
+        // BOTH, not either: "2,402 left" from an unloaded diary would be a wrong, real-looking number (CLAUDE.md).
         <Spinner label="Loading your day" />
       ) : (
         <>

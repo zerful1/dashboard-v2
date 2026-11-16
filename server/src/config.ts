@@ -2,12 +2,7 @@ import { resolve } from "node:path";
 import { z } from "zod";
 import * as dotenv from "dotenv";
 
-// Resolved from __dirname, NOT process.cwd(). `npm test -w @dashboard/server` runs
-// with cwd=server/, so a bare dotenv.config() silently finds nothing, SESSION_SECRET
-// comes back undefined, and config throws before a single test runs.
-//
-// Missing file is fine and expected in production, where the platform injects the
-// environment directly.
+// Resolved from __dirname, not cwd: tests run with cwd=server/, where a bare dotenv.config() finds nothing.
 dotenv.config({ path: resolve(__dirname, "../../.env") });
 
 const schema = z.object({
@@ -23,15 +18,13 @@ const schema = z.object({
   SESSION_SECRET: z.string().min(32, "must be at least 32 characters"),
   RESEND_API_KEY: z.string().default(""),
   RESEND_FROM: z.string().default("Dashboard <onboarding@resend.dev>"),
-  // Reduced to the bare origin: a trailing slash in the env var otherwise reaches
-  // reset links as "//reset-password" and the CORS header as a non-origin.
+  // Bare origin: a trailing slash would reach reset links as "//reset-password" and CORS as a non-origin.
   APP_ORIGIN: z
     .string()
     .url()
     .default("http://localhost:5173")
     .transform((u) => new URL(u).origin)
-    // "localhost:5173" passes .url() as a scheme, and its origin is "null": the
-    // one value a sandboxed iframe sends, so it must never reach the CORS header.
+    // "localhost:5173" parses as a scheme with origin "null", which a sandboxed iframe sends: never CORS.
     .refine((o) => o !== "null", "must be an http(s) origin"),
   /** Who may register: empty = nobody new, "*" = anyone, or a list. See signups.ts. */
   SIGNUP_ALLOWLIST: z.string().default(""),
@@ -45,9 +38,7 @@ if (!parsed.success) {
   const issues = parsed.error.issues
     .map((i) => `  ${i.path.join(".")}: ${i.message}`)
     .join("\n");
-  // Fail loudly at startup rather than limping along with a bad config. In
-  // particular there is deliberately no fallback SESSION_SECRET — a hardcoded
-  // default would mean anyone reading the source could forge a session cookie.
+  // Fail loudly at startup; no fallback SESSION_SECRET, or anyone reading the source could forge a cookie.
   throw new Error(`Invalid environment configuration:\n${issues}`);
 }
 
@@ -63,17 +54,7 @@ export const config = {
   isTest,
 };
 
-/**
- * Schema-qualified table names.
- *
- * Runtime queries go over the transaction pooler, where a pooled connection is only
- * guaranteed to you for the duration of one transaction — so `search_path` set on a
- * connection cannot be relied upon between statements, and every table reference
- * must carry its schema explicitly.
- *
- * Collected here rather than interpolated ad hoc so a mistyped table name is a
- * compile error instead of a runtime one.
- */
+/** Schema-qualified table names: the transaction pooler keeps no search_path, and a typo fails to compile. */
 const S = parsed.data.DB_SCHEMA;
 
 export const T = {

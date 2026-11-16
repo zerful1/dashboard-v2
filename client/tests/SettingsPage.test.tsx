@@ -14,8 +14,7 @@ function renderPage() {
     <QueryClientProvider
       client={
         new QueryClient({
-          // No retries: the point here is what the settled failure renders,
-          // and the app's own `retry: 1` would only make the test slower.
+          // No retries: the test is about the settled failure, and the app's own `retry: 1` would only slow it.
           defaultOptions: { queries: { retry: false } },
         })
       }
@@ -59,8 +58,7 @@ function mockWithDelete(summary: unknown = SUMMARY) {
     if (path === "/api/profile" && (init?.method ?? "GET") === "GET") return PROFILE as never;
     if (path === "/api/profile" && init?.method === "DELETE") {
       calls.push({ path, init });
-      // Never resolves: onSuccess would assign window.location, which jsdom
-      // cannot perform. The body is captured at call time regardless.
+      // Never resolves: onSuccess would assign window.location, which jsdom cannot do.
       return new Promise(() => {}) as never;
     }
     throw new Error(`unexpected ${init?.method ?? "GET"} ${path}`);
@@ -97,12 +95,7 @@ describe("SettingsPage account deletion", () => {
 });
 
 describe("SettingsPage", () => {
-  // The failure this pins is silent by construction: in TanStack Query v5 a
-  // settled-with-error query has isLoading false and data undefined, so a
-  // guard written as `isLoading || !profile` falls through to the spinner and
-  // stays there. Nothing throws, nothing logs, and the page says "loading"
-  // about a request that stopped a minute ago. The database this reads
-  // through pauses when it has been idle for a week, so it is a live case.
+  // Silent by construction: a settled-with-error v5 query has isLoading false and data undefined.
   it("renders an error with a retry, not a spinner, when the profile query fails", async () => {
     const spy = vi.spyOn(apiModule, "api").mockImplementation(async (path: string) => {
       if (path === "/api/auth/me") return { id: "1", email: "a@b.com" };
@@ -116,8 +109,7 @@ describe("SettingsPage", () => {
     expect(screen.getByRole("alert")).toHaveClass("text-negative");
     expect(retry).toHaveClass("border-edge");
 
-    // Both halves matter. An error that appears *next to* a permanent spinner
-    // would satisfy "an error is shown" while leaving the page just as stuck.
+    // Both halves matter: an error beside a permanent spinner would satisfy "an error is shown".
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(retry).toBeInTheDocument();
 

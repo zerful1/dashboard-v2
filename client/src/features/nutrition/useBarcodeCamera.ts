@@ -4,11 +4,7 @@ import { createDetector } from "./barcodeDetector";
 export type CameraState = "starting" | "scanning" | "denied" | "unavailable";
 const SCAN_EVERY_MS = 250;
 
-/**
- * The back camera into `video`, read every 250 ms until a code turns up. The
- * stream stops the moment a code is read or the caller unmounts: the camera
- * light must never stay on.
- */
+/** Back camera into `video`, read every 250 ms until a code turns up; the stream must stop (camera light). */
 export function useBarcodeCamera(video: RefObject<HTMLVideoElement | null>, onCode: (code: string) => void): CameraState {
   const [state, setState] = useState<CameraState>("starting");
   const onCodeRef = useRef(onCode);

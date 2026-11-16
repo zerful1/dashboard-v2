@@ -69,7 +69,7 @@ export interface LiftDetail {
   /** The all-time best, only when it beats the span's (or the span has none). */
   allTime: DatedSet | null
   points: LiftChartPoint[]
-  /** The span held no session, so the chart is the lift's whole history (decided 2026-10-07). */
+  /** The span held no session, so the chart is the lift's whole history. */
   chartAll: boolean
   /** Every session of the lift, newest first, its sets in order. */
   sessions: LiftSession[]
@@ -112,11 +112,7 @@ function groupBy<T>(xs: T[], key: (x: T) => string): Map<string, T[]> {
 
 const lastDateOf = (sets: LiftSetRow[]) => sets.reduce((m, s) => (s.date > m ? s.date : m), sets[0]!.date)
 
-/**
- * Each session's best set, oldest first. A lift whose every set is bodyweight
- * is valued by reps; any other lift by Epley over its weighted sets, any rep
- * count, so a session of only bodyweight sets has no value and is left out.
- */
+/** Each session's best set, oldest first: reps if every set is bodyweight, else Epley over weighted sets. */
 export function sessionBests(sets: LiftSetRow[]): { bodyweightOnly: boolean; sessions: SessionBest[] } {
   const bodyweightOnly = sets.length > 0 && sets.every((s) => s.is_bodyweight)
   const value = (s: LiftSetRow) => (bodyweightOnly ? s.reps : epley(s))
@@ -179,12 +175,9 @@ export function liftDetail(name: string, sets: LiftSetRow[], today: string): Lif
   // A lift with nothing in the span (most v1-era lifts) charts its whole history instead.
   const chartAll = span.length === 0
   const charted = new Set((chartAll ? bests : span).map((s) => s.session_id))
-  // The chart plots what was lifted: the heaviest weighted set, or reps for a
-  // bodyweight-only lift. Epley ranks the best set, but plotted it put 19.3 × 8
-  // at 24.4, above anything on the bar.
+  // The chart plots what was lifted, not Epley, which would draw above anything on the bar.
   const plotted = (s: LiftSetRow) => (bodyweightOnly ? s.reps : s.weight_kg)
-  // Heavier wins, and at one weight more reps: the bar under the line is the
-  // reps of the set the line plots, so a rep gain at a weight shows.
+  // Heavier wins, then more reps at one weight, so the bar's reps match the plotted set.
   const outranks = (a: LiftSetRow, b: LiftSetRow) =>
     plotted(a) > plotted(b) || (plotted(a) === plotted(b) && a.reps > b.reps)
   // One point per date: two sessions of one lift on a day (two day types) are one day trained.
@@ -194,8 +187,7 @@ export function liftDetail(name: string, sets: LiftSetRow[], today: string): Lif
     const held = byDate.get(s.date)
     if (!held || outranks(s, held)) byDate.set(s.date, s)
   }
-  // A new high outranks every earlier day by the same rule: a heavier weight,
-  // or more reps at the heaviest so far. More reps at a lighter weight is not.
+  // A new high outranks every earlier day by the same rule; more reps at a lighter weight is not.
   let running: LiftSetRow | null = null
   const points = [...byDate.entries()]
     .sort(([a], [b]) => a.localeCompare(b))

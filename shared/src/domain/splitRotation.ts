@@ -1,18 +1,6 @@
-// The workout split: which training days exist, their labels, and which weekday
-// (Mon–Sun) each runs on. Editable from the dashboard — the live config is stored
-// per-user in the `workout_split` table and read via the `useSplit` hook. Until a
-// user customises it, everything resolves to DEFAULT_SPLIT, so behaviour is
-// identical to the old hardcoded split.
-//
-// Historical sessions are NOT labeled from this module — every workout_sessions
-// row snapshots its own `day_name` at log time (getDayName), so old sessions keep
-// their original names forever even after the split changes. History filter chips
-// merge the current labels with whatever names actually exist in the DB
-// (historyFilterNames) rather than a hardcoded legacy list.
+// Historical sessions are never labelled from here: each snapshots its own `day_name` at log time.
 
-// A training day's stable id. day_type is a free integer used as the key on the
-// `exercises` template and `workout_sessions` rows; 'rest' only ever appears in a
-// week slot or as getTodayDayType's "no workout today" result.
+// day_type is a free integer keying `exercises` and `workout_sessions`; 'rest' only fills a week slot.
 export type DayType = number | 'rest'
 
 export interface SplitDay {
@@ -21,17 +9,13 @@ export interface SplitDay {
 }
 
 export interface SplitConfig {
-  // Ordered training days: defines which day_types exist, their labels, and the
-  // DaySelector / History-chip order.
+  // Ordered training days: the day_types that exist, their labels, and the selector/chip order.
   days: SplitDay[]
-  // Length 7, index 0 = Monday … 6 = Sunday. Each slot is a day_type or 'rest'.
+  // Length 7, Monday first; each slot is a day_type or 'rest'.
   week: DayType[]
 }
 
-// PPL R UL R, Monday-anchored. Day-type numbers keep the original-era assignment
-// (1=Legs … 5=Upper) so seeded `exercises` rows and pre-existing sessions stay
-// aligned; `days` order matches the legacy DaySelector order (1→5) so nothing
-// visibly changes until a user customises their split.
+// Day-type numbers keep the original-era assignment so seeded `exercises` rows and old sessions stay aligned.
 export const DEFAULT_SPLIT: SplitConfig = {
   days: [
     { day_type: 1, label: 'Legs' },
@@ -43,31 +27,22 @@ export const DEFAULT_SPLIT: SplitConfig = {
   week: [3, 2, 1, 'rest', 5, 4, 'rest'], // Mon … Sun
 }
 
-// Weekday index with Monday = 0 … Sunday = 6. JS Date.getDay() is Sunday = 0, so
-// we rotate by 6 to put Monday first.
+// Monday = 0 … Sunday = 6; Date.getDay() starts at Sunday, so rotate by 6.
 export function mondayIndex(date: Date): number {
   return (date.getDay() + 6) % 7
 }
 
-// Today's day_type per the split's weekly rotation. Returns a day_type (number) on
-// a training weekday, or 'rest' on a rest weekday. A rest weekday is already 'rest'
-// in `week`, so the slot is returned as-is; the `?? 'rest'` only guards a malformed
-// (short) week array, treating anything unexpected as a rest day.
+// The `?? 'rest'` only guards a malformed (short) week array.
 export function getTodayDayType(split: SplitConfig, today: Date = new Date()): DayType {
   return split.week[mondayIndex(today)] ?? 'rest'
 }
 
-// The display name for a day_type in the given split. Falls back to 'Workout' for
-// an unknown day_type (mirrors the old `CURRENT_SPLIT[dt] ?? 'Workout'`), so a
-// session insert always has a sensible day_name to snapshot.
+// Falls back to 'Workout' so a session insert always has a day_name to snapshot.
 export function getDayName(split: SplitConfig, dayType: number): string {
   return split.days.find(d => d.day_type === dayType)?.label ?? 'Workout'
 }
 
-// Names for the History filter chips: current split labels first (in order), then
-// any distinct historical day_names not already covered. Replaces the hardcoded
-// LEGACY_DAY_NAMES — retired split names now surface straight from the DB. A name
-// shared across splits (e.g. an old and current "Lower") yields a single chip.
+// History chips: current labels first, then historical day_names not already covered (one chip per name).
 export function historyFilterNames(
   currentLabels: string[],
   historicalNames: string[],

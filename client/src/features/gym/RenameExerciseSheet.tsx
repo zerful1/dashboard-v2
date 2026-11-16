@@ -17,10 +17,7 @@ interface Props {
   isPending: boolean;
 }
 
-/**
- * The server enforces both rules; this shows the outcome BEFORE the user
- * commits, so a merge is never a surprise.
- */
+/** The server enforces both rules; this shows the outcome BEFORE the user commits. */
 export function RenameExerciseSheet({ oldName, dayType, onClose, onRename, isPending }: Props) {
   const { user } = useAuth();
   const [value, setValue] = useState("");
@@ -69,10 +66,7 @@ export function RenameExerciseSheet({ oldName, dayType, onClose, onRename, isPen
         </Field>
 
         {evaluation.mergeWith && (
-          // Renaming onto a name from another day merges their history and
-          // stats. Say so before it happens — it is not reversible by renaming
-          // back, because both exercises then share one name and there is no
-          // record of which sets came from which.
+          // Renaming onto another day's name merges history irreversibly, so say so before it happens.
           <p className="rounded-lg border border-caution/40 bg-caution/10 px-3 py-2 text-xs text-caution">
             This will merge with <strong>{evaluation.mergeWith}</strong> on another day. Their
             history and stats combine.
@@ -91,8 +85,7 @@ export function RenameExerciseSheet({ oldName, dayType, onClose, onRename, isPen
             className="flex-1"
             disabled={!canSave}
             loading={isPending}
-            // Adopt the existing casing when merging, or the merge creates a
-            // case-variant split instead of joining them.
+            // Adopt the existing casing when merging, or the merge creates a case-variant split.
             onClick={() => onRename(evaluation.mergeWith ?? trimmed)}
           >
             Rename

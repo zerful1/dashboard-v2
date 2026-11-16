@@ -9,8 +9,7 @@ export function OfflineBanner() {
 
   return (
     <div
-      // Announced when it appears, but not interrupting: being offline is worth
-      // knowing, not worth cutting across whatever is being read.
+      // Announced when it appears, but not interrupting what is being read.
       role="status"
       aria-live="polite"
       className="flex items-center justify-center gap-2 bg-raised px-4 py-1.5 text-xs text-muted"

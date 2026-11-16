@@ -19,8 +19,7 @@ describe("projectionText", () => {
       .toBe("Over a year away at this rate");
   });
 
-  // Dates round down to their Monday, so a projection later
-  // this week once came out as a past date ("around 28 Sep" on Saturday 3 Oct).
+  // Dates round down to their Monday, so a projection later this week once came out as a past date.
   it("says this week for a projection that falls in the current week", () => {
     expect(projectionText({ goalId: "g", status: "projected", date: "2026-09-28", ratePerWeek: -0.5, current: 78.1 }, "weight", TODAY))
       .toBe("this week · −0.5 kg a week");

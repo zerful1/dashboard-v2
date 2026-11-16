@@ -30,8 +30,7 @@ export function LoginPage() {
       await login(email, password);
       navigate("/", { replace: true });
     } catch (err) {
-      // The API returns one message for both wrong password and unknown email,
-      // deliberately — do not try to be more helpful here.
+      // The API gives one message for wrong password and unknown email on purpose; don't be more helpful.
       setError(err instanceof ApiError ? err.message : "Could not sign in");
     } finally {
       setBusy(false);
@@ -51,9 +50,7 @@ export function LoginPage() {
     }
   }
 
-  // Most visitors are strangers (the CV links here), and sign-ups are closed, so
-  // the demo is the one action; the form is the owner's, and a password manager
-  // fills it (sign-in redesign, 2026-10-20).
+  // Most visitors are strangers and sign-ups are closed, so the demo is the one action.
   return (
     <AuthShell title="Track your training, food and habits" footer="Sign-ups are by invite only.">
       <Button type="button" loading={demoBusy} className="w-full" onClick={onDemo}>

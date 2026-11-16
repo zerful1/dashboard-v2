@@ -26,8 +26,7 @@ describe('projectGoal: weight', () => {
   })
 
   it('projects the date the trend meets the target, rounded to its Monday', () => {
-    // From 79 at -0.5 kg a week, 78 is two weeks away: 14 days -> Wed 14 Oct -> Mon 12 Oct.
-    // (Floating point may make it 15 days; Thu 15 Oct rounds to the same Monday.)
+    // From 79 at -0.5 kg a week, 78 is two weeks away (Mon 12 Oct); floating point may make it 15 days, same Monday.
     const p = projectGoal(weightGoal(78), line(14, 79, -0.5), TODAY)
     expect(p).toMatchObject({ status: 'projected', date: '2026-10-12' })
     expect(p.status === 'projected' && p.current).toBeCloseTo(79, 6)
@@ -70,8 +69,7 @@ describe('projectGoal: lift', () => {
     expect(projectGoal(liftGoal(80), points, TODAY).status).toBe('reached')
   })
 
-  // Reaching a lift goal is a fact (one set at the target), not
-  // a trend, so it needs no minimum number of sessions.
+  // Reaching a lift goal is a fact (one set at the target), not a trend, so it needs no minimum number of sessions.
   it('is reached on a lifted target even with fewer than 6 sessions', () => {
     const points = [...line(4, 70, 1, 7).slice(0, 3), { date: TODAY, value: 75 }]
     expect(projectGoal(liftGoal(75), points, TODAY).status).toBe('reached')
@@ -83,8 +81,7 @@ describe('projectGoal: lift', () => {
   })
 })
 
-// Weight and Home show this rate with or without a goal, and it
-// must be the number Insights projects from.
+// Weight and Home show this rate with or without a goal, and it must be the number Insights projects from.
 describe('trendFit', () => {
   it('needs 14 points inside the window', () => {
     expect(trendFit('weight', line(13, 79, -0.5), TODAY)).toEqual({ status: 'not-enough-data', have: 13, need: 14 })
@@ -110,8 +107,7 @@ describe('trendFit', () => {
   })
 })
 
-// The one rule for "reached": the goal line says it and the rate stops being
-// green by the same test.
+// The one rule for "reached": the goal line says it and the rate stops being green by the same test.
 describe('weightGoalReached', () => {
   it('is reached at or past the target, in the direction from where it started', () => {
     expect(weightGoalReached({ target_kg: 78, start_kg: 84 }, 78)).toBe(true)
@@ -146,8 +142,7 @@ describe('rateTone', () => {
   })
 })
 
-// One "flat" test for the rate line, the composition line and the projection,
-// so "Flat", "Weight steady" and "no date at this rate" always agree.
+// One "flat" test for the rate line, composition line and projection, so they always agree.
 describe('isFlatRate', () => {
   it("is flat under the kind's threshold, and moving at it", () => {
     expect(isFlatRate('weight', -0.049)).toBe(true)

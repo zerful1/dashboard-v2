@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
 
-/**
- * `navigator.onLine` is only trustworthy when false - true means "there is a
- * network interface", not "the internet is reachable". That asymmetry is right
- * for both callers: a false "offline" would hide something from someone who
- * is really online, and false only ever means genuinely disconnected.
- */
+/** `navigator.onLine` is trustworthy only when false: true means an interface exists, not a reachable internet. */
 export function useOnline(): boolean {
   const [online, setOnline] = useState(() => navigator.onLine);
   useEffect(() => {

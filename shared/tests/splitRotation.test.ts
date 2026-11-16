@@ -8,8 +8,7 @@ import {
   type SplitConfig,
 } from '../src/domain/splitRotation'
 
-// DEFAULT_SPLIT.week = [3, 2, 1, 'rest', 5, 4, 'rest'] (Mon … Sun)
-// Push, Pull, Legs, rest, Upper, Lower, rest.
+// DEFAULT_SPLIT.week = [3, 2, 1, 'rest', 5, 4, 'rest'] (Mon-Sun): Push, Pull, Legs, rest, Upper, Lower, rest.
 
 describe('mondayIndex', () => {
   it('maps Monday to 0 and Sunday to 6', () => {

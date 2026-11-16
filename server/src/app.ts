@@ -22,17 +22,7 @@ import { config } from "./config";
 import { parseSignupPolicy, type SignupPolicy } from "./signups";
 import { buildRateLimits } from "./middleware/rateLimit";
 
-/**
- * Builds the Express app. A factory rather than a module-level singleton so tests
- * can construct isolated instances, and so nothing mutable lives at module scope
- * where concurrent serverless invocations would share it.
- *
- * `signups` defaults to SIGNUP_ALLOWLIST. Tests pass one explicitly to exercise
- * a closed or listed policy while the rest of the suite registers freely.
- *
- * `rateLimits` is on everywhere but the test suite, whose every request comes
- * from one address and would trip them; tests/rateLimit.test.ts turns it on.
- */
+/** A factory, so tests get isolated instances and nothing mutable sits at module scope. */
 export function createApp(options: { signups?: SignupPolicy; rateLimits?: boolean } = {}): Express {
   const app = express();
 
@@ -42,20 +32,14 @@ export function createApp(options: { signups?: SignupPolicy; rateLimits?: boolea
   // Required for `secure` cookies to be set behind a TLS-terminating proxy.
   app.set("trust proxy", 1);
 
-  // CSP is OFF. The client uses inline style attributes - Motion writes
-  // transforms, Recharts sizes its SVG - which a default policy blocks, and a
-  // working policy needs its own pass with the built client in front of it.
-  // Everything else helmet sets is safe as-is, including the x-powered-by
-  // removal that used to be explicit above.
+  // CSP is off: the client's inline styles (Motion, Recharts SVG) would be blocked by a default policy.
   app.use(helmet({ contentSecurityPolicy: false }));
 
   // Restore reads a whole download, so it brings its own larger parser.
   const json = express.json({ limit: "1mb" });
   app.use((req, res, next) => (req.path.startsWith("/api/restore") ? next() : json(req, res, next)));
 
-  // Credentialed CORS: the origin must be echoed exactly — a wildcard is rejected
-  // by browsers when Allow-Credentials is true, and the session cookie would never
-  // be sent.
+  // Credentialed CORS needs the origin echoed exactly: browsers reject a wildcard with Allow-Credentials.
   app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", config.APP_ORIGIN);
     res.header("Vary", "Origin");
@@ -69,8 +53,7 @@ export function createApp(options: { signups?: SignupPolicy; rateLimits?: boolea
     next();
   });
 
-  // Before the session, so a refused request costs no database read, and after
-  // the body parser, which the reset limit reads the address from.
+  // Before the session so a refused request costs no database read; after the body parser.
   if (options.rateLimits ?? !config.isTest) {
     const limits = buildRateLimits();
     app.use("/api/auth", limits.auth);
@@ -86,13 +69,7 @@ export function createApp(options: { signups?: SignupPolicy; rateLimits?: boolea
     res.json({ ok: true });
   });
 
-  /**
-   * Keeps the Supabase free tier from pausing.
-   *
-   * A free project is paused after roughly a week of inactivity and has to be
-   * resumed by hand — which, on a portfolio piece, means the link is dead exactly
-   * when someone clicks it. A daily Vercel cron touching the database avoids that.
-   */
+  /** Keeps the Supabase free tier from pausing: a daily Vercel cron touches the database. */
   app.get("/api/cron/keepalive", async (_req, res, next) => {
     try {
       const { rows } = await pool.query<{ now: Date }>("SELECT now() as now");

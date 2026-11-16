@@ -65,8 +65,7 @@ describe("GoalsSection", () => {
     expect(screen.getByText("Not enough data yet (4 of 6 sessions)")).toBeInTheDocument();
   });
 
-  // The projections query opts out of the toast, so the section
-  // must show its failure itself, or every goal reads "…" for good.
+  // The projections query opts out of the toast, so the section must show its failure itself.
   it("says when projections could not load, and retries", async () => {
     let fail = true;
     vi.spyOn(apiModule, "api").mockImplementation(async (path: string) => {
@@ -133,8 +132,7 @@ describe("GoalsSection", () => {
     expect(screen.getByLabelText("Target weight (kg)")).toBeInTheDocument();
   });
 
-  // "Target now", not "Now": above "Target weight", a bare "Now 75 kg" read as
-  // your weight today (the call on #44).
+  // "Target now", not "Now": above "Target weight", a bare "Now 75 kg" read as your weight today.
   it("says the current target above the weight field, not only as a placeholder", async () => {
     mockApi([goal({})], []);
     renderSection();
@@ -178,8 +176,7 @@ describe("GoalsSection", () => {
     await userEvent.type(screen.getByLabelText("Target weight (kg)"), "74.5");
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(calls).toContainEqual({ key: "PUT /api/goals/weight", body: { target_kg: 74.5 } });
-    // Wait for the save to finish (it clears the field), or a sheet that closes
-    // on success would still be open when this looks.
+    // Wait for the save to finish (it clears the field), or a closing sheet is still open.
     await waitFor(() => expect(screen.getByLabelText("Target weight (kg)")).toHaveValue(""));
     expect(screen.getByRole("dialog", { name: "Goals" })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Done" }));

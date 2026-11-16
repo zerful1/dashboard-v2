@@ -72,8 +72,7 @@ describe("ExerciseSheet, logging", () => {
   });
 
   it("continues numbering from the highest existing set, not the count", async () => {
-    // Set 2 was deleted; the next must be 4, or it collides with set 3 on
-    // UNIQUE (session_id, exercise_name, set_number), and the server upserts.
+    // Set 2 was deleted; the next must be 4, or it collides with set 3 on the server's upsert key.
     mockCoaching(null);
     const { onLogSet } = renderSheet({ todaySets: [aSet(1), aSet(3)] });
     await userEvent.type(reps(), "5");
@@ -91,8 +90,7 @@ describe("ExerciseSheet, logging", () => {
     expect(onLogSet).toHaveBeenCalledWith(0, 9, true, 1);
   });
 
-  // A selected toggle once dropped its border, so switching one on
-  // moved everything below it by 2px. Both states keep a 1px border.
+  // A selected toggle once dropped its border and shifted everything below by 2px; both states keep 1px.
   it("keeps the bodyweight toggle the same size when it is switched on", async () => {
     mockCoaching(null);
     renderSheet();
@@ -218,8 +216,7 @@ describe("ExerciseSheet, last time", () => {
     expect(screen.getByLabelText("Right")).toHaveValue(8);
   });
 
-  // "Nothing last time" is not "First time" while today's
-  // sets may still hold this exercise.
+  // 'Nothing last time' is not 'First time' while today's sets may still hold this exercise.
   it("says nothing about a first time while today's sets load", () => {
     mockCoaching(null);
     const { update } = renderSheet({ todayPending: true });
@@ -293,8 +290,7 @@ describe("ExerciseSheet, last time", () => {
     expect(reps()).toHaveValue(6);
   });
 
-  // Until last time has loaded, the sheet must not
-  // claim there is none, and its arrival must not rebuild the inputs.
+  // Until last time has loaded, the sheet must not claim there is none, nor rebuild the inputs on arrival.
   it("says nothing about last time while it loads", () => {
     mockCoaching(null);
     const { update } = renderSheet({ lastPending: true });
@@ -345,10 +341,7 @@ describe("ExerciseSheet, last time", () => {
   });
 });
 
-// Deferred from #32: opened before today's sets arrived, the sheet numbered the
-// next set 1, and the server's upsert then overwrote the real set 1.
-// The grey hints are last time's numbers. Doing the same again is the common
-// case, so an empty field takes its hint rather than make you type it out.
+// Deferred from #32: an empty field takes its hint, and a sheet opened before today's sets mustn't number 1.
 describe("ExerciseSheet, the hints count as values", () => {
   it("logs set 1 from last time's hints with nothing typed", async () => {
     mockCoaching(null);
@@ -384,9 +377,7 @@ describe("ExerciseSheet, the hints count as values", () => {
     expect(onLogSet).toHaveBeenCalledWith(20, { left: 10, right: 9 }, false, 1);
   });
 
-  // Android's number keyboard has an action key, which presses Enter: the
-  // first moves across, the next logs. (An iPhone's has none, so there it is
-  // Safari's arrows above the keyboard, then Add set.)
+  // Android's number keyboard has an action key that presses Enter: first moves across, next logs.
   it("moves from weight to reps on Enter, and logs on the next", async () => {
     mockCoaching(null);
     const { onLogSet } = renderSheet({ last: lastTime([aSet(1, { weight_kg: 80, reps: 8 })]) });
@@ -442,8 +433,7 @@ describe("ExerciseSheet, before today's sets load", () => {
     expect(onLogSet).toHaveBeenCalledWith(90, 6, false, 2);
   });
 
-  // Following today's sets past their arrival moved the weight
-  // when a set was deleted to redo it, and the redo logged the wrong one.
+  // Following today's sets past their arrival moved the weight when a set was deleted to redo it.
   it("keeps the weight when a set is deleted to redo it", () => {
     mockCoaching(null);
     const sets = [aSet(1, { weight_kg: 80 }), aSet(2, { weight_kg: 80 }), aSet(3, { weight_kg: 85 })];
@@ -493,8 +483,7 @@ describe("ExerciseSheet, left / right", () => {
     expect(screen.getByLabelText("Right")).toHaveAttribute("placeholder", "8");
   });
 
-  // The sheet closes between exercises and iOS drops the app
-  // during rest, so a choice made today must survive reopening the sheet.
+  // The sheet closes between exercises and iOS drops the app during rest, so a choice must survive reopening.
   it("switches itself on when this session already has a set logged per side", () => {
     mockCoaching(null);
     renderSheet({ todaySets: [sidedSet()] });

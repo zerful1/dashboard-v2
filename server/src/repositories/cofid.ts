@@ -2,12 +2,7 @@ import { pool } from "../db/pool";
 import { T } from "../config";
 import type { FoodHit } from "@dashboard/shared";
 
-/*
- * The one repository with no userId. cofid_foods is global reference data -
- * the UK government's composition table - with no user_id column and no
- * per-user rows, so there is nothing to scope. The route still requires a
- * session.
- */
+/* The one repository with no userId: cofid_foods is global reference data with no user_id column. */
 
 const MAX_TERMS = 6;
 // Postgres ARE metacharacters: the search text is user input, and it goes into a regex.
@@ -26,12 +21,7 @@ interface Row {
   salt: number | null;
 }
 
-/**
- * Every word must start a word in the name - `\m` is Postgres' start-of-word
- * anchor. "chick bre" finds "Chicken, breast" as you type; "oat" does not find
- * "coated", which v1's substring ILIKE did (measured against the real table).
- * Names starting with the first word rank first, then shorter names.
- */
+/** Every word must start a word in the name (`\m`): "oat" must not find "coated"; first-word matches rank first. */
 export async function searchCofid(q: string, limit = 20): Promise<FoodHit[]> {
   const terms = q.trim().split(/\s+/).filter(Boolean).slice(0, MAX_TERMS).map(escapeRegex);
   if (terms.length === 0) return [];

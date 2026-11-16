@@ -7,8 +7,7 @@ import { DEFAULT_SPLIT, gridSince } from "@dashboard/shared";
 import { prettyDate } from "../src/lib/dates";
 import * as apiModule from "../src/lib/api";
 
-// Mutable so one test can render with NO user. vi.mock is hoisted above every
-// import, so the state it reads has to be hoisted with it.
+// Mutable so one test can render with NO user; vi.mock is hoisted above every import.
 const auth = vi.hoisted(() => ({
   user: { id: "u1", email: "a@b.com" } as { id: string; email: string } | null,
 }));
@@ -24,10 +23,7 @@ const aSet = (n: number, reps = 5) => ({
   weight_kg: 100, reps, reps_left: null, reps_right: null, is_bodyweight: false,
 });
 
-/**
- * By path, longest prefix first. The grid asks for sessions with `since`, and
- * the list without, so one sessions route answers both from what it is asked.
- */
+/** By path, longest prefix first: the grid asks for sessions with `since` and the list without. */
 function mockByPath(routes: { list?: unknown[]; grid?: unknown[]; detail?: unknown; dayNames?: string[] }) {
   vi.spyOn(apiModule, "api").mockImplementation(async (path: string) => {
     if (path.startsWith("/api/split")) return DEFAULT_SPLIT as never;
@@ -156,8 +152,7 @@ describe("History, the session sheet", () => {
     );
   });
 
-  // "100 × 8" broke onto two lines in narrow columns; a long session
-  // scrolls sideways inside the sheet instead.
+  // "100 × 8" broke onto two lines in narrow columns; a long session scrolls sideways inside the sheet instead.
   it("keeps every set cell on one line", async () => {
     mockByPath({ list: [session("a", "2026-08-16", "Legs")], detail: { sets: [1, 2, 3, 4, 5, 6].map((n) => aSet(n)), cardio: [] } });
     renderTab();
@@ -168,8 +163,7 @@ describe("History, the session sheet", () => {
   });
 
   it("leaves a gap where a set number is missing rather than shifting later sets left", async () => {
-    // Set 2 was deleted, so the row is 1, —, 3. Rendering by position instead
-    // of by set_number would show 1, 3 and silently relabel set 3 as set 2.
+    // Set 2 was deleted so the row is 1, —, 3; rendering by position, not set_number, would relabel set 3.
     mockByPath({ list: [session("a", "2026-08-16", "Legs")], detail: { sets: [aSet(1, 1), aSet(3, 3)], cardio: [] } });
     renderTab();
     await userEvent.click(await screen.findByText(prettyDate("2026-08-16")));
@@ -178,8 +172,7 @@ describe("History, the session sheet", () => {
   });
 });
 
-// Deferred from #33: the grid is keyed by the day it starts on, which moves every
-// day, so offline on a new day it waited for the network with a spinner.
+// The grid is keyed by the day it starts on, which moves daily.
 describe("History, offline on a new day", () => {
   afterEach(() => onlineManager.setOnline(true));
 

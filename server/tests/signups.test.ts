@@ -48,8 +48,7 @@ describe("registration when sign-ups are closed", () => {
     await request(closed).post("/api/auth/login").send(alice).expect(200);
   });
 
-  // The positive complement: a policy that refused everyone would pass the
-  // tests above on its own.
+  // The positive complement: a policy that refused everyone would pass the tests above on its own.
   it("lets a listed address register, and only that one", async () => {
     const listed = createApp({ signups: parseSignupPolicy("alice@example.com") });
     await request(listed).post("/api/auth/register").send(alice).expect(201);

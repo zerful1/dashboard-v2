@@ -20,8 +20,7 @@ const configSchema = z
       )
       .min(1)
       .max(14),
-    // Exactly seven, Monday-first. A shorter array would make getTodayDayType
-    // silently return 'rest' for the missing days rather than failing.
+    // Exactly seven, Monday-first: a shorter array makes getTodayDayType return 'rest' silently.
     week: z.array(dayTypeSchema).length(7),
   })
   .refine(

@@ -53,8 +53,7 @@ describe('evaluateRename', () => {
   })
 
   it('still merges when the old name also exists on other days', () => {
-    // 'Lateral Raise' lives on days 3 and 5; renaming it from day 3 to a
-    // day-5 name is a merge, not a collision.
+    // 'Lateral Raise' lives on days 3 and 5; renaming it from day 3 to a day-5 name is a merge, not a collision.
     expect(evaluateRename(rows, 'Lateral Raise', 3, 'Incline DB Press')).toEqual({
       sameDayCollision: false,
       mergeWith: 'Incline DB Press',

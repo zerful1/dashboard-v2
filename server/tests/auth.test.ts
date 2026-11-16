@@ -36,12 +36,7 @@ describe("register", () => {
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("bad_request");
 
-    // Pinned to the exact text, not merely "defined": this string is rendered
-    // verbatim under the Password field, so it is interface copy rather than a
-    // diagnostic. zod's default here is "String must contain at least 8
-    // character(s)", which names the validator's own type at the user and
-    // carries a "(s)" that can never be singular — a regression back to it
-    // would be invisible to a toBeDefined() check.
+    // Pinned to the exact text: it is interface copy, and zod's default names its own type at the user.
     expect(res.body.details.password).toBe(
       `Password must be at least ${PASSWORD_MIN_LENGTH} characters`,
     );
@@ -130,8 +125,7 @@ describe("login", () => {
     const known = await time(creds.email);
     const unknown = await time("nobody@example.com");
 
-    // Without DUMMY_HASH the unknown path returns in ~1ms against ~100ms. A 5x
-    // band survives CI jitter while still catching a missing dummy verify.
+    // Without DUMMY_HASH the unknown path returns in ~1ms against ~100ms; a 5x band survives CI jitter.
     const ratio = Math.max(known, unknown) / Math.min(known, unknown);
     expect(ratio).toBeLessThan(5);
   });

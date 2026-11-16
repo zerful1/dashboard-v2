@@ -36,11 +36,7 @@ function CameraView({ onCode }: { onCode: (code: string) => void }) {
   );
 }
 
-/**
- * Scan or type a barcode, then go to the amount step. A library food comes
- * back as its item (logging links to it); an unknown one offers the Custom
- * form with the barcode attached.
- */
+/** Scan or type a barcode, then go to the amount step; an unknown code offers the Custom form with it attached. */
 export function ScanTab({ onFound, onAddYourself }: {
   onFound: (choice: FoodChoice) => void;
   onAddYourself: (barcode: string) => void;
@@ -48,8 +44,7 @@ export function ScanTab({ onFound, onAddYourself }: {
   const online = useOnline();
   const [status, setStatus] = useState<Status>({ kind: "scanning" });
   const [typed, setTyped] = useState("");
-  // An answer belongs to the lookup that asked for it: a newer lookup, or
-  // leaving the tab, makes it stale.
+  // An answer belongs to the lookup that asked: a newer lookup, or leaving the tab, makes it stale.
   const latest = useRef(0);
   useEffect(() => () => void latest.current++, []);
 

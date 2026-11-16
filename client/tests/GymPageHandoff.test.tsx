@@ -12,15 +12,7 @@ vi.mock("@/auth/AuthProvider", () => ({
   useAuth: () => ({ user: { id: "u1", email: "a@b.com" }, loading: false }),
 }));
 
-/**
- * GymPage composes useSplit, useGymDay, useExercises, useWorkoutDay and a
- * lastLoggedDay query — five fetches with no serialisation between them. An
- * order-based mock here would be a race, so this matches on path only.
- *
- * Order matters within this list: `/api/workouts/session-detail` must be tested
- * before `/api/workouts/session`, since startsWith would otherwise never reach
- * it. Longest-prefix-first is the safe habit.
- */
+/** Mocks by path only, longest prefix first (`session-detail` before `session`). */
 const ROUTES: [string, unknown][] = [
   ["/api/split", DEFAULT_SPLIT],
   ["/api/exercises", []],
@@ -36,8 +28,7 @@ const ROUTES: [string, unknown][] = [
 ];
 
 function OLD_SESSION() {
-  // A Push session (day_type 3) on a date that is not today, so a successful
-  // hand-off is visible in both the heading and the date control.
+  // A Push session (day_type 3) on a date that is not today.
   return {
     id: "old-1",
     user_id: "u1",
@@ -70,8 +61,7 @@ function renderPage() {
       </QueryClientProvider>
     </MemoryRouter>,
   );
-  // The visible date label is locale-formatted ("20 May" vs "May 20"), so
-  // assertions read the underlying input instead.
+  // The visible date label is locale-formatted ("20 May" vs "May 20"), so assertions read the underlying input.
   const selectedDate = () =>
     (container.querySelector('input[type="date"]') as HTMLInputElement | null)?.value;
   return { selectedDate, container };
@@ -85,8 +75,7 @@ describe("GymPage sub-tabs and hand-off", () => {
     mockByPath();
     const { container } = renderPage();
 
-    // The day and date are the page's context. Hiding them on History would
-    // make the hand-off look like it did nothing.
+    // The day and date are the page's context; hiding them on History would make the hand-off look like it did nothing.
     for (const tab of ["Stats", "History"]) {
       await userEvent.click(await screen.findByRole("button", { name: tab }));
       expect(screen.getByRole("button", { name: /^Training day/ })).toBeInTheDocument();
@@ -102,9 +91,7 @@ describe("GymPage sub-tabs and hand-off", () => {
     await userEvent.click(await screen.findByText(prettyDate("2026-05-20")));
     await userEvent.click(await screen.findByRole("button", { name: /edit in log/i }));
 
-    // Heading follows day_type 3 -> Push, and the date follows the session's
-    // date. Both, from one jumpTo — a selectDay that forgot the date would
-    // still pass the heading assertion.
+    // Heading follows day_type 3 -> Push and the date follows the session, both from one jumpTo.
     await waitFor(() =>
       expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Push"),
     );
@@ -112,9 +99,7 @@ describe("GymPage sub-tabs and hand-off", () => {
   });
 
   it("the hand-off survives a late lastLoggedDay resolving", async () => {
-    // A v1 bug, re-asserted at the page level: jumpTo latches, so the fallback
-    // cannot pull the user back to today's rotation slot. A plain selectDay +
-    // selectDate pair would not latch and would regress this.
+    // jumpTo latches, so the fallback cannot pull the user back to today's rotation slot.
     let resolveLastLogged!: (v: unknown) => void;
     const lastLoggedPromise = new Promise<unknown>((r) => {
       resolveLastLogged = r;

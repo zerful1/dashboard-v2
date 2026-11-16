@@ -4,11 +4,7 @@ import { clientPath } from "./clientRoot";
 
 const CSS = readFileSync(clientPath("src/styles.css"), "utf8");
 
-/**
- * Recharts makes its chart focusable, so tapping the Weight chart left a focus
- * box around it (#37). jsdom has no layout or focus heuristics, so this pins
- * the stylesheet; the browser pass taps the chart.
- */
+/** Recharts makes its chart focusable, leaving a focus box on tap; jsdom has no focus heuristics. */
 describe("the chart's focus outline", () => {
   it("is hidden for pointer focus on the chart", () => {
     expect(CSS).toMatch(
@@ -16,9 +12,7 @@ describe("the chart's focus outline", () => {
     );
   });
 
-  // Recharts 3 makes a Bar's layer focusable at tabindex -1, so tapping the
-  // lift chart's rep bars boxed them in white. Tab never reaches tabindex -1,
-  // so hiding its outline hides nothing from the keyboard.
+  // Recharts 3 makes a Bar's layer focusable at tabindex -1, which Tab never reaches.
   it("is hidden on the chart's tabindex -1 layers, which only a pointer can focus", () => {
     expect(CSS).toMatch(/\.recharts-wrapper \[tabindex="-1"\]:focus\s*\{[^}]*outline:\s*none/);
   });

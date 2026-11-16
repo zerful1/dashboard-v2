@@ -1,9 +1,4 @@
-/**
- * "Mon 22 Sep" for a YYYY-MM-DD. Built as a LOCAL date: new Date('2026-08-16')
- * parses as UTC and renders the previous day for anyone west of it. Was
- * duplicated in DateSelector and Home's old last-session card; now the copy
- * sheet needs it too.
- */
+/** "Mon 22 Sep" for a YYYY-MM-DD, built as a LOCAL date since new Date('2026-08-16') parses as UTC. */
 export function prettyDate(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(y!, m! - 1, d!).toLocaleDateString(undefined, {
@@ -41,8 +36,7 @@ export function shortDate(iso: string, today: string): string {
   return new Date(y!, m! - 1, d!).toLocaleDateString(undefined, opts);
 }
 
-// Fixed English names, not the locale's: en-GB's short September is "Sept",
-// and a screen reader's label should not change with the device.
+// Fixed English names, not the locale's: a screen reader's label should not change with the device.
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const MONTHS_LONG = [
   "January", "February", "March", "April", "May", "June",
@@ -56,13 +50,12 @@ function weekday(iso: string): string {
   return WEEKDAYS[new Date(y!, m! - 1, d!).getDay()]!;
 }
 
-/** "24–30 Sep", "28 Sep – 4 Oct", "29 Dec 2025 – 4 Jan": a span of days, with the year only outside today's. */
+/** "24–30 Sep", "28 Sep – 4 Oct": a span of days, with the year only outside today's. */
 export function rangeLabel(from: string, to: string, today: string): string {
   const [fy, fm, fd] = from.split("-").map(Number);
   const [ty, tm, td] = to.split("-").map(Number);
   const year = (y: number) => (y === Number(today.slice(0, 4)) ? "" : ` ${y}`);
-  // Across a year end the second year is named, always, and the first never:
-  // "29 Dec – 4 Jan 2026".
+  // Across a year end the second year is named, always, and the first never.
   if (fy !== ty) return `${fd} ${MONTHS[fm! - 1]} – ${td} ${MONTHS[tm! - 1]} ${ty}`;
   if (fm !== tm) return `${fd} ${MONTHS[fm! - 1]} – ${td} ${MONTHS[tm! - 1]}${year(ty!)}`;
   return `${fd}–${td} ${MONTHS[tm! - 1]}${year(ty!)}`;
@@ -85,7 +78,7 @@ export function monthLabel(iso: string, today: string): string {
   return iso.slice(0, 4) === today.slice(0, 4) ? MONTHS_LONG[m]! : `${MONTHS[m]} ${iso.slice(0, 4)}`;
 }
 
-/** "Feb – Apr", or "Nov 2025 – Feb 2026" when either end is outside today's year; one month is monthLabel. */
+/** "Feb – Apr", or "Nov 2025 – Feb 2026" when either end is outside today's year. */
 export function monthRangeLabel(from: string, to: string, today: string): string {
   if (from.slice(0, 7) === to.slice(0, 7)) return monthLabel(from, today);
   const year = today.slice(0, 4);

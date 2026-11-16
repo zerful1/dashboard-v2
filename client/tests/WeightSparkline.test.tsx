@@ -4,8 +4,7 @@ import { render } from "@testing-library/react";
 import type { AveragePoint } from "@dashboard/shared";
 import { WeightSparkline } from "../src/features/weight/WeightChart";
 
-// jsdom has no layout, so a ResponsiveContainer measures 0 x 0 and draws
-// nothing. A fixed size lets the line and its dots render.
+// jsdom has no layout, so a ResponsiveContainer measures 0 x 0 and draws nothing.
 vi.mock("recharts", async (importOriginal) => {
   const actual = await importOriginal<typeof import("recharts")>();
   return {

@@ -48,12 +48,7 @@ export async function addCardio(
   return rows[0]!;
 }
 
-/**
- * Every field is replaced — the client sends the whole entry, not a diff.
- *
- * Returns null rather than throwing when nothing matched, so the route can
- * answer 404 without distinguishing "no such entry" from "not yours".
- */
+/** Every field is replaced; null when nothing matched, so the route answers 404 for missing or foreign. */
 export async function updateCardio(
   userId: string,
   id: string,

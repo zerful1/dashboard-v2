@@ -9,14 +9,7 @@ export interface ImportArgs {
   apply: boolean;
 }
 
-/**
- * Refuses by SHAPE before touching anything, like seedDev and tests/setup.ts.
- * The schema must be named on the command line - never read from DB_SCHEMA,
- * where a stale .env could supply the wrong one - and must not be app_test
- * (tests own their fixtures) or public (where v1 lived until 2026-10-20; nothing
- * of ours belongs there).
- * Without --apply nothing is written at all.
- */
+/** Refuses by shape: schema named on the command line, not app_test or public; --apply to write. */
 export function parseArgs(argv: string[]): ImportArgs {
   const file = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   if (!file) throw new Error("Usage: npm run import-cofid -- <CoFID.xlsx> --schema <name> [--apply]");
