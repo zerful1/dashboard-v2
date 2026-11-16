@@ -69,6 +69,9 @@ const resetEmail = (req: Request) => {
   return req.method === "POST" && typeof email === "string" ? email.trim().toLowerCase().slice(0, 254) : null;
 };
 
+/** Deleting the account checks a password: an argon2 hash per guess, like a login. */
+const accountDelete = (req: Request) => (req.method === "DELETE" && req.path === "/" ? (req.ip ?? null) : null);
+
 /**
  * The app's limits, built once per app instance. Mounted by createApp in front
  * of the session, so a refused request costs no database read.
@@ -81,11 +84,18 @@ const resetEmail = (req: Request) => {
  *                      requests to Open Food Facts under this app's name, and
  *                      the demo lets anyone make them. Typing a search fires
  *                      a few a second at most.
+ *   DELETE /api/profile 10 per 15 minutes per address: each is a password check
  */
-export function buildRateLimits(): { auth: RequestHandler; forgotPassword: RequestHandler; food: RequestHandler } {
+export function buildRateLimits(): {
+  auth: RequestHandler;
+  forgotPassword: RequestHandler;
+  food: RequestHandler;
+  accountDelete: RequestHandler;
+} {
   return {
     auth: rateLimit({ max: 30, windowMs: 15 * MINUTE, key: authPost }),
     forgotPassword: rateLimit({ max: 5, windowMs: 60 * MINUTE, key: resetEmail }),
     food: rateLimit({ max: 60, windowMs: MINUTE }),
+    accountDelete: rateLimit({ max: 10, windowMs: 15 * MINUTE, key: accountDelete }),
   };
 }

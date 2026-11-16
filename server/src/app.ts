@@ -76,6 +76,7 @@ export function createApp(options: { signups?: SignupPolicy; rateLimits?: boolea
     app.use("/api/auth", limits.auth);
     app.use("/api/auth/forgot-password", limits.forgotPassword);
     app.use("/api/food", limits.food);
+    app.use("/api/profile", limits.accountDelete);
   }
 
   app.use(sessionMiddleware);
