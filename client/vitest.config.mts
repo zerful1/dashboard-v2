@@ -6,6 +6,8 @@ export default defineConfig({
     environment: "jsdom",
     include: ["tests/**/*.test.{ts,tsx}"],
     setupFiles: ["./tests/setup.ts"],
+    // Node 25+ ships its own localStorage, which shadows jsdom's.
+    execArgv: ["--no-experimental-webstorage"],
   },
   resolve: {
     // import.meta.dirname, NOT __dirname — client/package.json sets
