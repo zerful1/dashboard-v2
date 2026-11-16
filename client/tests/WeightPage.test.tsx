@@ -127,9 +127,7 @@ describe("Weight page", () => {
     expect(screen.getByText("7-day average", { selector: ".lbl" })).toBeInTheDocument();
   });
 
-  // Once drawn without the goals, the signal returning starts
-  // their fetch (pending again). Spinning then would unmount an open sheet and
-  // lose what was being typed, so the page waits for the goals only once.
+  // Once drawn without the goals, the signal returning refetches them; spinning would unmount an open sheet.
   it("stays drawn, with an open sheet, when the signal returns and the goals start loading", async () => {
     let release!: (goals: Goal[]) => void;
     mockApi({ goals: new Promise<Goal[]>((r) => (release = r)) });
@@ -195,10 +193,7 @@ describe("Weight page", () => {
     );
   });
 
-  // No held failure needed (unlike Home's field): Log closes the sheet, so the
-  // form is gone however soon the save fails. Its exit animation keeps it
-  // mounted, though, and reopening mid-exit revives the old form with what was
-  // typed still in it, so the test waits for the sheet to finish closing.
+  // Log closes the sheet but its exit animation keeps it mounted: wait for it to close before reopening.
   it("gives a failed weigh-in back when Log is opened again", async () => {
     mockApi({ saveFails: true });
     const qc = renderPage();

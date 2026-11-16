@@ -4,7 +4,7 @@ import { createApp } from "../src/app";
 
 const app = createApp();
 
-/** An unparseable body reaches the handler as a plain http-errors object; treated as unexpected it logged the raw body. */
+/** An unparseable body arrives as a plain http-errors object; treated as unexpected it logged it. */
 describe("a body the JSON parser rejects", () => {
   afterEach(() => vi.restoreAllMocks());
 
@@ -34,7 +34,7 @@ describe("a body the JSON parser rejects", () => {
   });
 
   it("leaves a well-formed request to the route", async () => {
-    // The positive complement: a 400 for every body would pass the tests above; a wrong password is the route's own 401.
+    // The positive complement: a 400 for every body would pass the tests above; a wrong password is a 401.
     const res = await request(app)
       .post("/api/auth/login")
       .send({ email: "nobody@example.com", password: "wrong-password-1" });

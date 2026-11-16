@@ -27,7 +27,7 @@ describe("body weight", () => {
     expect(res.body.map((r: { date: string }) => r.date)).toEqual(["2026-08-15", "2026-08-13"]);
   });
 
-  /* node-pg parses a `date` at local midnight, so during BST it serialises a day early; the winter dates alone would miss it. */
+  /* node-pg parses a `date` at local midnight, so in BST it serialises a day early; winter dates miss it. */
   it("returns dates as plain strings, unshifted", async () => {
     const agent = request.agent(app);
     await agent.post("/api/auth/register").send(alice);

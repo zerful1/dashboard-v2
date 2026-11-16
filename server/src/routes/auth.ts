@@ -21,19 +21,7 @@ import { refreshDemoIfStale, DEMO_TIMEZONE } from "../demo/refresh";
 
 export const authRouter = Router();
 
-/**
- * Every message below is written out rather than left to zod's default.
- *
- * The defaults leak the validator's vocabulary into the interface — a user
- * shown "String must contain at least 8 character(s)" is reading about a zod
- * type, not about their password. Spelling the message out also removes the
- * "(s)": the minimum is a fixed number, so the plural is never in question.
- *
- * The object KEYS are the contract, not the messages. `details` is keyed by the
- * field path (see middleware/validate.ts) and the client maps `details.password`
- * onto the Password field, so renaming a key silently breaks that mapping while
- * rewording a message is free.
- */
+/** Messages are spelled out, not zod's defaults; the KEYS are the contract (`details` keys by path). */
 const emailField = z
   .string()
   .email("Enter a valid email address")
@@ -60,11 +48,7 @@ authRouter.post("/register", validate({ body: credentials }), async (req, res, n
   try {
     const { email, password } = req.body as z.infer<typeof credentials>;
 
-    // Before hashing and before the database: a refused sign-up costs nothing
-    // and creates nothing. A plain 403 rather than the deliberately vague 400
-    // below. It does tell a caller whether an address is on the allowlist -
-    // acceptable because that list is empty in production and only ever holds
-    // a demo address, never a real person's.
+    // Before hashing and the database; a plain 403 shows allowlist membership, fine: only a demo address.
     if (!signupAllowed(req.app.locals.signupPolicy as SignupPolicy, email)) {
       next(new Forbidden("Sign-ups are closed"));
       return;
@@ -77,17 +61,14 @@ authRouter.post("/register", validate({ body: credentials }), async (req, res, n
     const passwordHash = await hashPassword(password);
     const user = await createUserWithProfile(email, passwordHash);
 
-    // Same fixation defence as login: an attacker who planted a known session id
-    // in the victim's browser must not still hold it once the account exists.
+    // Same fixation defence as login: a planted session id must not survive the account's creation.
     await regenerate(req);
     req.session.userId = user.id;
 
     res.status(201).json({ id: user.id, email: user.email });
   } catch (err) {
     if (err instanceof Conflict) {
-      // Deliberately vague at the HTTP boundary. The repository knows the email is
-      // taken, but confirming that to an unauthenticated caller turns the signup
-      // form into an account-enumeration oracle.
+      // Deliberately vague: confirming the email is taken would make signup an account-enumeration oracle.
       next(new BadRequest("Could not create that account"));
       return;
     }
@@ -98,13 +79,10 @@ authRouter.post("/register", validate({ body: credentials }), async (req, res, n
 authRouter.post("/login", validate({ body: credentials }), async (req, res, next) => {
   try {
     const { email, password } = req.body as z.infer<typeof credentials>;
-    // The demo account is reachable only through /demo, which marks the session
-    // read-only: here it is an unknown address, dummy hash and all.
+    // The demo is reachable only through /demo, so here it is an unknown address, dummy hash and all.
     const user = isDemoEmail(email) ? null : await findUserByEmail(email);
 
-    // Always hash, even when the email is unknown — otherwise response time
-    // reveals whether the account exists. DUMMY_HASH never matches, so the
-    // outcome is unchanged; only the timing is.
+    // Always hash, even for an unknown email, or response time reveals whether the account exists.
     const ok = await verifyPassword(user?.password_hash ?? DUMMY_HASH, password);
     if (!user || !ok) {
       next(new Unauthorized("Invalid email or password"));
@@ -131,9 +109,7 @@ authRouter.post("/logout", (req, res, next) => {
   });
 });
 
-// The read-only demo: no password, regardless of the sign-up policy. Server
-// time in the demo's own timezone decides staleness (CLAUDE.md: server work
-// takes a timezone, never the client's clock).
+// The read-only demo needs no password; server time in the demo's own timezone decides staleness.
 authRouter.post("/demo", async (req, res, next) => {
   try {
     const user = await findOrCreateDemoUser();
@@ -152,8 +128,7 @@ authRouter.get("/me", requireAuth, async (req, res, next) => {
   try {
     const user = await findUserById(req.userId);
     if (!user) {
-      // The session outlived its user row — deleted account, or a restored
-      // database. Clear it rather than 500ing on every subsequent request.
+      // The session outlived its user row: clear it rather than 500 on every later request.
       req.session.destroy(() => {});
       next(new Unauthorized());
       return;
@@ -164,9 +139,7 @@ authRouter.get("/me", requireAuth, async (req, res, next) => {
   }
 });
 
-// ---------------------------------------------------------------------------
 // Password change and reset
-// ---------------------------------------------------------------------------
 
 const changeBody = z.object({
   currentPassword: z
@@ -191,9 +164,7 @@ authRouter.post(
         return;
       }
 
-      // updatePasswordHash deletes EVERY session for this user, including the one
-      // making the request — so regenerate afterwards to keep the caller signed
-      // in. The reverse order would delete the session it just created.
+      // updatePasswordHash deletes every session including this one, so regenerate afterwards, not before.
       await updatePasswordHash(user.id, await hashPassword(newPassword));
       await regenerate(req);
       req.session.userId = user.id;
@@ -227,8 +198,7 @@ authRouter.post(
       }
       await floor;
 
-      // Always 204, whether or not the account exists. Any other shape is an
-      // account-enumeration oracle.
+      // Always 204, whether or not the account exists, or this is an account-enumeration oracle.
       res.sendStatus(204);
     } catch (err) {
       next(err);
@@ -237,8 +207,7 @@ authRouter.post(
 );
 
 const resetBody = z.object({
-  // Not user-typed — it comes from the emailed link — so a length failure means
-  // a mangled URL, not something the user can correct by editing a field.
+  // Comes from the emailed link, so a length failure means a mangled URL, not something the user can edit.
   token: z.string().length(64, "That reset link is not valid"),
   newPassword: passwordField,
 });
@@ -253,8 +222,7 @@ authRouter.post("/reset-password", validate({ body: resetBody }), async (req, re
       return;
     }
 
-    // Signs out every device. A reset is usually a response to compromise, so
-    // leaving other sessions alive would defeat the point.
+    // Signs out every device: a reset is usually a response to compromise.
     await updatePasswordHash(userId, await hashPassword(newPassword));
     res.sendStatus(204);
   } catch (err) {

@@ -48,7 +48,7 @@ export async function findSession(
   return rows[0] ?? null;
 }
 
-/** Returns the session for (date, dayType), creating it; `day_name` is snapshotted at creation because day_type is reused across eras. */
+/** Returns the session for (date, dayType), creating it; `day_name` is snapshotted as day_type is reused. */
 export async function getOrCreateSession(
   userId: string,
   date: string,
@@ -75,7 +75,7 @@ export interface SessionListOptions {
   since?: string;
 }
 
-/** Newest first with distinct exercises and set count; COUNT is a bigint that pg returns as a string, hence the casts. */
+/** Newest first with distinct exercises and set count; pg returns COUNT (bigint) as a string, hence casts. */
 export async function listSessions(
   userId: string,
   opts: SessionListOptions,

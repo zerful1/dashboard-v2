@@ -49,7 +49,7 @@ export function SettingsPage() {
     },
   });
 
-  // Uncommitted autosave-on-blur text; cleared from mutateAsync's promise, as a second blur detaches `.mutate()` callbacks.
+  // Unsaved autosave-on-blur text; cleared from mutateAsync's promise, as a second blur detaches `.mutate()`.
   const [tzDraft, setTzDraft] = useState<string | null>(null);
   const [tzError, setTzError] = useState<string | undefined>(undefined);
 

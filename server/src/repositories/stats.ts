@@ -2,11 +2,7 @@ import { pool } from "../db/pool";
 import { T } from "../config";
 import type { LiftSetRow, WorkoutSet, CardioEntry } from "@dashboard/shared";
 
-/**
- * Every set, or one exercise's, with its session's date, oldest first: what the
- * lift stats read. No aggregation here; the rule lives
- * in shared, where it is tested.
- */
+/** Every set, or one exercise's, with its session's date, oldest first; the rule lives in shared. */
 export async function liftRows(userId: string, exerciseName?: string): Promise<LiftSetRow[]> {
   const { rows } = await pool.query<LiftSetRow>(
     `SELECT s.session_id, ws.date::text AS date, s.exercise_name, s.set_number,
@@ -52,14 +48,7 @@ export async function sessionDetail(
   return { sets: sets.rows, cardio: cardio.rows };
 }
 
-/**
- * Distinct exercise names from HISTORY, not the template.
- *
- * The template has 28 rows; the sets span far more, because exercises get
- * pruned over time. Listing from the template would make everything you have
- * stopped doing unreachable in stats — which is exactly the history worth
- * looking at.
- */
+/** Distinct exercise names from HISTORY, not the template: pruned exercises must stay reachable in stats. */
 export async function historyExerciseNames(userId: string): Promise<string[]> {
   const { rows } = await pool.query<{ exercise_name: string }>(
     `SELECT DISTINCT exercise_name FROM ${T.workoutSets}

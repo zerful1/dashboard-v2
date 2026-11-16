@@ -2,16 +2,7 @@ import { pool } from "../db/pool";
 import { T } from "../config";
 import type { SessionGroup } from "@dashboard/shared";
 
-/**
- * The last `limit` sessions containing this exercise, NEWEST FIRST, each as a
- * flat list of its sets.
- *
- * Order is load-bearing, not cosmetic. computeRecommendation reads index 0 as
- * the most recent session (`const latest = sessionGroups[0]`), index 1 as the
- * one it may have jumped from, and liftStep learns the step from the jumps in
- * order. Reversing this produces confident advice based on the oldest
- * sessions — which would look entirely plausible and be wrong.
- */
+/** The last `limit` sessions with this exercise, NEWEST FIRST: index 0 is the latest. */
 export async function recentSessionGroups(
   userId: string,
   exerciseName: string,
@@ -46,7 +37,6 @@ export async function recentSessionGroups(
     group.push({ weight_kg: r.weight_kg, reps: r.reps, is_bodyweight: r.is_bodyweight });
     byDate.set(r.date, group);
   }
-  // Map preserves insertion order, and rows arrive date DESC, so this is
-  // already newest-first.
+  // Map keeps insertion order and rows arrive date DESC, so this is already newest-first.
   return [...byDate.values()];
 }

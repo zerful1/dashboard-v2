@@ -140,8 +140,7 @@ describe("Insights: the week", () => {
     expect((await screen.findByText("+0.8")).closest("[data-tone]")).toHaveAttribute("data-tone", "good");
   });
 
-  // Offline, with the week saved and goals never loaded, the goals
-  // query pauses and stays pending. Waiting for it would spin for good (Weight's rule).
+  // Offline, week saved, goals never loaded: the goals query stays pending, and waiting would spin forever.
   it("draws the saved week offline when the goals were never loaded", async () => {
     freeze();
     mockApi();
@@ -152,8 +151,7 @@ describe("Insights: the week", () => {
     expect(await screen.findByText("38 sets · 9,120 kg (+6%)")).toBeInTheDocument();
   });
 
-  // #40's deferred minor: drawn without the goals offline, the signal returning
-  // starts their fetch (pending again), and the week spun until it settled.
+  // #40's deferred minor: drawn without goals offline, the signal returning refetches them and the week spun.
   it("stays drawn when the signal returns and the goals start loading", async () => {
     freeze();
     mockApi({ goals: () => new Promise<Goal[]>(() => {}) });

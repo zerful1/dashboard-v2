@@ -74,7 +74,7 @@ export function useExercises(dayType: number) {
   const renameExercise = useMutation({
     mutationFn: ({ oldName, newName }: { oldName: string; newName: string }) =>
       gymApi.renameExercise(oldName, dayType, newName),
-    // A rename rewrites exercise_name on every historical set, so the whole exercises tree and all session/set readers refetch.
+    // A rename rewrites exercise_name on every historical set, so the exercises tree and set readers refetch.
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: ["exercises"] });
       void qc.invalidateQueries({ queryKey: ["exerciseNames"] });

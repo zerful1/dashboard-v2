@@ -9,7 +9,7 @@ interface DetectorClass {
   getSupportedFormats(): Promise<string[]>;
 }
 
-/** The browser's BarcodeDetector when it reads all four formats, else ZXing WASM served from /static/wasm, never a CDN. */
+/** Native BarcodeDetector when it reads all four formats, else ZXing WASM from /static/wasm, never a CDN. */
 export async function createDetector(): Promise<Detector> {
   const native = (globalThis as { BarcodeDetector?: DetectorClass }).BarcodeDetector;
   if (native) {

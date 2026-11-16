@@ -37,7 +37,7 @@ export function NutritionPage() {
   // Today open, with the strip ending today, IS following the clock.
   const choose = (next: Picked) => setPicked(next.end === today && next.open === today ? null : next);
   const pickDate = (d: string) => {
-    // A typed date is not capped at today and its year can be anything ("10000-…" sorts before today and crashes the strip).
+    // A typed date isn't capped at today and its year can be anything ("10000-…" crashes the strip).
     if (!isRealDate(d) || d > today) return;
     choose({ end: d >= from && d <= end ? end : d, open: d });
   };

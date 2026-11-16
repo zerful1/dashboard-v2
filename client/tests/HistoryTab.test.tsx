@@ -163,7 +163,7 @@ describe("History, the session sheet", () => {
   });
 
   it("leaves a gap where a set number is missing rather than shifting later sets left", async () => {
-    // Set 2 was deleted so the row is 1, —, 3; rendering by position instead of set_number would silently relabel set 3 as set 2.
+    // Set 2 was deleted so the row is 1, —, 3; rendering by position, not set_number, would relabel set 3.
     mockByPath({ list: [session("a", "2026-08-16", "Legs")], detail: { sets: [aSet(1, 1), aSet(3, 3)], cardio: [] } });
     renderTab();
     await userEvent.click(await screen.findByText(prettyDate("2026-08-16")));

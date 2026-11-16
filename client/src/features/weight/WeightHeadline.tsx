@@ -17,7 +17,7 @@ interface Props {
 
 const TONE_CLASS = { good: "text-good", caution: "text-caution", neutral: "text-text" } as const;
 
-/** Where the weight is and which way it is going, in words: 7-day average, Insights' rate and goal projection, then composition. */
+/** Where the weight is and where it is heading, in words: 7-day average, Insights' rate and projection. */
 export function WeightHeadline({ summary, today, goal, goalsFailed, composition }: Props) {
   const safe = useMotionSafe();
   const rate = rateLine(summary.fit, goal);

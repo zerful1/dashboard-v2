@@ -66,7 +66,7 @@ export async function findUserByIdWithPassword(id: string): Promise<UserRow | nu
   return rows[0] ?? null;
 }
 
-/** Changes the password and invalidates every session of the user; the caller must regenerate its own session afterwards. */
+/** Changes the password and invalidates all the user's sessions; the caller must regenerate its own. */
 export async function updatePasswordHash(userId: string, passwordHash: string): Promise<void> {
   await withTransaction(async (client) => {
     await client.query(`UPDATE ${T.users} SET password_hash = $2 WHERE id = $1`, [

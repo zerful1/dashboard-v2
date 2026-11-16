@@ -107,7 +107,7 @@ export function CardioSection({
           >
             Log cardio
           </Button>
-          {/* POST /api/cardio creates the session itself, so no "log a set first" guard and a cardio-only day works. */}
+          {/* POST /api/cardio creates the session itself, so no "log a set first" guard. */}
         </div>
       )}
     </List>

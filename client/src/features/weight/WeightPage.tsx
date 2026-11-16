@@ -51,7 +51,7 @@ export function WeightPage() {
   const start = rangeStart(spec, today, summary.points[0]?.date ?? today);
   const rows = useMemo(() => periodRows(summary.points, spec.period, start, today), [summary.points, spec.period, start, today]);
 
-  // Wait on isPending incl. goals (they colour the rate), but not when paused offline or once drawn, which would unmount an open sheet.
+  // Wait on isPending incl. goals (they colour the rate), not when paused offline or once drawn.
   const [drawn, setDrawn] = useState(false);
   const ready = !isPending && !(goals.isPending && goals.fetchStatus !== "paused" && !drawn);
   useEffect(() => {

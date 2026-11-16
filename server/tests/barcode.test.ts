@@ -113,7 +113,7 @@ describe("GET /api/food/barcode/:code", () => {
     expect((await agent.get("/api/food/barcode/5000112548167").expect(502)).body.message).toBe("Product lookup is unavailable right now");
   });
 
-  // OFF answers a 12-digit UPC-A with the product under its 13-digit code, so a food saved from search is updated, not duplicated.
+  // OFF answers a 12-digit UPC-A under its 13-digit code, so a saved search food is updated, not duplicated.
   it("takes Open Food Facts' own 13-digit code for a 12-digit UPC-A", async () => {
     const page = JSON.parse(COKE);
     page.code = page.product.code = "0049000006582";

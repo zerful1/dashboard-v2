@@ -2,11 +2,7 @@ import { describe, it, expect } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-/**
- * A script pointing tsx at a deleted file passes the typecheck and fails only
- * when someone runs it, which for a one-off tool can be months later. Retiring
- * v1 deleted six such files and their four scripts.
- */
+/** A script pointing tsx at a deleted file passes the typecheck and fails only when someone runs it. */
 describe("npm scripts", () => {
   it.each([
     ["the root", resolve(__dirname, "../..")],

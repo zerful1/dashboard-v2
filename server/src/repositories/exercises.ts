@@ -48,7 +48,7 @@ export async function deleteExercise(userId: string, id: string): Promise<boolea
   return (res.rowCount ?? 0) > 0;
 }
 
-/** Rewrites the day's order from explicit ids; each UPDATE is scoped by user_id and day_type, so foreign ids match nothing. */
+/** Rewrites the day's order from explicit ids; each UPDATE is scoped by user_id and day_type. */
 export async function reorderExercises(
   userId: string,
   dayType: number,
@@ -78,7 +78,7 @@ export interface RenameResult {
   finalName: string;
 }
 
-/** Renames by NAME across template and history in one transaction; throws Conflict if a workout holds a set number under both names. */
+/** Renames by NAME across template and history in one transaction; Conflict if a workout holds both names. */
 export async function renameExercise(
   userId: string,
   oldName: string,

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-/** Inline banner for a failed submission; each auth page keeps its own handler so ForgotPassword's defence can't be flagged off. */
+/** Failed-submission banner; each auth page keeps its own handler so ForgotPassword's defence stays on. */
 export function FormError({ children }: { children: ReactNode }) {
   return (
     <p

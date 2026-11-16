@@ -60,7 +60,7 @@ export function useGymDay(
 
   useEffect(() => {
     if (userHasChosen.current) return;
-    // Decide nothing from DEFAULT_SPLIT: an early rest-day verdict latches the fallback and the real split can't undo it.
+    // Decide nothing from DEFAULT_SPLIT: an early rest-day verdict latches the fallback for good.
     if (splitPending) return;
 
     const todayType = getTodayDayType(split);

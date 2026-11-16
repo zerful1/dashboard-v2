@@ -24,7 +24,7 @@ const SERVING_COLUMNS = new Set<string>(
   NUTRITION_COLUMNS.filter((c) => c === "serving_description" || c === "serving_grams" || c.endsWith("_per_serving")),
 );
 
-/** Stores `food` in the user's library inside the caller's transaction; search foods upsert, manual foods always insert. */
+/** Stores `food` in the user's library in the caller's transaction; search foods upsert, manual insert. */
 export async function upsertFoodItem(client: PoolClient, userId: string, food: FoodInput): Promise<string> {
   const columns = ["user_id", "external_source", "external_id", "name", "brand", "barcode", ...NUTRITION_COLUMNS];
   const values = [

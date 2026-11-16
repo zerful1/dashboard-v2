@@ -116,7 +116,7 @@ describe("useGymDay", () => {
   });
 
   it("the rest-day fallback latches, so a later split change cannot undo it", () => {
-    // The fallback sets the latch itself, or a split refetch would re-run the effect and yank the user off the day they were logging against.
+    // The fallback sets the latch itself, or a split refetch re-runs the effect and moves the user.
     freeze(A_THURSDAY);
     const { result, rerender } = renderHook(({ split }) => useGymDay(split, false, 5), {
       initialProps: { split: DEFAULT_SPLIT },

@@ -6,7 +6,7 @@ import { T } from "../src/config";
 import { listExercises } from "../src/repositories/exercises";
 import { findUserByEmail } from "../src/repositories/users";
 
-/** workout_sets is UNIQUE (session_id, exercise_name, set_number); renaming onto a name living on in history hit it as a 500. */
+/** workout_sets is UNIQUE (session_id, exercise_name, set_number); renaming onto a historic name was a 500 */
 
 const app = createApp();
 const alice = { email: "alice@example.com", password: "correct-horse-9" };

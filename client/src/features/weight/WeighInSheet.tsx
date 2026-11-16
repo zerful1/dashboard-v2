@@ -21,18 +21,13 @@ interface Props {
   remove: ReturnType<typeof useWeights>["deleteWeight"];
 }
 
-/**
- * Logging and editing a weigh-in. Replaces the inline
- * log card and the edit sheet: Log opens it on today with the date free to
- * change; a weigh-in opens it with the date fixed.
- */
+/** Logging and editing a weigh-in: Log opens on today with the date free, a weigh-in with it fixed. */
 export function WeighInSheet(props: Props) {
   const { target, onClose, today } = props;
   const title = target === null ? "" : target.mode === "log" ? "Log weight" : `Edit ${listDate(target.entry.date, today)}`;
   return (
     <Sheet open={target !== null} onClose={onClose} title={title}>
-      {/* A fresh form per opening: Log always starts on today, never on the
-          date picked last time. */}
+      {/* A fresh form per opening: Log always starts on today, never the date picked last time. */}
       {target && <WeighInForm key={target.mode === "log" ? "log" : target.entry.id} {...props} target={target} />}
     </Sheet>
   );
@@ -41,8 +36,7 @@ export function WeighInSheet(props: Props) {
 function WeighInForm({ target, onClose, entries, today, save, remove }: Props & { target: WeighInTarget }) {
   const [date, setDate] = useState(target.mode === "edit" ? target.entry.date : today);
   const existing = entries.find((e) => e.date === date) ?? (target.mode === "edit" ? target.entry : null);
-  // A failed save gives back what was typed, on its date: Log closed the sheet,
-  // so the form that held it is gone (Home's weigh-in does the same).
+  // A failed save gives back what was typed, on its date: Log closed the sheet, so its form is gone.
   const failed = save.isError && save.variables?.date === date ? save.variables : null;
   const fields = failed
     ? { kg: String(failed.weight_kg), notes: failed.notes ?? "" }
@@ -52,11 +46,7 @@ function WeighInForm({ target, onClose, entries, today, save, remove }: Props & 
   // The latest weigh-in by date is the likeliest next one; "82.4" only with none.
   const latest = entries.reduce<BodyWeightEntry | null>((a, e) => (a === null || e.date > a.date ? e : a), null);
 
-  /**
-   * Reload the fields when the DATE changes, and only then. Depending on
-   * `existing` as well would let a background refetch overwrite what is being
-   * typed (the log card's rule, carried over).
-   */
+  /** Reload the fields when the DATE changes, and only then, so a refetch can't overwrite what is typed. */
   useEffect(() => {
     setKg(fields.kg);
     setNotes(fields.notes);

@@ -135,7 +135,7 @@ describe("service worker", () => {
   });
 
   it("does NOT cache an error page as the offline shell", async () => {
-    // fetch() resolves on a 500, so without the res.ok guard a mid-deploy error page becomes the shell every offline load is served.
+    // fetch() resolves on a 500, so without the res.ok guard a mid-deploy error page becomes the shell.
     const { listeners, cache } = loadWorker({
       response: () => new Response("gateway error", { status: 502 }),
     });
@@ -155,7 +155,7 @@ describe("service worker", () => {
   });
 
   it("does NOT cache the app's HTML under an asset's name", async () => {
-    // A host answering a missing /static/ file with the shell and a 200 would have it saved for good as that chunk, until CACHE is bumped.
+    // A host answering a missing /static/ file with the shell and a 200 would have it saved as that chunk.
     const { listeners, cache } = loadWorker({
       response: () => new Response("<!doctype html>", { headers: { "content-type": "text/html; charset=utf-8" } }),
     });

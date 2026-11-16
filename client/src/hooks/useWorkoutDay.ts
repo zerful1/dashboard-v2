@@ -7,11 +7,7 @@ import { invalidateSessionReaders } from "./invalidate";
 export const workoutDayKey = (userId: string, dayType: number, date: string) =>
   ["workoutDay", userId, dayType, date] as const;
 
-/**
- * One (day, date)'s session and its sets, shared by useWorkoutDay and Home. No
- * session yet is the normal state for a day you have not started — not an
- * error, and not a reason to show a spinner forever.
- */
+/** One (day, date)'s session and its sets, shared with Home; no session yet is a normal state. */
 export function workoutDayQueryOptions(userId: string, dayType: number, date: string) {
   return queryOptions({
     queryKey: workoutDayKey(userId, dayType, date),
@@ -22,7 +18,7 @@ export function workoutDayQueryOptions(userId: string, dayType: number, date: st
   });
 }
 
-/** Everything needed to log one (day, date): the session and its sets. Last time is per exercise, from useLastTimes. */
+/** Everything needed to log one (day, date): the session and its sets; last time comes from useLastTimes. */
 export function useWorkoutDay(dayType: number, date: string) {
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -39,10 +35,7 @@ export function useWorkoutDay(dayType: number, date: string) {
       const sets = previous?.sets ?? [];
       const sided = "reps_left" in input;
 
-      // The server upserts on (session_id, exercise_name, set_number), so a
-      // repeat of the same set number REPLACES. Appending here would briefly
-      // render two rows that then collapse to one — and the row that vanished
-      // would read as a bug rather than a correction.
+      // The server upserts on (session_id, exercise_name, set_number), so a repeat REPLACES: don't append.
       const optimistic = {
         id: `optimistic-${input.exercise_name}-${input.set_number}`,
         user_id: userId,
@@ -74,8 +67,7 @@ export function useWorkoutDay(dayType: number, date: string) {
     onError: (_e, _v, ctx) => {
       if (ctx?.previous) qc.setQueryData(key, ctx.previous);
     },
-    // ["workoutDay"] is a prefix of `key`, so this hook's own query is covered
-    // along with every other reader of sessions and sets.
+    // ['workoutDay'] is a prefix of `key`, so this covers this hook's query and every other reader.
     onSettled: () => invalidateSessionReaders(qc),
   });
 
@@ -99,8 +91,7 @@ export function useWorkoutDay(dayType: number, date: string) {
   return {
     session: session.data?.session ?? null,
     sets: session.data?.sets ?? [],
-    // isPending, not isLoading (CLAUDE.md): until the sets are in, the next set
-    // number is unknown, and a guess of 1 overwrites the real set 1 on the server.
+    // isPending, not isLoading (CLAUDE.md): until sets are in, a guessed set number 1 overwrites set 1.
     isPending: session.isPending,
     // Failed with nothing to show is no better: `sets` is then [] as well.
     failed: session.isError && session.data === undefined,

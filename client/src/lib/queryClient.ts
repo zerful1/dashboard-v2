@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { ApiError } from "@/lib/api";
 import { MAX_AGE } from "@/lib/persister";
 
-/** A failed write's message; offline it says so, matching the banner. Error rule: forms render inline, all else toasts. */
+/** A failed write's message; offline it says so, matching the banner. Forms render errors inline. */
 export function writeFailureMessage(err: unknown): string {
   // api() timed out: a slow write can still land, so not "not saved"; the refetch on settle shows which.
   if (err instanceof ApiError && err.code === "timeout") return "Timed out — may not have saved";
@@ -44,7 +44,7 @@ export function createQueryClient(): QueryClient {
         gcTime: MAX_AGE,
       },
       mutations: {
-        // Never queue writes offline (CLAUDE.md): the default "online" mode pauses and replays them, so they look saved.
+        // Never queue writes offline (CLAUDE.md): the default "online" mode replays them, so they look saved.
         networkMode: "always",
       },
     },

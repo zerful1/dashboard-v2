@@ -9,7 +9,7 @@ import { ApiError } from "@/lib/api";
 import { writeFailureMessage } from "@/lib/queryClient";
 import { cantSend, missingParts, packBody, readDownload, total, type PackedBody } from "./restoreFile";
 
-/** The toast's own words, since both mutations opt out of it; offline and timeout read as the rest of the app says them. */
+/** The toast's own words, since both mutations opt out; offline and timeout read as elsewhere in the app. */
 const message = (err: Error) =>
   err instanceof ApiError && err.status === 403 ? "The demo can't restore downloads." : writeFailureMessage(err);
 

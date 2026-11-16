@@ -9,10 +9,10 @@ export interface PackedBody {
 
 export const TOO_LARGE = "This file is too large to restore";
 
-/** Vercel's cap on a request body; one over it is refused as an error page the app can only call "Something went wrong". */
+/** Vercel's cap on a request body; over it, an error page the app can only call "Something went wrong". */
 export const REQUEST_CAP_BYTES = 4_500_000;
 
-/** The file's text when it is a dashboard download, else why nothing is sent; size is checked first so a video is never read whole. */
+/** The file's text if it is a dashboard download, else why not; size first so a video isn't read whole. */
 export async function readDownload(file: File): Promise<{ text: string } | { refused: string }> {
   if (file.size > RESTORE_MAX_BYTES) return { refused: TOO_LARGE };
   const text = await file.text();
@@ -25,7 +25,7 @@ export async function readDownload(file: File): Promise<{ text: string } | { ref
   return { refused: "This isn't a dashboard download" };
 }
 
-/** Gzipped to stay far under Vercel's 4.5 MB cap; plain where there is no CompressionStream, and the server takes either. */
+/** Gzipped to stay far under Vercel's 4.5 MB cap; plain without CompressionStream; the server takes both. */
 export async function packBody(text: string): Promise<PackedBody> {
   if (typeof CompressionStream === "undefined") return { body: text, gzipped: false, bytes: new Blob([text]).size };
   const stream = new Response(text).body!.pipeThrough(new CompressionStream("gzip"));
@@ -33,7 +33,7 @@ export async function packBody(text: string): Promise<PackedBody> {
   return { body: blob, gzipped: true, bytes: blob.size };
 }
 
-/** Why a packed file would be refused on its way to the server, or null; plain (Safari before 16.4) a few MB can exceed the cap. */
+/** Why a packed file would be refused, or null; plain (Safari before 16.4) a few MB can exceed the cap. */
 export function cantSend({ bytes, gzipped }: PackedBody): string | null {
   if (bytes <= REQUEST_CAP_BYTES) return null;
   return gzipped ? TOO_LARGE : "This browser can't send a file this large. Try an up-to-date browser.";

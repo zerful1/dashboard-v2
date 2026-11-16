@@ -33,7 +33,7 @@ describe("deriveWeightSummary", () => {
   });
 });
 
-// The chart's y-range is the data ± 1 kg; a goal far outside it is drawn only inside the range and named beside the chart otherwise.
+// The y-range is the data ± 1 kg; a goal far outside it is not drawn and is named beside the chart.
 describe("goalPlacement", () => {
   const pts = [{ date: "2026-09-01", kg: 84 }, { date: "2026-10-01", kg: 80.6 }];
   const line = [{ date: "2026-09-01", kg: 83.8 }, { date: "2026-10-01", kg: 80.8 }];

@@ -109,7 +109,7 @@ describe("SettingsPage", () => {
     expect(screen.getByRole("alert")).toHaveClass("text-negative");
     expect(retry).toHaveClass("border-edge");
 
-    // Both halves matter: an error next to a permanent spinner would satisfy "an error is shown" while leaving the page stuck.
+    // Both halves matter: an error beside a permanent spinner would satisfy "an error is shown".
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(retry).toBeInTheDocument();
 

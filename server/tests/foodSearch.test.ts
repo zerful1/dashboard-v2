@@ -183,7 +183,7 @@ describe("Open Food Facts mapping limits", () => {
 });
 
 describe("Open Food Facts impossible values", () => {
-  // Impossible core values leave the hit out and impossible label values become unknown, since the diary POST refuses some.
+  // Impossible core values drop the hit, impossible label values become unknown; the diary POST refuses them.
   it("leaves out a hit with impossible energy or macros", () => {
     expect(mapSearchHit({ code: "187006", product_name: "Creamy Pork Bolognese", nutriments: { "energy-kcal_100g": 59000 } })).toBeNull();
     expect(mapSearchHit({ code: "4", product_name: "Bar", nutriments: { "energy-kcal_100g": 400, carbohydrates_100g: 112 } })).toBeNull();

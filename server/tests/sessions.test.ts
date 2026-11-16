@@ -36,7 +36,7 @@ describe("sessions", () => {
     const renamed = { ...DEFAULT_SPLIT, days: [{ day_type: 1, label: "Leg Day" }] };
     const again = await getOrCreateSession(id, "2026-08-16", 1, renamed as never);
 
-    // The snapshot is why history survives a split rename: day_type is reused across eras ('Upper A' and 'Legs' are both 1).
+    // The snapshot keeps history after a split rename: day_type is reused ('Upper A' and 'Legs' are both 1).
     expect(again.day_name).toBe("Legs");
   });
 

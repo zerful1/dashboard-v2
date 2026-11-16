@@ -85,7 +85,7 @@ describe("demo is read-only", () => {
 });
 
 describe("a browser still holding a demo session", () => {
-  // "Leave demo" signs out locally even when its POST fails, and a reset link can open in a browser that last visited the demo.
+  // "Leave demo" signs out locally even when its POST fails; a reset link can open in a browser last on demo.
   it("can still sign in to a real account, or reset a password", async () => {
     await request(app).post("/api/auth/register").send({ email: "alice@example.com", password: "correct-horse-9" }).expect(201);
     const agent = await inDemo();

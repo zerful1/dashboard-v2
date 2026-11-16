@@ -86,8 +86,7 @@ describe("cardio", () => {
         calories_burned: null,
       })
       .expect(200);
-    // PATCH replaces every field rather than merging a diff, so omitted values
-    // become null rather than keeping their previous contents.
+    // PATCH replaces every field, so omitted values become null rather than keeping their contents.
     expect(patched.body.distance_miles).toBe(5);
     expect(patched.body.speed).toBeNull();
 

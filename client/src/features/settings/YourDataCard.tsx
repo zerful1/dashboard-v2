@@ -48,7 +48,7 @@ function SummaryLine({ s }: { s: DataSummary }) {
   );
 }
 
-/** Everything the user owns as one JSON file, their only backup; neither a query nor a mutation, so no cache or global toast. */
+/** Everything the user owns as one JSON file, their only backup; not a query or mutation, so no toast. */
 export function YourDataCard() {
   const [busy, setBusy] = useState(false);
   const [restoring, setRestoring] = useState(false);

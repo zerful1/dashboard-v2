@@ -62,7 +62,7 @@ describe("DateSelector", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  // One clock per page: in the minute after midnight the clock says the 18th while the page's useToday still says the 17th.
+  // One clock per page: just after midnight the clock says the 18th while the page's useToday says the 17th.
   it("takes the page's today when given one, not its own clock", () => {
     freeze("2026-08-18");
     render(<DateSelector value="2026-08-17" onChange={() => {}} today="2026-08-17" />);

@@ -16,7 +16,7 @@ export interface WeightSummary {
   line: AveragePoint[];
 }
 
-/** Every figure the Weight page and Home's weight section show, in one pure pass; `today` is an argument so no process clock is read. */
+/** Every figure the Weight page and Home's weight section show, in one pure pass; `today` is passed in. */
 export function deriveWeightSummary(entries: BodyWeightEntry[], today: string): WeightSummary {
   // localeCompare on YYYY-MM-DD sorts chronologically, so no Date is needed.
   const points: ChartPoint[] = [...entries]
@@ -33,7 +33,7 @@ export function deriveWeightSummary(entries: BodyWeightEntry[], today: string): 
   };
 }
 
-/** Where the goal sits against the chart's y-range; only a goal inside it is drawn, since stretching the axis squashed the line. */
+/** Where the goal sits in the chart's y-range; only one inside it is drawn (stretching squashed the line). */
 export function goalPlacement(
   points: ChartPoint[],
   line: ChartPoint[],

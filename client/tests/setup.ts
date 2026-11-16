@@ -4,8 +4,7 @@ import { afterEach } from "vitest";
 
 afterEach(cleanup);
 
-// jsdom's Blob has no text(), which every browser the app supports does. Read
-// through FileReader, which jsdom has, so code under test can call it as written.
+// jsdom's Blob has no text(); read through FileReader so code under test can call it as written.
 if (!Blob.prototype.text) {
   Blob.prototype.text = function (this: Blob) {
     return new Promise<string>((resolve, reject) => {

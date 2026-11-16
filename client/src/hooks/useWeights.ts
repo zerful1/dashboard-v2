@@ -4,16 +4,7 @@ import { weightApi, type WeightInput } from "@/api/weight";
 import { invalidateInsightsReaders } from "./invalidate";
 import type { BodyWeightEntry } from "@dashboard/shared";
 
-/**
- * The cache key carries the user id.
- *
- * An earlier version shipped a cross-account leak because `["profile"]` carried no
- * identity and outlived a sign-out: the next account in the same tab was served
- * the previous one's row. That was fixed by clearing the cache on every
- * identity transition, which works but depends on the clear firing. Scoping the
- * key structurally closes the same hole by construction — there is no cache
- * entry another user could read even if a clear were missed.
- */
+/** The cache key carries the user id, so no entry another user could read exists even if a clear misfires. */
 export const weightKey = (userId: string) => ["weight", userId] as const;
 
 export function useWeights() {
@@ -33,10 +24,7 @@ export function useWeights() {
       await qc.cancelQueries({ queryKey: key });
       const previous = qc.getQueryData<BodyWeightEntry[]>(key) ?? [];
 
-      // POST upserts on (user_id, date), so an existing day is replaced rather
-      // than duplicated. The optimistic write models that: filter the day out
-      // and prepend. Appending instead would briefly render two rows for one
-      // day, and the row that vanished on settle would look like a bug.
+      // POST upserts on (user_id, date): filter the day out and prepend, or one day briefly shows two rows.
       const optimistic: BodyWeightEntry = {
         id: previous.find((e) => e.date === input.date)?.id ?? `optimistic-${input.date}`,
         user_id: user?.id ?? "",
@@ -55,8 +43,7 @@ export function useWeights() {
 
       return { previous };
     },
-    // Roll back only. The global MutationCache handler (lib/queryClient.ts) owns the
-    // message, so per-hook handlers never touch UI — one failure, one message.
+    // Roll back only: the global MutationCache handler owns the message, so one failure gives one message.
     onError: (_e, _v, ctx) => {
       if (ctx?.previous) qc.setQueryData(key, ctx.previous);
     },
@@ -93,9 +80,7 @@ export function useWeights() {
   return {
     entries: query.data ?? [],
     isLoading: query.isLoading,
-    // For callers that render derived values rather than a bare list: a disabled
-    // query reports isLoading false, so isLoading alone lets a page paint
-    // conclusions drawn from an empty array. See useHomeDay.
+    // For derived values: a disabled query reports isLoading false, so gate on isPending. See useHomeDay.
     isPending: query.isPending,
     isError: query.isError,
     hasData: query.data !== undefined,

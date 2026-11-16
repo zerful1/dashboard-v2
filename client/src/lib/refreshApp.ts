@@ -20,7 +20,7 @@ async function serverReachable(): Promise<boolean> {
   }
 }
 
-/** "Refresh the app": clears this device's caches and service worker then reloads; false, clearing nothing, when offline. */
+/** "Refresh the app": clears this device's caches and service worker, then reloads; false when offline. */
 export async function refreshApp(qc: QueryClient, reload: () => void = () => window.location.reload()): Promise<boolean> {
   if (!(await serverReachable())) return false;
   try {

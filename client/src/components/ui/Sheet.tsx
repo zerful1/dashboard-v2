@@ -18,7 +18,7 @@ export function Sheet({ open, onClose, title, children }: Props) {
   const safe = useMotionSafe();
   const panel = useRef<HTMLDivElement>(null);
 
-  // aria-modal: focus moves to the sheet on open and back on close; the opener is read in render, as an autoFocus child steals activeElement at commit.
+  // aria-modal: focus moves to the sheet on open and back on close; the opener is read in render.
   const opener = useRef<HTMLElement | null>(null);
   const wasOpen = useRef(false);
   if (open && !wasOpen.current) {

@@ -15,7 +15,7 @@ export const API_TIMEOUT_MS = 15_000;
 
 /** The only fetch call; credentials 'include' sends the cookie, and only the wait for the answer to start is timed. */
 export async function api<T = unknown>(path: string, options?: RequestInit): Promise<T> {
-  // Our own controller so the timer can abort; the caller's signal is forwarded by hand (no AbortSignal.any on old iOS).
+  // Our own controller so the timer can abort; the caller's signal is forwarded by hand (no AbortSignal.any).
   const controller = new AbortController();
   const caller = options?.signal;
   const forward = () => controller.abort(caller?.reason);

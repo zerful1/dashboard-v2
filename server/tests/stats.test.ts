@@ -146,8 +146,7 @@ describe("session detail", () => {
   });
 
   it("preserves set_number beyond four, so a long session is not truncated", async () => {
-    // v1's detail table hardcoded four columns. Real sessions reach 22 sets, so
-    // the shape of this response is what makes a derived column count possible.
+    // Real sessions reach 22 sets, so this response's shape is what makes a derived column count possible.
     const agent = await signedIn(alice);
     await logSets(
       agent,

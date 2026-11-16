@@ -19,7 +19,7 @@ beforeAll(async () => {
 });
 
 export async function truncateAll(): Promise<void> {
-  // Schema-qualified (no usable search_path over the pooler); CASCADE handles FK order; cofid_foods is global reference data, so absent.
+  // Schema-qualified (no search_path over the pooler); CASCADE handles FK order; cofid_foods is global.
   await pool.query(
     `TRUNCATE ${T.users}, ${T.profiles}, ${T.passwordResetTokens}, ${T.session},
               ${T.bodyWeight}, ${T.exercises},

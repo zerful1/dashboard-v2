@@ -29,7 +29,7 @@ export function InsightsPage() {
   const records = useRecords();
   const goals = useGoals();
   const historyNames = useHistoryExerciseNames();
-  // Wait for goals (isPending) as they colour the weight change, but not when paused offline or once drawn (Weight's rule).
+  // Wait for goals (isPending) as they colour the weight change, not when paused offline or once drawn.
   const goalsSettled = !goals.isPending || goals.isPaused;
   const [drawn, setDrawn] = useState(false);
   const showWeek = !!review.data && (goalsSettled || drawn);

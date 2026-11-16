@@ -6,7 +6,7 @@ export type RateLine =
   | { kind: "flat" }
   | { kind: "none"; have: number; need: number };
 
-/** The rate as Weight and Home word it: Insights' fit, "flat" under its threshold, green only toward the goal and neutral once reached. */
+/** The rate as Weight and Home word it: Insights' fit, "flat" under its threshold, green only toward goal. */
 export function rateLine(fit: TrendFit, goal: Pick<Goal, "target_kg" | "start_kg"> | null): RateLine {
   if (fit.status === "not-enough-data") return { kind: "none", have: fit.have, need: fit.need };
   if (isFlatRate("weight", fit.ratePerWeek)) return { kind: "flat" };
@@ -43,7 +43,7 @@ function goalStatus(p: Projection, today: string): string | null {
   }
 }
 
-/** "Goal 80 kg · around 16 Nov": projectGoal over the page's weigh-ins, as Insights runs it; `stale` keeps only the target. */
+/** "Goal 80 kg · around 16 Nov": projectGoal as Insights runs it; `stale` keeps only the target. */
 export function goalLine(
   goal: Pick<Goal, "id" | "kind" | "target_kg" | "start_kg">,
   points: { date: string; kg: number }[],

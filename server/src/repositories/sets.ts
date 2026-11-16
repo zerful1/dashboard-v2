@@ -61,7 +61,7 @@ export function deleteSet(userId: string, id: string): Promise<boolean> {
   return deleteFromSession(userId, T.workoutSets, id);
 }
 
-/** "Last time" per exercise: the newest earlier session with a set of it on ANY day type, since day_type is reused across eras. */
+/** "Last time" per exercise: newest earlier session with a set of it on ANY day type (day_type is reused). */
 export async function lastTimes(
   userId: string,
   names: string[],

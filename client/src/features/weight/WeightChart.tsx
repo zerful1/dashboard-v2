@@ -37,7 +37,7 @@ export interface WeightRow {
   avg: number | null;
 }
 
-/** The weigh-ins from `start` as day-axis rows with their 7-day average, a null row breaking the line across gaps over 7 days. */
+/** Weigh-ins from `start` as day-axis rows with 7-day average; a null row breaks the line over gaps > 7 d. */
 export function weightRows(points: ChartPoint[], line: AveragePoint[], start: string): WeightRow[] {
   const byDate = new Map(line.map((a) => [a.date, a]));
   const rows: WeightRow[] = [];
@@ -83,7 +83,7 @@ interface Props {
   weekly: boolean;
 }
 
-/** THE swappable boundary: nothing outside this file imports a charting library (Recharts; Bklit coerced x through `new Date`). */
+/** THE swappable boundary: nothing else imports a charting library (Bklit coerced x via `new Date`). */
 export function WeightChart({ points, line, start, today, goalKg, span, weekly }: Props) {
   const rows = useMemo(() => weightRows(points, line, start), [points, line, start]);
   const plotted = rows.filter((r) => r.kg !== null);
@@ -114,7 +114,7 @@ export function WeightChart({ points, line, start, today, goalKg, span, weekly }
               dataKey="x"
               type="number"
               domain={[0, daysBetweenISO(start, today)]}
-              // Today sits at the axis's end and 1M labels it: inset the end so the centred label fits inside the chart.
+              // Today is at the axis's end and 1M labels it: inset the end so the centred label fits.
               padding={{ left: 0, right: 16 }}
               ticks={ticks.map((t) => t.x)}
               tickFormatter={(x: number) => labels.get(x) ?? ""}
@@ -202,7 +202,7 @@ export function WeightChart({ points, line, start, today, goalKg, span, weekly }
   );
 }
 
-/** The 7-day average with a null between points over 7 days apart; a point with a break on both sides is `lone`, drawn as a dot. */
+/** The 7-day average, null across gaps over 7 days; a point with a break on both sides is `lone`, a dot. */
 export function sparklineRows(line: AveragePoint[]): { date: string; kg: number | null; lone: boolean }[] {
   const rows = line.flatMap((p) =>
     p.gapBefore ? [{ date: `${p.date}-gap`, kg: null }, { date: p.date, kg: p.kg }] : [{ date: p.date, kg: p.kg }],
@@ -210,7 +210,7 @@ export function sparklineRows(line: AveragePoint[]): { date: string; kg: number 
   return rows.map((r, i) => ({ ...r, lone: r.kg !== null && rows[i - 1]?.kg == null && rows[i + 1]?.kg == null }));
 }
 
-/** A sparkline (shape only) that animates on purpose, in the Home tile, drawing the 7-day average; it lives here to keep one charting import site. */
+/** Home tile sparkline of the 7-day average, animated on purpose; here to keep one charting import site. */
 export function WeightSparkline({ line }: { line: AveragePoint[] }) {
   const safe = useMotionSafe();
   if (line.length < 2) return null;
@@ -333,7 +333,7 @@ export function liftRepsTicks(reps: number[]): number[] {
   return [...new Set([0, Math.round(max / 2), max])];
 }
 
-/** One lift over the trend span: heaviest weight per day as a line, reps as bars on one shared x axis; the picked day is named in a fixed line, not a tooltip (CLAUDE.md). */
+/** One lift over the span: top weight per day as a line, reps as bars; the picked day is a fixed line. */
 export function LiftChart({
   points,
   unit,

@@ -112,7 +112,7 @@ describe("History's pages", () => {
   it("walk sessions that share a date in one fixed order: the later-made first", async () => {
     const agent = await signedIn();
     const userId = (await findUserByEmail(alice.email))!.id;
-    // Six sessions on one date: date alone left the order unstable between pages, showing one twice and another not at all.
+    // Six sessions on one date: date alone left the order unstable between pages, repeating or dropping one.
     for (const dayType of [1, 2, 3, 4, 5, 6]) await getOrCreateSession(userId, "2026-08-16", dayType, DEFAULT_SPLIT);
     // Made in an order that is neither the insert order nor its reverse, so no accident of storage produces it.
     const newestFirst = [4, 1, 6, 2, 5, 3];

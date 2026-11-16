@@ -59,14 +59,12 @@ export function weekNumbers(inputs: ReviewInputs, monday: string): WeekNumbers {
     training: {
       days: new Set(inputs.sessionDates.filter(inside)).size,
       sets: sets.length,
-      // A bodyweight set's stored weight is 0, so it has no volume to add. On a
-      // single-sided set `reps` is the weaker side, as in every other stat.
+      // A bodyweight set stores weight 0 (no volume); on a single-sided set `reps` is the weaker side.
       volume: sum(sets.filter((s) => !s.is_bodyweight).map((s) => s.weight_kg * s.reps)),
     },
     food: {
       daysLogged: foodDays,
-      // Over the days logged, and null rather than 0 when there were none: an
-      // empty week is "nothing logged", not "ate nothing".
+      // Over the days logged; null, not 0, when none: an empty week is 'nothing logged', not 'ate nothing'.
       avgKcal: foodDays ? sum(food.map((f) => f.calories)) / foodDays : null,
       avgProteinG: foodDays ? sum(food.map((f) => f.protein_g)) / foodDays : null,
     },

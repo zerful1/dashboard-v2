@@ -77,8 +77,7 @@ describe("useWeights", () => {
       result.current.saveWeight.mutate({ date: "2026-08-15", weight_kg: 81.4 });
     });
 
-    // POST upserts on (user_id, date) — one row, the new value. Appending
-    // instead would show two rows for one day until the refetch settled.
+    // POST upserts on (user_id, date): one row with the new value; appending would show two rows for one day.
     await waitFor(() => {
       expect(result.current.entries).toHaveLength(1);
       expect(result.current.entries[0]!.weight_kg).toBe(81.4);
@@ -122,8 +121,7 @@ describe("useWeights", () => {
     const { result } = renderHook(() => useWeights(), { wrapper: wrapper(fresh()) });
     await waitFor(() => expect(result.current.entries).toHaveLength(1));
 
-    // 26 September is in BST, and is the earliest migrated session date. A Date
-    // round trip anywhere in this path would render it as the 25th.
+    // 26 September is in BST and the earliest migrated date: a Date round trip would render it as the 25th.
     expect(result.current.entries[0]!.date).toBe("2025-09-26");
     expect(typeof result.current.entries[0]!.date).toBe("string");
   });

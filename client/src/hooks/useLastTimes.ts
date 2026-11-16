@@ -15,7 +15,7 @@ export function lastTimesQueryOptions(userId: string, names: string[], before: s
   });
 }
 
-/** Last time by name; callers say nothing while `isPending`, which counts only while enabled (disabled never settles). */
+/** Last time by name; callers say nothing while `isPending`, which counts only while enabled. */
 export function useLastTimes(names: string[], before: string): { byName: Record<string, LastTime>; isPending: boolean } {
   const { user } = useAuth();
   const enabled = !!user && names.length > 0;

@@ -49,7 +49,7 @@ const label = (v: unknown): number | null => {
   return n === null || n > MAX_GRAMS_PER_100G ? null : n;
 };
 
-/** The user's words as literal text, since Search-a-licious reads `q` as Lucene syntax; the country clause is added after. */
+/** The user's words as literal text, as Search-a-licious reads `q` as Lucene syntax; country clause after. */
 export function escapeLucene(text: string): string {
   return text.replace(/[+\-&|!(){}[\]^"~*?:\\/]/g, "\\$&");
 }
@@ -95,7 +95,7 @@ async function searchOnce(q: string, signal: AbortSignal): Promise<FoodHit[]> {
   return (body.hits ?? []).map(mapSearchHit).filter((h): h is FoodHit => h !== null);
 }
 
-/** UK-tagged products first, topped up with unfiltered hits when under MIN_UK_HITS; one deadline covers both requests. */
+/** UK-tagged products first, topped up with unfiltered hits under MIN_UK_HITS; one deadline covers both. */
 export async function searchOpenFoodFacts(q: string, timeoutMs = OFF_TIMEOUT_MS): Promise<FoodHit[]> {
   const signal = AbortSignal.timeout(timeoutMs);
   const terms = escapeLucene(q);
@@ -120,7 +120,7 @@ export interface OffProductPage extends OffProduct {
   serving_quantity?: number | string;
 }
 
-/** A product page as a hit, plus its label serving; the id is Open Food Facts' own code, so a scan updates a saved search food. */
+/** A product page as a hit plus its label serving; the id is Open Food Facts' own, so a scan updates it. */
 export function mapProduct(p: OffProductPage, code: string): FoodHit | null {
   const own = p.code === undefined ? "" : String(p.code);
   const canonical = /^\d{8,14}$/.test(own) ? own : code;

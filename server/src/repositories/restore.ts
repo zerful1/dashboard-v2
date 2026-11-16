@@ -29,7 +29,7 @@ const NATURAL_KEY = {
 };
 type Parent = keyof typeof NATURAL_KEY;
 
-/** A child's parent column, and what happens when the parent isn't the user's: sets and ticks drop, food entries lose their food. */
+/** A child's parent column and what happens if the parent isn't the user's: sets, ticks drop; food lost. */
 const CHILD: Partial<Record<RestoredTable, { column: string; parent: Parent; orphan: "drop" | "null" }>> = {
   food_log_entries: { column: "food_item_id", parent: "food_items", orphan: "null" },
   workout_sets: { column: "session_id", parent: "workout_sessions", orphan: "drop" },
@@ -58,7 +58,7 @@ class DryRun extends Error {
   }
 }
 
-/** Maps each parent id the children name to the user's own row (same id, or natural-key clash); absent if not theirs. */
+/** Maps each parent id the children name to the user's own row (same id or natural-key clash), else none. */
 async function parentMap(
   client: PoolClient,
   userId: string,
@@ -80,7 +80,7 @@ async function parentMap(
   return new Map(found.map((r) => [r.file_id, r.mine]));
 }
 
-/** Adds back the rows the account lacks, changing nothing it has, in one transaction; `dryRun` rolls back so previews match restores. */
+/** Adds back rows the account lacks, changing nothing it has, in one transaction; `dryRun` rolls back. */
 export async function restoreUserData(
   userId: string,
   tables: Record<string, Row[]>,

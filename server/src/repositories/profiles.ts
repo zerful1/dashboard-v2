@@ -51,7 +51,7 @@ export async function updateProfile(
   return rows[0] ?? null;
 }
 
-/** Deletes the account: everything cascades from users except `session`, which has no foreign key and is removed explicitly. */
+/** Deletes the account: all cascades from users except `session` (no foreign key), removed explicitly. */
 export async function deleteAccount(userId: string): Promise<void> {
   await withTransaction(async (client) => {
     await client.query(`DELETE FROM ${T.session} WHERE sess->>'userId' = $1`, [userId]);

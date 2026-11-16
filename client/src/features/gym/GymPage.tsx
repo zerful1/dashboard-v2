@@ -138,7 +138,7 @@ export function GymPage() {
       {tab === "history" && (
         <HistoryTab
           onEditInLog={(s) => {
-            // jumpTo sets day and date AND latches; a plain selectDay + selectDate pair would let lastLoggedDay pull it back.
+            // jumpTo sets day, date and latch; selectDay + selectDate would let lastLoggedDay pull it back.
             jumpTo(s.day_type, s.date);
             setTab("log");
           }}

@@ -69,7 +69,7 @@ export async function deleteEntry(userId: string, id: string): Promise<boolean> 
   return (res.rowCount ?? 0) > 0;
 }
 
-/** Copies every entry on `from` to `to`, shifting logged_at by whole local days so wall-clock times and order are kept. */
+/** Copies every entry on `from` to `to`, shifting logged_at by whole local days to keep times and order. */
 export async function copyDay(userId: string, from: string, to: string): Promise<FoodLogEntry[]> {
   const { rows } = await pool.query<FoodLogEntry>(
     `WITH tz AS (SELECT timezone AS z FROM ${T.profiles} WHERE user_id = $1),
@@ -93,7 +93,7 @@ export async function copyDay(userId: string, from: string, to: string): Promise
   return rows;
 }
 
-/** Distinct recent foods with their latest entry; two scoped queries rather than a join, so items come only from the caller's library. */
+/** Distinct recent foods with their latest entry; two scoped queries, not a join, so items are the user's. */
 export async function listRecents(userId: string, limit = 30): Promise<RecentFood[]> {
   const { rows } = await pool.query<FoodLogEntry>(
     `SELECT ${ENTRY_COLS} FROM ${T.foodLogEntries}

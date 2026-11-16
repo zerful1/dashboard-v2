@@ -11,8 +11,7 @@ import { PASSWORD_MAX_LENGTH } from "@dashboard/shared";
 
 export const profileRouter = Router();
 
-// Guards the whole router, so a route added later is protected by default rather
-// than by remembering to add the middleware.
+// Guards the whole router, so a later route is protected by default.
 profileRouter.use(requireAuth);
 
 profileRouter.get("/", async (req, res, next) => {
@@ -30,13 +29,9 @@ profileRouter.get("/", async (req, res, next) => {
 
 const patchBody = z
   .object({
-    // A zone both sides know. It is not only passed to Intl: copyDay hands it
-    // to Postgres (AT TIME ZONE), where an unknown name was a 500 on every
-    // later copy.
+    // A zone both sides know: copyDay hands it to Postgres (AT TIME ZONE), where an unknown name was a 500.
     timezone: z.string().min(1).max(60).refine(isTimeZone, "Unknown time zone").optional(),
-    // Optional body details for the nutrition TDEE hint. The DB CHECKs repeat
-    // these bounds, so a request that slipped past here would still fail.
-    // Nullable: null clears a detail.
+    // Optional TDEE details: the DB CHECKs repeat these bounds, and null clears a detail.
     height_cm: z.number().min(100).max(250).nullable().optional(),
     birth_year: z.number().int().min(1900).max(2100).nullable().optional(),
     sex: z.enum(["male", "female"]).nullable().optional(),
@@ -57,13 +52,10 @@ profileRouter.patch("/", validate({ body: patchBody }), async (req, res, next) =
   }
 });
 
-// Not `passwordField`: this CHECKS a password, it does not set one, so the
-// length policy must not apply - a legacy short password still has to work.
+// Not `passwordField`: this checks a password, so the length policy must not apply to a legacy short one.
 const deleteBody = z.object({ password: z.string().min(1).max(PASSWORD_MAX_LENGTH) });
 
-// Deleting cascades through every table the account owns. A bare authenticated
-// request let anyone at an unlocked device erase it with one click and a
-// confirm; the password proves it is the account holder asking.
+// Deleting cascades through every owned table, so the password proves the account holder is asking.
 profileRouter.delete("/", validate({ body: deleteBody }), async (req, res, next) => {
   try {
     const { password } = req.body as z.infer<typeof deleteBody>;

@@ -174,7 +174,7 @@ describe("Gym's header", () => {
   });
 });
 
-// useSplit falls back to DEFAULT_SPLIT, so a split that failed with nothing cached named the default's day and logged against it.
+// useSplit falls back to DEFAULT_SPLIT, so a split that failed with nothing cached named the default's day.
 describe("Gym, opened from Settings", () => {
   it("opens the split editor from ?open=split, after the split loads", async () => {
     mockByPath();

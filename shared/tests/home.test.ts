@@ -95,7 +95,7 @@ describe('deriveHome — week', () => {
   })
 
   it('treats Sunday as the END of its week, not the start', () => {
-    // Sunday 2026-08-30's Monday is 08-24, not 08-31; getting this wrong makes a Sunday session vanish from its own week.
+    // Sunday 2026-08-30's Monday is 08-24, not 08-31; getting it wrong drops a Sunday session from its week.
     const h = deriveHome(DEFAULT_SPLIT, [session('2026-08-30')], '2026-08-30')
     expect(h.week.days[6]).toBe(true)
     expect(h.week.logged).toBe(1)

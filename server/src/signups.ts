@@ -1,4 +1,4 @@
-/** Who may register, from SIGNUP_ALLOWLIST: unset = nobody (a missing variable must not reopen sign-ups), * = anyone. */
+/** Who may register, from SIGNUP_ALLOWLIST: unset = nobody (a missing variable must not reopen), * = all. */
 export type SignupPolicy = { open: true } | { open: false; allow: ReadonlySet<string> };
 
 export function parseSignupPolicy(raw: string | undefined): SignupPolicy {

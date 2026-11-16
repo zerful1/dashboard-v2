@@ -228,7 +228,7 @@ describe("useHomeDay", () => {
   });
 });
 
-// useSplit falls back to DEFAULT_SPLIT, so a split that failed with nothing cached named the default's day as if it were today's.
+// useSplit falls back to DEFAULT_SPLIT, so a split that failed with nothing cached named the default's day.
 describe("useHomeDay, when the split fails to load", () => {
   it("says the workout couldn't load, and claims no day or target", async () => {
     freeze(WED);
