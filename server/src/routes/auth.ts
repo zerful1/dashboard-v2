@@ -205,12 +205,16 @@ authRouter.post(
   },
 );
 
+/** Every answer waits this long, so sending an email can't time-reveal that an account exists. */
+export const FORGOT_FLOOR_MS = 1000;
+
 authRouter.post(
   "/forgot-password",
   validate({ body: z.object({ email: emailField }) }),
   async (req, res, next) => {
     try {
       const { email } = req.body as { email: string };
+      const floor = new Promise((resolve) => setTimeout(resolve, FORGOT_FLOOR_MS));
       // No reset for the demo: it would hand it a usable password.
       const user = isDemoEmail(email) ? null : await findUserByEmail(email);
 
@@ -221,6 +225,7 @@ authRouter.post(
           `${config.APP_ORIGIN}/reset-password?token=${raw}`,
         );
       }
+      await floor;
 
       // Always 204, whether or not the account exists. Any other shape is an
       // account-enumeration oracle.

@@ -6,6 +6,7 @@ import { pool } from "../src/db/pool";
 import { T } from "../src/config";
 import { createResetToken, consumeResetToken } from "../src/repositories/passwordResets";
 import { findUserByEmail } from "../src/repositories/users";
+import { FORGOT_FLOOR_MS } from "../src/routes/auth";
 
 const app = createApp();
 const creds = { email: "alice@example.com", password: "correct-horse-9" };
@@ -96,6 +97,12 @@ describe("forgot password", () => {
 
     const { rows } = await pool.query(`SELECT id FROM ${T.passwordResetTokens}`);
     expect(rows).toHaveLength(0);
+  });
+
+  it("answers no faster for an unknown email than the floor a send hides behind", async () => {
+    const start = Date.now();
+    await request(app).post("/api/auth/forgot-password").send({ email: "nobody@example.com" }).expect(204);
+    expect(Date.now() - start).toBeGreaterThanOrEqual(FORGOT_FLOOR_MS - 50);
   });
 
   it("issues a token for a known email", async () => {
